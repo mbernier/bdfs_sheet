@@ -64,8 +64,8 @@ db.sqlite3-journal
 # Flask stuff:
 instance/
 .webassets-cache
-
 # Scrapy stuff:
+
 .scrapy
 
 # Sphinx documentation
@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+credentials.json
+token.json
