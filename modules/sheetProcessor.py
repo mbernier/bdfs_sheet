@@ -3,8 +3,8 @@ from modules.spreadsheet import Spreadsheet
 from modules.base import BaseClass
 
 # @todo refactor to pull out the getops functionality from this script
-#	create a class that takes in getopt options and data
-# 	and then have this Sheet Processor extend that class and pass the configuration
+#   create a class that takes in getopt options and data
+#   and then have this Sheet Processor extend that class and pass the configuration
 class SheetProcessor(BaseClass):
     # set the default spreadsheet id from the constants or configuration
     spreadsheet = None
@@ -52,7 +52,7 @@ class SheetProcessor(BaseClass):
                 # check the column titles and see if they fit our preferences
                 self.debug("user selected -c option")
                 print("Checking column titles on worksheets")
-                self.checkWorksheetColumns()
+                self.checkWorksheetColumns(checkExtras = True, addMissingColumns = False)
                 sys.exit()
             elif opt in ("-s", "--spreadsheet-id"):
                 self.debug("user selected -s option")
@@ -109,7 +109,7 @@ class SheetProcessor(BaseClass):
         print("Nothing is defined here yet")
         sys.exit()
 
-    def checkWorksheetColumns(self):
-        self.debug("SheetProcessor.checkWorksheetColumns()")
-        self.spreadsheet.checkWorksheetColumns()
+    def checkWorksheetColumns(self, **kwargs):
+        self.debug("SheetProcessor.checkWorksheetColumns({})".format(kwargs))
+        self.spreadsheet.checkWorksheetColumns(kwargs)
         return

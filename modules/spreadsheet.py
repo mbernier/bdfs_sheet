@@ -16,6 +16,7 @@ class Spreadsheet(BaseClass):
     # from BaseClass - allows us to set sub loggers
     logger_name = "Spreadsheet"
     cols_expected = []
+    cols_expected_extra = []
 
 
     # pass in the sheet ID if it was passed
@@ -89,7 +90,7 @@ class Spreadsheet(BaseClass):
 
     # scrub out the worksheets we don't care about based on the pattern
     # pattern: sheets we care about include "inventory" in the title
-    def setWorksheets(self, worksheetList):
+    def setWorksheets(self, worksheetList) -> list:
         self.debug("Spreadsheet.setWorksheets(%s)" % str(worksheetList))
         if None == self.worksheetKeeperPattern:
             self.debug()
@@ -107,7 +108,7 @@ class Spreadsheet(BaseClass):
 
 
     # quick setter for the worksheet list
-    def getWorksheets(self, use_cache = True):
+    def getWorksheets(self, use_cache = True) -> list:
         self.debug("Spreadsheet.getWorksheets()")
         if None == self.worksheet_list or False == use_cache:
             self.listWorksheets()
@@ -116,7 +117,7 @@ class Spreadsheet(BaseClass):
 
     # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
     # if use_cached is false, go retrieve it again
-    def listWorksheets(self, use_cache = True):
+    def listWorksheets(self, use_cache = True) -> list:
         self.debug("Spreadsheet.listWorksheets(%s)" % str(use_cache))
 
         # if the worksheet list is false or the code wants to retrieve a new list, retrieve it
@@ -133,30 +134,62 @@ class Spreadsheet(BaseClass):
         # make sure that we have worksheets before we try to output them
         self.listWorksheets()
         for sheet in self.getWorksheets():
-            print("    " + str(sheet.title))
+            self.console(str(sheet.title))
 
-
-    def checkWorksheetColumns(self):
+    # only checks the columns, doesn't do anything to adjust or fix them
+    # colsToCheck allows you to pass in something new to check against, rather than whatever is in cols_expected
+    # checkExtras will allow you to bypass checking against the cols_expected_extra columns
+    def checkWorksheetColumns(self, colsToCheck = None, checkExtras = True, addMissingColumns = False):
         self.debug("Spreadsheet.checkWorksheetColumns()")
-        columns = ["Title"]
-        spreadsheet = self.getSheet()
+
+        # if nothing was passed through, then use the default. Otherwise, use what was passed
+        if None == colsToCheck:
+            colsToCheck = self.cols_expected
 
         for worksheet in self.getWorksheets():
-            print(str(worksheet.title))
+            self.info("Worksheet: " + str(worksheet.title))
+
+            #
+            # The following is all logic to setup the columns that we need to check against
+            #
+
+            # set the columns to the default
+            colsToCheck = self.cols_expected
+
+            # if we are checking extras and we have extra cols to check, then let's loop through. Otherwise, just do the normal thing
+            if True == checkExtras and [] != self.cols_expected_extra:
+
+                # if we have extra columns that we need to check, loop through the options
+                for extraColCheck, colTitles in self.cols_expected_extra.items():
+
+                    # if we find that the key for the extra columns is in the worksheet title, 
+                    # then append the extras columns to check and then check against the new combined list
+                    if extraColCheck in worksheet.title:
+                         colsToCheck += self.cols_expected_extra[extraColCheck]
+
+            #
+            # The following is actually checking the columns
+            #
+
             # get everything from the first row
             first_row = worksheet.row_values(1)
-            # print(str(first_row))
-            # does the first_row contain everything in the self.cols_expected
-            firstrow_result =  all(elem in first_row for elem in self.cols_expected)
+            
+            row_length = len(first_row)
+            self.info("The row is %i cols long" % row_length)
+
+            # does the first_row contain everything in the colsToCheck
+            firstrow_result = self.compareLists(first_row, colsToCheck)
+
             if firstrow_result:
-                self.debug("The worksheet %s has all the columns we expect" % worksheet.title)
+                self.info("The worksheet %s has all the columns we expect" % worksheet.title)
             else: 
-                self.debug("The worksheet %s does not have all the columns we expect" % worksheet.title)
+                self.info("The worksheet %s does not have all the columns we expect" % worksheet.title)
                 #figure out what's missing and complain so that we can get that shit fixed
-                missing_columns = list(set(self.cols_expected) - set(first_row))
-                print("Worksheet: {} is Missing Columns: {}".format(worksheet.title, str(missing_columns)))
+                missing_columns = list(set(colsToCheck) - set(first_row))
+                self.console("Worksheet: {} is Missing Columns: {}".format(worksheet.title, str(missing_columns)), 1)
+                if True == addMissingColumns:
+                    self.addColumnsToWorkSheet(worksheet, missing_columns)
 
-            print("\n\n")
-
-
+    def addColumnsToWorkSheet(self, worksheet, columnsToAdd):
+        self.error("NEED TO ADD THIS FUNCTIONALITY")
 
