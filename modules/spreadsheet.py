@@ -3,21 +3,21 @@ import gspread
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
 #   spreadsheet ID.
-# This is the BDFS Inventory spreadsheet ID
-SPREADSHEET_ID = '1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8'
 
 class Spreadsheet:
     # placeholders for cacheable items
     service_account = None
     spreadsheet = None
-    spreadsheetId = SPREADSHEET_ID
+    spreadsheetId = None
     worksheet_list = None    
     
 
     # pass in the sheet ID if it was passed
-    def _init_(id = None):
+    def _init_(self, id = None):
         if None != id:
-            setSheetId(id)
+            self.setSheetId(id)
+        else:
+            raise Exception("class Spreadsheet cannot implement __init__ on it's own. Extend and pass a Spreadsheet Id")
 
 
     # set the sheet Id in case we want to override the default

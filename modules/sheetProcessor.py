@@ -8,27 +8,33 @@ class SheetProcessor:
     # set the default spreadsheet id from the constants or configuration
     spreadsheet = None
 
+    default_output = os.path.basename(__file__) + ' -h to see available commands and information'
+    help_output = """
+    To Use the SheetProcessor, pass in some commands:
+        -s or --spreadsheet-id is the ID of the spreadsheet that you want to parse
+        -lw or --list-worksheets will get you a list of the worksheets that are available
+        -w or worksheets is the comma seperated list of worksheets to process, use "-w all" to process all available worksheets
+    """
+
     def main(self, argv):
         outputfile = ''
-
-        default_output = os.path.basename(__file__) + ' -h to see available commands and information'
-        help_output = """
-            -s or --spreadsheet-id is the ID of the spreadsheet that you want to parse
-            -lw or --list-worksheets will get you a list of the worksheets that are available
-            -w or worksheets is the comma seperated list of worksheets to process, use "-w all" to process all available worksheets
-        """
 
         try:
             opts, args = getopt.getopt(argv, "hs:w:l",["spreadsheet-id=","worksheets="])
  
         except getopt.GetoptError as msg:
             print(msg)
-            print(default_output)
+            print(self.default_output)
             sys.exit(2)
 
-        for opt, arg in opts:
-            if opt == '-h':
-                print(help_output)
+        if [] == opts:
+            print("No Options were passed!")
+            print(self.help_output)
+            sys.exit()
+
+        for opt, arg in opts:     
+            if opt == '-h' or opt == None:
+                print(self.help_output)
                 sys.exit()
 
             elif opt in ("-s", "--spreadsheet-id"):
@@ -47,7 +53,7 @@ class SheetProcessor:
                 sys.exit()
             
             else:
-                print(default_output)
+                print(self.default_output)
                 print(opts)
                 print(args)
                 sys.exit()
