@@ -30,16 +30,30 @@ To run the script (replacing `python3` with the appropriate python command for y
 
 
 # What this functionality can do today (updated as changes are made):
-1. Take in command line arguments for:
-	a. listing all worksheets
-	b. passing in specific worksheet names (but doing nothing with them)
+*run.py*
+- Calls the `Processor` functionality that we care about
+
+*modules/sheetProcessor.py*
+**gives us the command line functionality that maps the sheets functionality to the command line**
+1. Take in command line arguments and then calls the Spreadsheet functionality, support for:
+	a. Listing all worksheets
+	b. Passing in specific worksheet names (but doing nothing with them)
 	c. Overriding the default spreadsheet ID
-2. Setup the Spreadsheet object
-3. Get the available worksheets
-4. Output the worksheet names to the console
+	d. Outputting all the worksheets names to the console
+
+*modules/spreadsheet.py*
+- Wrapper for core spreadsheet functionality
+- If you want to do something for a specific spreadsheet or style of sheet, then extend this class into the specific class
+Provides functionality that allows for:
+	a. Listing all worksheets
+	b. Passing in specific worksheet names (but doing nothing with them)
+	c. Overriding the default spreadsheet ID
+	d. Outputting all the worksheet names to the console
+
 
 ## To Add:
 1. Parsing through the information in the sheet - in a Shopify generic (NOT DOOR SPECIFIC) way
+	*DECIDE:* how do we want the information organized in the spreadsheet? Should it be organized by the categories that are in Shopify? Should there be a categorization mapping and a products table - referenced so that we can go back and forth? This needs to be figured out, as the structure can determine many things in the future. Right now, the spreadsheet is organized by door type.
 	a. Throw errors when the data is incorrect or weird
 	b. Build the handle
 	c. Build the title

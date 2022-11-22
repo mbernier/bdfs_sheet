@@ -1,6 +1,8 @@
 import gspread
 
-# @todo move this to a configuration?
+# @todo the spreadsheet ID should be given by the extending class
+#   If this class is called directly, then it should error out because it should never have a
+#   spreadsheet ID.
 # This is the BDFS Inventory spreadsheet ID
 SPREADSHEET_ID = '1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8'
 
