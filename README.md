@@ -20,9 +20,11 @@ We can then look into options for order processing as well.
 8. Sync doors with Spreadsheet and DFS
 
 # Setup
-1. Create your python environment, this is special per environment so you gotta figure this out
-2. Get your credentials for OAuth for google sheets: https://docs.gspread.org/en/latest/oauth2.html#
-3. You may need Matt to setup credentials for you and provide the access file, just ask him
+1. Create your python environment
+2. Run `pip install -r requirements.txt`
+	a. if you run into issues with pycairo, make sure to look at this [Stackoverflow comment](https://stackoverflow.com/a/61164149) for suggestions on how to fix
+3. Get your credentials for OAuth for google sheets: https://docs.gspread.org/en/latest/oauth2.html#
+4. You may need Matt to setup credentials for you and provide the access file, just ask him
 
 # Running the script
 To run the script (replacing `python3` with the appropriate python command for your environment):

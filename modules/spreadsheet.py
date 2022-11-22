@@ -4,25 +4,34 @@ import gspread
 #   If this class is called directly, then it should error out because it should never have a
 #   spreadsheet ID.
 
+#setup logging
+import logging
+from modules.logger import logger
+#define a sub-logger just for this code
+logger = logging.getLogger('logs.Spreadsheet')
+
+
 class Spreadsheet:
     # placeholders for cacheable items
     service_account = None
     spreadsheet = None
     spreadsheetId = None
-    worksheet_list = None    
-    
+    worksheet_list = None
+    worksheetKeeperPattern = None
 
     # pass in the sheet ID if it was passed
-    def _init_(self, id = None):
-        if None != id:
-            self.setSheetId(id)
-        else:
+    def __init__(self):
+        if None == self.spreadsheetId:
+            #fail if no one set the spreadsheetId on the wrapper class
             raise Exception("class Spreadsheet cannot implement __init__ on it's own. Extend and pass a Spreadsheet Id")
 
 
     # set the sheet Id in case we want to override the default
-    def setSheetId(id = None):
+    def setSpreadsheetId(id = None):
         this.spreadsheetId = id
+
+    def getSpreadsheetId(self):
+        return self.spreadsheetId
 
 
     # setup the service account if not setup, return it either way
@@ -42,6 +51,27 @@ class Spreadsheet:
 
         return self.spreadsheet
 
+    # scrub out the worksheets we don't care about based on the pattern
+    # pattern: sheets we care about include "inventory" in the title
+    def setWorksheets(self, worksheetList):
+        if None == self.worksheetKeeperPattern:
+            # no pattern is set, allow all the sheets through
+            self.worksheet_list = worksheetList
+        else:
+            # if we have a pattern, we should follow it
+            tempSheets = []
+            # clear out the worksheets we don't need
+            for sheet in worksheetList:
+                if  self.worksheetKeeperPattern in sheet.title:
+                    tempSheets.append(sheet)
+            self.worksheet_list = tempSheets
+        return self.getWorksheets()
+
+
+    # quick setter for the worksheet list
+    def getWorksheets(self):
+        return self.worksheet_list
+
 
     # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
     # if use_cached is false, go retrieve it again
@@ -51,7 +81,8 @@ class Spreadsheet:
 
         # if the worksheet list is false or the code wants to retrieve a new list, retrieve it
         if None == self.worksheet_list or False == use_cache:
-            self.worksheet_list = self.spreadsheet.worksheets()
+            # make sure we are setting the sheets appropriately
+            self.setWorksheets(self.spreadsheet.worksheets())
 
         return self.worksheet_list
 
@@ -64,8 +95,7 @@ class Spreadsheet:
             print("    " + str(sheet.title))
 
 
-    def read_sheet(this):
-        print("nothing implemented here")
-        sys.exit()
-        
-        SAMPLE_RANGE_NAME = 'sarto_barn_single!D2:CR'
+    def checkWorksheetColumns(this):
+        columns = ["Title"]
+        for worksheet in self.getWorksheets():
+            print(str(this.spreadsheet.get("'%s'!A1:Z1", worksheet.title)))

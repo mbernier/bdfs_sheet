@@ -3,15 +3,13 @@
 
 from modules.spreadsheet import Spreadsheet
 
+#set up logging for this code
+import logging
+from modules.logger import logger
+#define a sub-logger just for this code
+logger = logging.getLogger('logs.Bdfs_Spreadsheet')
+
 class Bdfs_Spreadsheet(Spreadsheet):
 	
 	spreadsheetId = '1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8'
-
-	# calls the parent __init__ method to make sure the spreadsheetId gets set
-	def _init_(self): 
-		super(Bdfs_Spreadsheet, self).__init__(self.spreadsheetId)
-
-	def getSpreadsheetId(self):
-		return self.spreadsheetId
-
-	
+	worksheetKeeperPattern = "inventory"

@@ -5,6 +5,11 @@
 from modules.sheetProcessor import SheetProcessor
 from modules.spreadsheets.bdfs_inventory import Bdfs_Spreadsheet
 
+#set up the logging for this code
+import logging
+from modules.logger import logger
+#define a sub-logger just for this code
+logger = logging.getLogger('logs.Bdfs_SheetProcessor')
 
 class Bdfs_SheetProcessor(SheetProcessor):
 

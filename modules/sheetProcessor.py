@@ -1,6 +1,12 @@
 import sys, getopt, os, gspread
 from modules.spreadsheet import Spreadsheet
 
+#setup logging
+import logging
+from modules.logger import logger
+#define a sub-logger just for this code
+logger = logging.getLogger('logs.SheetProcessor')
+
 # @todo refactor to pull out the getops functionality from this script
 #	create a class that takes in getopt options and data
 # 	and then have this Sheet Processor extend that class and pass the configuration
@@ -20,7 +26,7 @@ class SheetProcessor:
         outputfile = ''
 
         try:
-            opts, args = getopt.getopt(argv, "hs:w:l",["spreadsheet-id=","worksheets="])
+            opts, args = getopt.getopt(argv, "chs:w:l",["spreadsheet-id=","worksheets=","check-worksheet-cols"])
  
         except getopt.GetoptError as msg:
             print(msg)
@@ -36,7 +42,11 @@ class SheetProcessor:
             if opt == '-h' or opt == None:
                 print(self.help_output)
                 sys.exit()
-
+            elif opt in ("-c", "--check-worksheet-cols"):
+                # check the column titles and see if they fit our preferences
+                print("Checking column titles on worksheets")
+                self.checkWorksheetColumns()
+                sys.exit()
             elif opt in ("-s", "--spreadsheet-id"):
                 # override spreadsheet ID
                 print("Overriding the default worksheet to be: " + arg)  
@@ -85,3 +95,7 @@ class SheetProcessor:
     def processWorksheets(self, sheets):
         print("Nothing is defined here yet")
         sys.exit()
+
+    def checkWorksheetColumns(self):
+        self.spreadsheet.checkWorksheetColumns()
+        return
