@@ -1,4 +1,4 @@
-import gspread
+import gspread,datetime,sys
 from modules.base import BaseClass
 from modules.worksheet import Worksheet
 
@@ -31,9 +31,12 @@ class Spreadsheet(BaseClass):
         # let's make sure that the wrapper class is playing by the rules
         self.checkSetup()
 
+        # make sure we have a service account setup
+        self.getServiceAccount()
+
         # if we get this far, then we should setup the spreadsheet object
         self.getSheet()
-        
+
 
     # quick check that the things we want passed in are in fact passed
     # otherwise, just fail
@@ -41,26 +44,54 @@ class Spreadsheet(BaseClass):
         self.debug("Spreadsheet.checkSetup()")
 
         #if we don't have the spreadsheetId we cannot connect to it
-        if None == self.spreadsheetId:
+        if None == self.getSpreadsheetId():
             self.critical("SpreadsheetId was not set before instantiating Spreadsheet class")
             #fail if no one set the spreadsheetId on the wrapper class
             raise Exception("class Spreadsheet cannot implement __init__ on it's own. Extend and pass a Spreadsheet Id")
 
         # if we don't know what cols are expected, we cannot check the sheet is setup properly
-        if [] == self.cols_expected:
+        if [] == self.getExpectedColumns():
             #fail if no one set the spreadsheetId on the wrapper class
             self.critical("Cols expected was not set before instantiating Spreadsheet class")
             raise Exception("cols_expected parameter is not set")
 
         # we don't NEED the keeperPattern, but if we want to reduce the work and prevent errors later it's a good idea
-        if None == self.worksheetKeeperPattern:
+        if None == self.getWorksheetKeeperPattern():
             self.warning("Spreadsheet.worksheetKeeperPattern is not set, this is OK")
 
+    
+    def setExpectedColumns(self, expectedColumns):
+        self.debug("Spreadsheet.setExpectedColumns({})".format(expectedColumns))
+        self.cols_expected = expectedColumns
+        return self.getExpectedColumns()
+
+    def getExpectedColumns(self):
+        self.debug("Spreadsheet.getExpectedColumns()")
+        return self.cols_expected
+
+    def getExtraExpectedColumns(self):
+        self.debug("Spreadsheet.getExtraExpectedColumns()")
+        return self.cols_expected_extra
+
+    def setExtraExpectedColumns(self, extraColumns):
+        self.debug("Spreadsheet.setExtraExpectedcolumns({})".format(extraColumns))
+        self.cols_expected_extra = extraColumns
+        return self.getExtraExpectedColumns()
+
+    def getWorksheetKeeperPattern(self):
+        self.debug("Spreadsheet.getWorksheetKeeperPattern()")
+        return self.worksheetKeeperPattern
+
+    def setWorksheetKeeperPattern(self, worksheetKeeperPattern):
+        self.debug("Spreadsheet.setWorksheetKeeperPattern({})".format(worksheetKeeperPattern))
+        self.worksheetKeeperPattern = worksheetKeeperPattern
+        return getWorksheetKeeperPattern()
 
     # set the sheet Id in case we want to override the default
     def setSpreadsheetId(id = None):
         self.debug("Spreadsheet.setSpreadsheetId(%s)", id)
-        this.spreadsheetId = id
+        self.spreadsheetId = id
+        return self.getSpreadsheetId()
 
 
     # get the id that we have set and return it
@@ -80,8 +111,6 @@ class Spreadsheet(BaseClass):
     # setup the sheet object if not setup, return it either way
     def getSheet(self, use_cache = True):
         self.debug("Spreadsheet.getSheet(%s)" % str(use_cache))
-        # make sure we have a service account setup
-        self.getServiceAccount()
 
         if None == self.spreadsheet or False == use_cache:
             self.spreadsheet = self.service_account.open_by_key(self.spreadsheetId)
@@ -91,10 +120,9 @@ class Spreadsheet(BaseClass):
 
     # scrub out the worksheets we don't care about based on the pattern
     # pattern: sheets we care about include "inventory" in the title
-    def setWorksheets(self, worksheetList) -> list:
-        self.debug("Spreadsheet.setWorksheets(%s)" % str(worksheetList))
-        if None == self.worksheetKeeperPattern:
-            self.debug()
+    def setWorksheetList(self, worksheetList) -> list:
+        self.debug("Spreadsheet.setWorksheetList(%s)" % str(worksheetList))
+        if None == self.getWorksheetKeeperPattern():
             # no pattern is set, allow all the sheets through
             self.worksheet_list = worksheetList
         else:
@@ -102,14 +130,14 @@ class Spreadsheet(BaseClass):
             tempSheets = []
             # clear out the worksheets we don't need
             for sheet in worksheetList:
-                if  self.worksheetKeeperPattern in sheet.title:
+                if self.getWorksheetKeeperPattern() in sheet.title:
                     tempSheets.append(sheet)
             self.worksheet_list = tempSheets
-        return self.getWorksheets()
+        return self.getWorksheetList()
 
 
     # quick setter for the worksheet list
-    def getWorksheets(self, use_cache = True) -> list:
+    def getWorksheetList(self, use_cache = True) -> list:
         self.debug("Spreadsheet.getWorksheets()")
         if None == self.worksheet_list or False == use_cache:
             self.listWorksheets()
@@ -124,9 +152,9 @@ class Spreadsheet(BaseClass):
         # if the worksheet list is false or the code wants to retrieve a new list, retrieve it
         if None == self.worksheet_list or False == use_cache:
             # make sure we are setting the sheets appropriately
-            self.setWorksheets(self.spreadsheet.worksheets())
+            self.setWorksheetList(self.spreadsheet.worksheets())
 
-        return self.worksheet_list
+        return self.getWorksheetList()
 
 
     # print the worksheets to the console
@@ -134,25 +162,27 @@ class Spreadsheet(BaseClass):
         self.debug("Spreadsheet.outputWorksheets()")
         # make sure that we have worksheets before we try to output them
         self.listWorksheets()
-        for sheet in self.getWorksheets():
+        for sheet in self.getWorksheetList():
             self.console(str(sheet.title))
+
 
     # only checks the columns, doesn't do anything to adjust or fix them
     # colsToCheck allows you to pass in something new to check against, rather than whatever is in cols_expected
     # checkExtras will allow you to bypass checking against the cols_expected_extra columns
     def checkWorksheetColumns(self, colsToCheck = None, checkExtras = True, addMissingColumns = False):
-        self.debug("Spreadsheet.checkWorksheetColumns()")
-
+        self.debug("Spreadsheet.checkWorksheetColumns(colsToCheck={},checkExtras={},addMissingColumns={})".format(colsToCheck,checkExtras,addMissingColumns))
         # if nothing was passed through, then use the default. Otherwise, use what was passed
         if None == colsToCheck:
-            colsToCheck = self.cols_expected
+            colsToCheck = self.getExpectedColumns()
 
-        for worksheet in self.getWorksheets():
-            worksheet = Worksheet(worksheet, self.cols_expected, self.cols_expected_extra)
-
-
-
-    def addColumnsToWorkSheet(self, worksheet, columnsToAdd):
-        worksheet.update_cell(1, 2, 'Bingo!')
-
-
+        for worksheet in self.getWorksheetList():
+            worksheet = Worksheet(worksheet)
+            worksheet.checkColumns(self.getExpectedColumns(), self.getExtraExpectedColumns())
+            if addMissingColumns:
+                # remove the empty columns
+                worksheet.removeEmptyColumns()
+                self.console("finished cleaning in Spreadsheet line 183")
+                worksheet.addMissingColumns()
+        
+            self.console("We are only running one worksheet right now, see Spreadhsheet.py line 188")
+            sys.exit()

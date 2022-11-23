@@ -33,7 +33,7 @@ class SheetProcessor(BaseClass):
         outputfile = ''
 
         try:
-            opts, args = getopt.getopt(argv, "chs:w:l",["spreadsheet-id=","worksheets=","check-worksheet-cols"])
+            opts, args = getopt.getopt(argv, "chs:w:l",["spreadsheet-id=","worksheets=","check-worksheet-cols","check-and-add-missing-cols"])
  
         except getopt.GetoptError as msg:
             self.critical(msg)
@@ -60,6 +60,14 @@ class SheetProcessor(BaseClass):
                 self.console("Checking column titles on worksheets")
                 self.checkWorksheetColumns(checkExtras = True, addMissingColumns = False)
                 sys.exit()
+
+            if opt in ("--check-and-add-missing-cols"):
+                # check the column titles and see if they fit our preferences
+                self.debug("user selected -check-and-add-missing-cols option")
+                self.console("Checking column titles on worksheets")
+                self.checkWorksheetColumns(checkExtras = True, addMissingColumns = True)
+                sys.exit()
+
             elif opt in ("-s", "--spreadsheet-id"):
                 self.debug("user selected -s option")
                 # override spreadsheet ID
@@ -111,7 +119,7 @@ class SheetProcessor(BaseClass):
 
     # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
     #   to make sure that the spreadsheet is valid for what we want to do
-    def checkWorksheetColumns(self, **kwargs):
-        self.debug("SheetProcessor.checkWorksheetColumns({})".format(kwargs))
-        self.spreadsheet.checkWorksheetColumns(kwargs)
+    def checkWorksheetColumns(self, checkExtras = True, addMissingColumns = False):
+        self.debug("SheetProcessor.checkWorksheetColumns(checkExtras = {}, addMissingColumns = {})".format(checkExtras, addMissingColumns))
+        self.spreadsheet.checkWorksheetColumns(checkExtras = checkExtras, addMissingColumns = addMissingColumns)
         return
