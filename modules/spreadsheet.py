@@ -1,5 +1,6 @@
 import gspread
 from modules.base import BaseClass
+from modules.worksheet import Worksheet
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -147,49 +148,11 @@ class Spreadsheet(BaseClass):
             colsToCheck = self.cols_expected
 
         for worksheet in self.getWorksheets():
-            self.info("Worksheet: " + str(worksheet.title))
+            worksheet = Worksheet(worksheet, self.cols_expected, self.cols_expected_extra)
 
-            #
-            # The following is all logic to setup the columns that we need to check against
-            #
 
-            # set the columns to the default
-            colsToCheck = self.cols_expected
-
-            # if we are checking extras and we have extra cols to check, then let's loop through. Otherwise, just do the normal thing
-            if True == checkExtras and [] != self.cols_expected_extra:
-
-                # if we have extra columns that we need to check, loop through the options
-                for extraColCheck, colTitles in self.cols_expected_extra.items():
-
-                    # if we find that the key for the extra columns is in the worksheet title, 
-                    # then append the extras columns to check and then check against the new combined list
-                    if extraColCheck in worksheet.title:
-                         colsToCheck += self.cols_expected_extra[extraColCheck]
-
-            #
-            # The following is actually checking the columns
-            #
-
-            # get everything from the first row
-            first_row = worksheet.row_values(1)
-            
-            row_length = len(first_row)
-            self.info("The row is %i cols long" % row_length)
-
-            # does the first_row contain everything in the colsToCheck
-            firstrow_result = self.compareLists(first_row, colsToCheck)
-
-            if firstrow_result:
-                self.info("The worksheet %s has all the columns we expect" % worksheet.title)
-            else: 
-                self.info("The worksheet %s does not have all the columns we expect" % worksheet.title)
-                #figure out what's missing and complain so that we can get that shit fixed
-                missing_columns = list(set(colsToCheck) - set(first_row))
-                self.console("Worksheet: {} is missing these columns: ".format(worksheet.title), data=str(missing_columns))
-                if True == addMissingColumns:
-                    self.addColumnsToWorkSheet(worksheet, missing_columns)
 
     def addColumnsToWorkSheet(self, worksheet, columnsToAdd):
-        self.error("NEED TO ADD THIS FUNCTIONALITY")
+        worksheet.update_cell(1, 2, 'Bingo!')
+
 
