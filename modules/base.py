@@ -51,6 +51,7 @@ class BaseClass:
     def critical(self, str, new_lines=3, prefix="\n\n\n"):
         str = self._prepareString(str, new_lines=new_lines, prefix=prefix, textColor="red")
         self.logger.critical(str)
+        raise Exception("Logged a critical issue: " + str)
 
 
     def debug(self, str, new_lines=0, prefix=""):
@@ -61,7 +62,7 @@ class BaseClass:
     # Output something to the console, if the config allows it
     # if we're in debug mode for the logs, set the console outputs aside by adding extra lines
     # default colors of Console: blue on grey
-    def console(self, str = None, new_lines=1, prefix="", postfix=""):
+    def console(self, str = None, data = None, new_lines=1, prefix="", postfix=""):
 
         if "DEBUG" == self.config["log_level"]:
             if "" == prefix:
@@ -71,7 +72,7 @@ class BaseClass:
 
         # only print to console if we are allowing it via config.ini `output_to_console`
         if self.output_to_console: 
-            str = self._prepareString(str, prefix=prefix, new_lines=new_lines, postfix=postfix, textColor="blue", bgcolor="grey")
+            str = self._prepareString(str, data=data, prefix=prefix, new_lines=new_lines, postfix=postfix, textColor="blue", dataColor="blue", dataBgColor="grey")
 
             # only print something if we pass something
             if None != str:
@@ -79,12 +80,20 @@ class BaseClass:
 
 
     # handle prefix and new_lines being added to the string, one call to do everything, reduce repetition above
-    def _prepareString(self, str, prefix=None, new_lines=0, postfix="", textColor="white", bgcolor=None) -> str:
+    def _prepareString(self, str, data=None, prefix=None, new_lines=0, postfix="", textColor="white", bgcolor=None, dataColor="white", dataBgColor="") -> str:
         
         if None != bgcolor:
             bgcolor = "on_" + bgcolor
 
+        if None != dataBgColor:
+            dataBgColor = "on_" + dataBgColor
+
         str = colored(str, textColor, bgcolor)
+
+        if (None != data):
+            data = colored(data, dataColor, dataBgColor)
+            str += "{}".format(data)
+
         str = self.prefixStr(str, prefix=prefix)
         str = self.postfixStr(str,postfix=postfix, new_lines=new_lines)
         return str
@@ -120,3 +129,11 @@ class BaseClass:
         self.info("List 1 {} contain all the items in list2".format("does" if(result) else "does not"))
         
         return result
+
+
+    def importClass(self, name):
+        components = name.split('.')
+        mod = __import__(components[0])
+        for comp in components[1:]:
+            mod = getattr(mod, comp)
+        return mod

@@ -21,7 +21,7 @@ class Spreadsheet(BaseClass):
 
     # pass in the sheet ID if it was passed
     def __init__(self):
-
+        # has to be called to setup all the BaseClass wonderfulness, otherwise things like the logger don't get instantiated
         super(Spreadsheet, self).__init__()
 
         #this HAS to come after super() call, otherwise you get errors bc the logger isn't setup yet
@@ -32,7 +32,7 @@ class Spreadsheet(BaseClass):
 
         # if we get this far, then we should setup the spreadsheet object
         self.getSheet()
-
+        
 
     # quick check that the things we want passed in are in fact passed
     # otherwise, just fail
@@ -186,7 +186,7 @@ class Spreadsheet(BaseClass):
                 self.info("The worksheet %s does not have all the columns we expect" % worksheet.title)
                 #figure out what's missing and complain so that we can get that shit fixed
                 missing_columns = list(set(colsToCheck) - set(first_row))
-                self.console("Worksheet: {} is Missing Columns: {}".format(worksheet.title, str(missing_columns)), 1)
+                self.console("Worksheet: {} is missing these columns: ".format(worksheet.title), data=str(missing_columns))
                 if True == addMissingColumns:
                     self.addColumnsToWorkSheet(worksheet, missing_columns)
 

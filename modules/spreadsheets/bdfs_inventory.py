@@ -68,4 +68,3 @@ class Bdfs_Spreadsheet(Spreadsheet):
 
     cols_expected_extra = {'single': single_door_cols,
                             'double': double_door_cols}
-

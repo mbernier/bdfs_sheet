@@ -12,6 +12,8 @@ class SheetProcessor(BaseClass):
     # from BaseClass - allows us to set sub loggers
     logger_name = "SheetProcessor"
 
+    spreadsheet_class = {"module": "modules.spreadsheet", "class": "Spreadsheet"}
+
     default_output = os.path.basename(__file__) + ' -h to see available commands and information'
     help_output = """
     To Use the SheetProcessor, pass in some commands:
@@ -19,11 +21,15 @@ class SheetProcessor(BaseClass):
         -lw or --list-worksheets will get you a list of the worksheets that are available
         -w or worksheets is the comma seperated list of worksheets to process, use "-w all" to process all available worksheets
     """
+
     def __init__(self):
+        # has to be called to setup all the BaseClass wonderfulness, otherwise things like the logger don't get instantiated
         super(SheetProcessor, self).__init__()
+        self.getSheet()
+
 
     def main(self, argv):
-        self.debug("SheetProcessor.main(%s)" % str(argv))
+        self.debug("SheetProcessor.main(%s)" % str(argv)) 
         outputfile = ''
 
         try:
@@ -42,7 +48,7 @@ class SheetProcessor(BaseClass):
         for opt, arg in opts:     
             if opt == '-h' or opt == None:
                 self.debug("user selected -h option")
-                print(self.help_output)
+                self.console(self.help_output)
                 sys.exit()
 
             # everything from here on needs the spreadsheet to be setup.
@@ -51,32 +57,32 @@ class SheetProcessor(BaseClass):
             if opt in ("-c", "--check-worksheet-cols"):
                 # check the column titles and see if they fit our preferences
                 self.debug("user selected -c option")
-                print("Checking column titles on worksheets")
+                self.console("Checking column titles on worksheets")
                 self.checkWorksheetColumns(checkExtras = True, addMissingColumns = False)
                 sys.exit()
             elif opt in ("-s", "--spreadsheet-id"):
                 self.debug("user selected -s option")
                 # override spreadsheet ID
-                print("Overriding the default worksheet to be: " + arg)  
+                self.console("Overriding the default worksheet to be: " + arg)  
                 self.spreadsheet_id = arg
             
             elif opt in ("-l", "--list-worksheets"):
                 self.debug("user selected -l option")
-                print("Current Worksheet List:")
+                self.console("Current Worksheet List:")
                 self.outputWorksheets()
                 sys.exit()
             
             elif opt in ("-w", "--worksheets"):
                 self.debug("user selected -w option")
-                print('Processing worksheet: ' + arg)
+                self.console('Processing worksheet: ' + arg)
                 self.processWorksheets(arg)
                 sys.exit()
             
             else:
                 self.critical("Somehow we got through all options with no option selected")
-                print(self.default_output)
-                print(opts)
-                print(args)
+                self.console(self.default_output)
+                self.debug(opts)
+                self.debug(args)
                 sys.exit()
 
 
@@ -84,7 +90,9 @@ class SheetProcessor(BaseClass):
     def getSheet(self):
         self.debug("SheetProcessor.getSheet()")
         if None == self.spreadsheet:
-            self.spreadsheet = Spreadsheet()
+            # self.spreadsheet = getattr(sys.modules[self.spreadsheet_class["module"]], self.spreadsheet_class["class"])
+            spreadsheetClass = self.importClass(self.spreadsheet_class)
+            self.spreadsheet = spreadsheetClass()
 
         return self.spreadsheet
 
@@ -101,14 +109,8 @@ class SheetProcessor(BaseClass):
         self.debug("SheetProcessor.outputWorksheets()")
         self.spreadsheet.outputWorksheets()
 
-
-    # do the processing of the worksheets
-    # @todo this is a bullshit placeholder, determine the type of processing or feed a config or something
-    def processWorksheets(self, sheets):
-        self.debug("SheetProcessor.processWorksheets(%s)" % str(sheets))
-        print("Nothing is defined here yet")
-        sys.exit()
-
+    # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
+    #   to make sure that the spreadsheet is valid for what we want to do
     def checkWorksheetColumns(self, **kwargs):
         self.debug("SheetProcessor.checkWorksheetColumns({})".format(kwargs))
         self.spreadsheet.checkWorksheetColumns(kwargs)

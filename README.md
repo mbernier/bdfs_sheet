@@ -41,11 +41,15 @@ This was setup to allow for multiple functions to be possible, without changing 
 
 *modules/sheetProcessor.py*
 **gives us the command line functionality that maps the sheets functionality to the command line**
-1. Take in command line arguments and then calls the Spreadsheet functionality, support for:
+Take in command line arguments and then calls the Spreadsheet functionality, support for:
     a. Listing all worksheets
     b. Passing in specific worksheet names (but doing nothing with them)
     c. Overriding the default spreadsheet ID
     d. Outputting all the worksheets names to the console
+
+*modules/sheetProcessors/bdfs_inventory.py*
+
+
 
 *modules/spreadsheet.py*
 - Wrapper for core spreadsheet functionality
