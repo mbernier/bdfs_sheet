@@ -277,6 +277,29 @@ class Worksheet(BaseClass):
 
 
     # Go through the missing columns and add them to the worksheet at the end of the worksheet
+
+#  Consider pulling all the data from the worksheet, modifying this locally, then replacing it back into the sheet
+#   Getting All Values From a Worksheet as a List of Lists
+#   list_of_lists = worksheet.get_all_values()
+# 
+#   Getting All Values From a Worksheet as a List of Dictionaries
+#   list_of_dicts = worksheet.get_all_records()
+# 
+#   order of ops:
+#       pull everything
+#       worksheet.clear()
+#       replace the sheet with a placeholder text to say "under construction"
+#       Do the data manipulation to sort the data to match "expected cols" order
+#       drop the data back in with self.__getWorksheetObj().batch_update(batch_update)
+# 
+#   to test: 
+#       pull everything
+#       clear: worksheet.clear()
+#       write everything
+#       see what happens
+#
+#   https://docs.gspread.org/en/latest/user-guide.html#getting-all-values-from-a-worksheet-as-a-list-of-lists
+
     def addMissingColumns(self):
         self.debug("Worksheet.addMissingColumns()")
 
