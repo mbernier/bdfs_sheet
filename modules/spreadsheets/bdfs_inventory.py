@@ -6,16 +6,14 @@ from modules.spreadsheet import Spreadsheet
 class Bdfs_Spreadsheet(Spreadsheet):
 
     spreadsheetId = '1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8'
+
     worksheetKeeperPattern = "inventory"
 
-    # from BaseClass - allows us to set sub loggers
-    logger_name = "Bdfs_Spreadsheet"
-
-    cols_expected = ['Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 
+    cols_expected = ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 
                         'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 
                         'Color', 'UnitedPorte URL', 'Image 1 URL', 'Image 1 SEO', 'Image 2 URL', 
                         'Image 2 SEO', 'Image 3 URL', 'Image 3 SEO', 'Image 4 URL', 'Image 4 SEO',
-                        'Image 5 URL', 'Image 5 SEO', 'Updated Date']
+                        'Image 5 URL', 'Image 5 SEO', 'Description']
     
     single_door_cols = ['Cost:18" x 80"', 'Cost:24" x 80"', 'Cost:28" x 80"', 'Cost:30" x 80"', 
                         'Cost:32" x 80"', 'Cost:36" x 80"', 'Cost:42" x 80"', 'Cost:18" x 84"', 'Cost:24" x 84"', 
@@ -26,7 +24,7 @@ class Bdfs_Spreadsheet(Spreadsheet):
                         'Price:42" x 80"', 'Price:18" x 84"', 'Price:24" x 84"', 'Price:28" x 84"', 
                         'Price:30" x 84"', 'Price:32" x 84"', 'Price:36" x 84"', 'Price:42" x 84"', 
                         'Price:18" x 96"', 'Price:24" x 96"', 'Price:28" x 96"', 'Price:30" x 96"', 
-                        'Price:32" x 96"', 'Price:36" x 96"', 'Price:42" x 96"', '', 'Profits:18" x 80"', 
+                        'Price:32" x 96"', 'Price:36" x 96"', 'Price:42" x 96"', 'Profits:18" x 80"', 
                         'Profits:24" x 80"', 'Profits:28" x 80"', 'Profits:30" x 80"', 'Profits:32" x 80"', 
                         'Profits:36" x 80"', 'Profits:42" x 80"', 'Profits:18" x 84"', 'Profits:24" x 84"', 
                         'Profits:28" x 84"', 'Profits:30" x 84"', 'Profits:32" x 84"', 'Profits:36" x 84"', 
@@ -68,3 +66,7 @@ class Bdfs_Spreadsheet(Spreadsheet):
 
     cols_expected_extra = {'single': single_door_cols,
                             'double': double_door_cols}
+
+    # from BaseClass - allows us to set sub loggers
+    logger_name = "Bdfs_Spreadsheet"
+ 

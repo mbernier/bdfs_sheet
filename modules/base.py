@@ -1,86 +1,64 @@
 #setup logging
 import logging, sys
 from termcolor import colored, cprint
+from modules.config import config
+
+from modules.logger import logger
 
 class BaseClass:
-    logger = None
-    logger_name = None
-    output_to_console = False
-    config = []
 
-    def __init__(self):
-        from modules.logger import logger
-        from modules.config import config
+    base_logger_name = "logs"
+    logger_name = ""
+    logger_configured = False
 
-        #make the config obj available to all sub objects
-        self.config = config
-
-        log_name = "logs"
-
-        #set up the logger properly
-        self.logger = logger
-
-        if None != self.logger_name:
-            #define a sub-logger just for this code
-            log_name += '.' + self.logger_name
-            self.debug("New Logger Name: " + log_name, new_lines=0)
-        
-            # grab the current instance of the logger object, if this is a sub-logger the logging lib will handle this for you
-            self.logger = logging.getLogger(log_name)
-
-        # are we allowing the script to print to the console?
-        self.output_to_console = self.config["output_to_console"]
-        self.debug("output_to_console = " + self.output_to_console)
+    def info(self, msg, data=None, new_lines=1, prefix=""):
+        msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="blue")
+        logger.info(msg)
 
 
-    def info(self, str, new_lines=1, prefix=""):
-        str = self._prepareString(str, new_lines=new_lines, prefix=prefix, textColor="blue")
-        self.logger.info(str)
+    def warning(self, msg, data=None, new_lines=2, prefix=""):
+        msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="magenta")
+        logger.warning(msg)
 
 
-    def warning(self, str, new_lines=2, prefix=""):
-        str = self._prepareString(str, new_lines=new_lines, prefix=prefix, textColor="magenta")
-        self.logger.warning(str)
+    def error(self, msg, data=None, new_lines=3, prefix="\n\n\n"):
+        msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="yellow")
+        logger.error(msg)
 
 
-    def error(self, str, new_lines=3, prefix="\n\n\n"):
-        str = self._prepareString(str, new_lines=new_lines, prefix=prefix, textColor="yellow")
-        self.logger.error(str)
+    def critical(self, msg, data=None, new_lines=3, prefix="\n\n\n"):
+        msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="red")
+        logger.critical(msg)
+        raise Exception("Logged a critical issue: " + msg)
 
 
-    def critical(self, str, new_lines=3, prefix="\n\n\n"):
-        str = self._prepareString(str, new_lines=new_lines, prefix=prefix, textColor="red")
-        self.logger.critical(str)
-        raise Exception("Logged a critical issue: " + str)
-
-
-    def debug(self, str, new_lines=0, prefix=""):
-        str = self._prepareString(str, new_lines=new_lines, prefix=prefix, textColor="cyan")
-        self.logger.debug(str)
-
+    def debug(self, msg, data=None, new_lines=0, prefix=""):
+        msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="cyan")
+        logger.debug(msg)
 
     # Output something to the console, if the config allows it
     # if we're in debug mode for the logs, set the console outputs aside by adding extra lines
     # default colors of Console: blue on grey
-    def console(self, str = None, data = None, new_lines=1, prefix="", postfix=""):
+    def console(self, msg = None, data = None, new_lines=1, prefix="", postfix=""):
 
-        if "DEBUG" == self.config["log_level"]:
+        if "DEBUG" == config.get("log_level"):
             if "" == prefix:
                 prefix = "\n\n" + colored("CONSOLE: ", "white")
             if 1 == new_lines:
                 new_lines = 2
 
         # only print to console if we are allowing it via config.ini `output_to_console`
-        if self.output_to_console: 
-            str = self._prepareString(str, data=data, prefix=prefix, new_lines=new_lines, postfix=postfix, textColor="blue", dataColor="blue", dataBgColor="grey")
+
+        if config["output_to_console"]: 
+            msg = self._prepareString(msg=msg, data=data, prefix=prefix, new_lines=new_lines, postfix=postfix, textColor="blue", dataColor="blue", dataBgColor="grey")
 
             # only print something if we pass something
-            if None != str:
-                print(str)
+            if None != msg:
+                print(msg)
 
 
     # handle prefix and new_lines being added to the string, one call to do everything, reduce repetition above
-    def _prepareString(self, str, data=None, prefix=None, new_lines=0, postfix="", textColor="white", bgcolor=None, dataColor="white", dataBgColor="") -> str:
+    def _prepareString(self, msg, data=None, prefix=None, new_lines=0, postfix="", textColor="white", bgcolor=None, dataColor="white", dataBgColor=None) -> str:
         
         if None != bgcolor:
             bgcolor = "on_" + bgcolor
@@ -88,52 +66,74 @@ class BaseClass:
         if None != dataBgColor:
             dataBgColor = "on_" + dataBgColor
 
-        str = colored(str, textColor, bgcolor)
+        # add the classname
+        msg = self.__className() + "." + msg
 
-        if (None != data):
+        # change the color to make it pretty
+        msg = colored(msg, textColor, bgcolor)
+
+        if "{}" in msg:
+            if isinstance(data, str):
+                msg = msg.format(data)
+            elif type(data) is tuple:
+                msg = msg.format(*data)
+            else:
+                msg = msg.format(data)
+
+        elif (None != data):
             data = colored(data, dataColor, dataBgColor)
-            str += "{}".format(data)
+            for _ in data:
+                msg += "{}".format(data)
 
-        str = self.prefixStr(str, prefix=prefix)
-        str = self.postfixStr(str,postfix=postfix, new_lines=new_lines)
-        return str
+        msg = self.prefixStr(msg, prefix=prefix)
+        msg = self.postfixStr(msg,postfix=postfix, new_lines=new_lines)
+        return msg
 
 
-    def prefixStr(self, str:str, prefix: str=""):
+    def prefixStr(self, msg:str, prefix: str=""):
         if None != prefix:
-            str = prefix + str
-        return str
+            msg = prefix + msg
+        return msg
 
 
-    def postfixStr(self, str:str, postfix:str="", new_lines:int =0):
-        str = self.appendNewLines(str, new_lines=new_lines)
-        str += postfix
-        return str
+    def postfixStr(self, msg:str, postfix:str="", new_lines:int =0):
+        msg = self.appendNewLines(msg, new_lines=new_lines)
+        msg += postfix
+        return msg
 
 
-    def appendNewLines(self, str: str, new_lines: int=0):
+    def appendNewLines(self, msg: str, new_lines: int=0):
         nl_str = ""
         if new_lines > 0:
             for _ in range(new_lines):
                 nl_str += "\n"
 
         #print the number of new lines requested
-        return "{} {}".format(str, nl_str)
+        return "{} {}".format(msg, nl_str)
 
 
     #does list1 contain everything in list2?
     def compareLists(self, list1, list2) -> list:
-        self.debug("BaseClass.compareLists({},{})".format(list1, list2))
+        self.debug("BaseClass.compareLists({},{})", (list1, list2))
         
         result =  all(elem in list1 for elem in list2)
-        self.info("List 1 {} contain all the items in list2".format("does" if(result) else "does not"))
+        self.info("List 1 {} contain all the items in list2", ("does" if(result) else "does not"))
         
         return result
 
 
-    def importClass(self, name):
+    def importClass(self, name): 
         components = name.split('.')
         mod = __import__(components[0])
         for comp in components[1:]:
             mod = getattr(mod, comp)
         return mod
+
+    def __checkArgs(self, required=[], **kwargs):
+        for arg in kwargs:
+            if arg in required and None == kwargs[arg]:
+                raise Exception("You must pass {} to Cache, NoneType was found".format(arg))
+
+    # cheater method to make setting debug statements a little faster
+    def __className(self):
+        return self.__class__.__name__

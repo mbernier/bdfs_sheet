@@ -130,3 +130,6 @@ dmypy.json
 
 credentials.json
 token.json
+
+# ignore anything I created for testing things
+matt_*.py

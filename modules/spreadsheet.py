@@ -2,31 +2,35 @@ import gspread,datetime,sys
 from modules.base import BaseClass
 from modules.worksheet import Worksheet
 
+# https://github.com/burnash/gspread/blob/master/gspread/utils.py
+from gspread import utils as gspread_utils
+
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
 #   spreadsheet ID.
 
 class Spreadsheet(BaseClass):
-    # placeholders for cacheable items
-    service_account = None
-    spreadsheet = None
+
     spreadsheetId = None
-    worksheet_list = None
+    service_account = None
     worksheetKeeperPattern = None
 
-    # from BaseClass - allows us to set sub loggers
-    logger_name = "Spreadsheet"
+    spreadsheet = None
+    worksheet_list = None
+
     cols_expected = []
     cols_expected_extra = []
 
+    # from BaseClass - allows us to set sub loggers
+    logger_name = "Spreadsheet"
 
     # pass in the sheet ID if it was passed
     def __init__(self):
-        # has to be called to setup all the BaseClass wonderfulness, otherwise things like the logger don't get instantiated
-        super(Spreadsheet, self).__init__()
+
+        # placeholders for cacheable items
 
         #this HAS to come after super() call, otherwise you get errors bc the logger isn't setup yet
-        self.debug("Spreadsheet.__init__()")
+        self.debug("__init__()")
 
         # let's make sure that the wrapper class is playing by the rules
         self.checkSetup()
@@ -41,7 +45,7 @@ class Spreadsheet(BaseClass):
     # quick check that the things we want passed in are in fact passed
     # otherwise, just fail
     def checkSetup(self):
-        self.debug("Spreadsheet.checkSetup()")
+        self.debug("checkSetup()")
 
         #if we don't have the spreadsheetId we cannot connect to it
         if None == self.getSpreadsheetId():
@@ -57,52 +61,52 @@ class Spreadsheet(BaseClass):
 
         # we don't NEED the keeperPattern, but if we want to reduce the work and prevent errors later it's a good idea
         if None == self.getWorksheetKeeperPattern():
-            self.warning("Spreadsheet.worksheetKeeperPattern is not set, this is OK")
+            self.warning("worksheetKeeperPattern is not set, this is OK")
 
     
     def setExpectedColumns(self, expectedColumns):
-        self.debug("Spreadsheet.setExpectedColumns({})".format(expectedColumns))
+        self.debug("setExpectedColumns({})".format(expectedColumns))
         self.cols_expected = expectedColumns
         return self.getExpectedColumns()
 
     def getExpectedColumns(self):
-        self.debug("Spreadsheet.getExpectedColumns()")
+        self.debug("getExpectedColumns()")
         return self.cols_expected
 
     def getExtraExpectedColumns(self):
-        self.debug("Spreadsheet.getExtraExpectedColumns()")
+        self.debug("getExtraExpectedColumns()")
         return self.cols_expected_extra
 
     def setExtraExpectedColumns(self, extraColumns):
-        self.debug("Spreadsheet.setExtraExpectedcolumns({})".format(extraColumns))
+        self.debug("setExtraExpectedcolumns({})".format(extraColumns))
         self.cols_expected_extra = extraColumns
         return self.getExtraExpectedColumns()
 
     def getWorksheetKeeperPattern(self):
-        self.debug("Spreadsheet.getWorksheetKeeperPattern()")
+        self.debug("getWorksheetKeeperPattern()")
         return self.worksheetKeeperPattern
 
     def setWorksheetKeeperPattern(self, worksheetKeeperPattern):
-        self.debug("Spreadsheet.setWorksheetKeeperPattern({})".format(worksheetKeeperPattern))
+        self.debug("setWorksheetKeeperPattern({})".format(worksheetKeeperPattern))
         self.worksheetKeeperPattern = worksheetKeeperPattern
         return getWorksheetKeeperPattern()
 
     # set the sheet Id in case we want to override the default
     def setSpreadsheetId(id = None):
-        self.debug("Spreadsheet.setSpreadsheetId(%s)", id)
+        self.debug("setSpreadsheetId(%s)", id)
         self.spreadsheetId = id
         return self.getSpreadsheetId()
 
 
     # get the id that we have set and return it
     def getSpreadsheetId(self):
-        self.debug("Spreadsheet.getSpreadsheetId()")
+        self.debug("getSpreadsheetId()")
         return self.spreadsheetId
 
 
     # setup the service account if not setup, return it either way
     def getServiceAccount(self):
-        self.debug("Spreadsheet.getServiceAccount()")
+        self.debug("getServiceAccount()")
         if None == self.service_account: 
             self.service_account = gspread.service_account()
         return self.service_account
@@ -110,7 +114,7 @@ class Spreadsheet(BaseClass):
 
     # setup the sheet object if not setup, return it either way
     def getSheet(self, use_cache = True):
-        self.debug("Spreadsheet.getSheet(%s)" % str(use_cache))
+        self.debug("getSheet(%s)" % str(use_cache))
 
         if None == self.spreadsheet or False == use_cache:
             self.spreadsheet = self.service_account.open_by_key(self.spreadsheetId)
@@ -121,7 +125,7 @@ class Spreadsheet(BaseClass):
     # scrub out the worksheets we don't care about based on the pattern
     # pattern: sheets we care about include "inventory" in the title
     def setWorksheetList(self, worksheetList) -> list:
-        self.debug("Spreadsheet.setWorksheetList(%s)" % str(worksheetList))
+        self.debug("setWorksheetList(%s)" % str(worksheetList))
         if None == self.getWorksheetKeeperPattern():
             # no pattern is set, allow all the sheets through
             self.worksheet_list = worksheetList
@@ -138,7 +142,7 @@ class Spreadsheet(BaseClass):
 
     # quick setter for the worksheet list
     def getWorksheetList(self, use_cache = True) -> list:
-        self.debug("Spreadsheet.getWorksheets()")
+        self.debug("getWorksheets()")
         if None == self.worksheet_list or False == use_cache:
             self.listWorksheets()
         return self.worksheet_list
@@ -147,7 +151,7 @@ class Spreadsheet(BaseClass):
     # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
     # if use_cached is false, go retrieve it again
     def listWorksheets(self, use_cache = True) -> list:
-        self.debug("Spreadsheet.listWorksheets(%s)" % str(use_cache))
+        self.debug("listWorksheets(%s)" % str(use_cache))
 
         # if the worksheet list is false or the code wants to retrieve a new list, retrieve it
         if None == self.worksheet_list or False == use_cache:
@@ -159,7 +163,7 @@ class Spreadsheet(BaseClass):
 
     # print the worksheets to the console
     def outputWorksheets(self):
-        self.debug("Spreadsheet.outputWorksheets()")
+        self.debug("outputWorksheets()")
         # make sure that we have worksheets before we try to output them
         self.listWorksheets()
         for sheet in self.getWorksheetList():
@@ -170,19 +174,44 @@ class Spreadsheet(BaseClass):
     # colsToCheck allows you to pass in something new to check against, rather than whatever is in cols_expected
     # checkExtras will allow you to bypass checking against the cols_expected_extra columns
     def checkWorksheetColumns(self, colsToCheck = None, checkExtras = True, addMissingColumns = False):
-        self.debug("Spreadsheet.checkWorksheetColumns(colsToCheck={},checkExtras={},addMissingColumns={})".format(colsToCheck,checkExtras,addMissingColumns))
+        self.debug("checkWorksheetColumns(colsToCheck={},checkExtras={},addMissingColumns={})".format(colsToCheck,checkExtras,addMissingColumns))
         # if nothing was passed through, then use the default. Otherwise, use what was passed
         if None == colsToCheck:
             colsToCheck = self.getExpectedColumns()
 
         for worksheet in self.getWorksheetList():
+            # setup the worksheet, do an initial pull of the data, then we can modify all we want and commit
             worksheet = Worksheet(worksheet)
+
+            # Right now, this can get all the data and sets up the cache in the WorksheetData class
+            # We need to figure out how to do the functionality below within the cached sheetData
+            # - making sure to keep the headers, data, etc up to date as we go
+            # - once it's cleaned, organized, we need to commit the data to the google sheet
+
+            raise Exception("Processing is stopped in Spreadsheet line ~190")
+            sys.exit()
+
+            # 
+            # Original info, assumed the sheet was source of truth, needs to be converted to object as source of truth
+            #             
+
             worksheet.checkColumns(self.getExpectedColumns(), self.getExtraExpectedColumns())
             if addMissingColumns:
                 # remove the empty columns
+                # clean up the empties so that we have a good measure of the sheet
                 worksheet.removeEmptyColumns()
-                self.console("finished cleaning in Spreadsheet line 183")
-                worksheet.addMissingColumns()
-        
+
+                # add in the new columns, so that we have everything we need
+                addedColumns = worksheet.addMissingColumns()
+
+                self.info("{} columns were added to {}".format(addedColumns, worksheet.getTitle()))
+
+                # double check that we don't have extra empties at the end of the sheet, just in case
+                worksheet.removeEmptyColumns(removeTrailingEmpties=True)
+
+                # since we can't control how the data gets added in previous steps or how it was in the original sheet, 
+                #   make sure it is clean here. By default, this stores to the worksheet when it's done running. To cancel that
+                #   add storeToWorksheet = False
+                sheetData = worksheet.sortTheColumns()
             self.console("We are only running one worksheet right now, see Spreadhsheet.py line 188")
             sys.exit()

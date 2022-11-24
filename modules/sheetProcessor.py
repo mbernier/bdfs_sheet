@@ -6,13 +6,11 @@ from modules.base import BaseClass
 #   create a class that takes in getopt options and data
 #   and then have this Sheet Processor extend that class and pass the configuration
 class SheetProcessor(BaseClass):
-    # set the default spreadsheet id from the constants or configuration
-    spreadsheet = None
-
+    
     # from BaseClass - allows us to set sub loggers
     logger_name = "SheetProcessor"
 
-    spreadsheet_class = {"module": "modules.spreadsheet", "class": "Spreadsheet"}
+    spreadsheet_class = "modules.spreadsheet.Spreadsheet"
 
     default_output = os.path.basename(__file__) + ' -h to see available commands and information'
     help_output = """
@@ -23,13 +21,14 @@ class SheetProcessor(BaseClass):
     """
 
     def __init__(self):
-        # has to be called to setup all the BaseClass wonderfulness, otherwise things like the logger don't get instantiated
-        super(SheetProcessor, self).__init__()
+        # set the default spreadsheet id from the constants or configuration
+        self.spreadsheet = None
+
         self.getSheet()
 
 
     def main(self, argv):
-        self.debug("SheetProcessor.main(%s)" % str(argv)) 
+        self.debug("main(%s)" % str(argv)) 
         outputfile = ''
 
         try:
@@ -96,10 +95,10 @@ class SheetProcessor(BaseClass):
 
     # setup the sheet object if not setup, return it either way
     def getSheet(self):
-        self.debug("SheetProcessor.getSheet()")
+        self.debug("getSheet()")
         if None == self.spreadsheet:
             # self.spreadsheet = getattr(sys.modules[self.spreadsheet_class["module"]], self.spreadsheet_class["class"])
-            spreadsheetClass = self.importClass(self.spreadsheet_class)
+            spreadsheetClass = self.importClass(self.spreadsheet_class) 
             self.spreadsheet = spreadsheetClass()
 
         return self.spreadsheet
@@ -108,18 +107,18 @@ class SheetProcessor(BaseClass):
     # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
     # if use_cached is false, go retrieve it again
     def listWorksheets(self, use_cache = True):
-        self.debug("SheetProcessor.listWorksheets(%s)" % str(use_cache))
+        self.debug("listWorksheets(%s)" % str(use_cache))
         return self.spreadsheet.listWorksheets(use_cache)
 
 
     # print out the worksheets to the console
     def outputWorksheets(self):
-        self.debug("SheetProcessor.outputWorksheets()")
+        self.debug("outputWorksheets()")
         self.spreadsheet.outputWorksheets()
 
     # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
     #   to make sure that the spreadsheet is valid for what we want to do
     def checkWorksheetColumns(self, checkExtras = True, addMissingColumns = False):
-        self.debug("SheetProcessor.checkWorksheetColumns(checkExtras = {}, addMissingColumns = {})".format(checkExtras, addMissingColumns))
+        self.debug("checkWorksheetColumns(checkExtras = {}, addMissingColumns = {})".format(checkExtras, addMissingColumns))
         self.spreadsheet.checkWorksheetColumns(checkExtras = checkExtras, addMissingColumns = addMissingColumns)
         return

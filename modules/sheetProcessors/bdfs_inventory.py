@@ -7,10 +7,8 @@ from modules.spreadsheets.bdfs_inventory import Bdfs_Spreadsheet
 
 class Bdfs_SheetProcessor(SheetProcessor):
 
-    # set the default spreadsheet id from the constants or configuration
-    spreadsheet = None
-
     # from BaseClass - allows us to set sub loggers
     logger_name = "Bdfs_SheetProcessor"
+
     # spreadsheet_class = {"module": "modules.spreadsheets.bdfs_inventory", "class": "Bdfs_Spreadsheet"}
     spreadsheet_class = "modules.spreadsheets.bdfs_inventory.Bdfs_Spreadsheet"
