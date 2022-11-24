@@ -183,13 +183,34 @@ class Spreadsheet(BaseClass):
             # setup the worksheet, do an initial pull of the data, then we can modify all we want and commit
             worksheet = Worksheet(worksheet)
 
-            # Right now, this can get all the data and sets up the cache in the WorksheetData class
+            # Right now, this can get all the data and sets up the cache in the WorksheetData class wrapped around NestedCache
             # We need to figure out how to do the functionality below within the cached sheetData
             # - making sure to keep the headers, data, etc up to date as we go
             # - once it's cleaned, organized, we need to commit the data to the google sheet
 
+            # decide what we need to keep from DataStore class and the X_ methods on worksheet, based on what we need to build below, as well
+
+
+                # 1. given a list of columns that we need, compare to the columns we have and return the diff:
+                #     a. Columns in the spreadsheet that are not in getExpectedColumns
+                #     b. Columns in expected that are not in the spreadsheet
+                # 2. Decide what to do with the extra columns in the sheet
+                #     - offer a flag to ignore columns in spreadsheet that are not in expected (keep them)
+                #     - if flag is not set to ignore, then throw an error
+                # 3. Add the missing expected columns to the spreadsheet
+                # 
+                #
+                #
+
+
+
             raise Exception("Processing is stopped in Spreadsheet line ~190")
             sys.exit()
+
+
+
+
+
 
             # 
             # Original info, assumed the sheet was source of truth, needs to be converted to object as source of truth

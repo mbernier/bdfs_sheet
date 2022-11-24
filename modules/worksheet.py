@@ -7,6 +7,7 @@ from modules.base import BaseClass
 from collections import OrderedDict
 from modules.cell import Cell
 from modules.worksheets.data import WorksheetData
+from pprint import pprint
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -66,12 +67,58 @@ class Worksheet(BaseClass):
         self._cells: list[list] = []          # The data in the worksheet, available by location
 
 
-    # if we mess with _sheetData, then we need to update headersList, HeadersFlatCache
-    def _setSheetData(self):
-        self.debug("_setSheetData()")
-        self._sheetData = WorksheetData(self.getAllValues())
+    ####
+    #
+    # Worksheet connection Methods
+    #
+    ####
 
-    
+    # getter for the param worksheetObj
+    def __getWorksheetObj(self):
+        self.debug("__getWorksheetObj")
+        return self._worksheetObj
+
+    def __setWorksheetObj(self, worksheetObj):
+        self.debug("__setWorksheetObj(worksheetObj={})".format(worksheetObj))
+        self._worksheetObj = worksheetObj
+        return self.__getWorksheetObj()
+
+    ####
+    #
+    # Sheet functionality
+    #
+    ####
+    # 'id', 
+    # 'index', 
+    # 'export', 
+    # 'isSheetHidden', 
+    # 'spreadsheet', 
+    # 'title', 
+    # 'url'
+    # 'update_index', 
+    # 'update_title', 
+    def getTitle(self):
+        self.debug("getTitle()")
+        return self._title
+
+
+    def setTitle(self, title):
+        self.debug("setTitle(title={})".format(title))
+        self._title = title
+        return self.getTitle()
+
+
+    ####
+    #
+    # Read Data from the sheet Methods
+    #
+    ####
+    # 'get_all_records', 
+    # 'get_all_values', 
+    # 'batch_get', 
+    # 'get', 
+    # 'get_values', 
+
     # Gets everything from the sheet, without being a List of dicts
     # @todo are we using this? it should be moved to use workSheetData
     def getAllValues(self):
@@ -87,16 +134,24 @@ class Worksheet(BaseClass):
         records = self.__getWorksheetObj().get_all_records()
         return records
 
-    # clears out all the data from the spreadsheet
-    #   Most of the time the workflow here is to clear your sheet, so you can write the worksheet data to it
-    #   consider carefully what could go wrong if you don't have data in the worksheet and you do not commit
-    #   the worksheetData object's data to the sheet. That's dangerous!
-    def clearAllRecords(self, deleteWorksheetData = False):
-        self.debug("clearAllRecords()")
-        self.__getWorksheetObj().clear()
-        # This is DANGEROUS, bc you can lose ALL of your data
-        if deleteWorkSheetData:
-            self._sheetData = WorksheetData()
+    #will return something like -- "A1:CT356"
+    def getDataRange(self):
+        self.debug("getDataRange()")
+        sheetData = self.__getSheetData()
+        return sheetData.getRange()
+
+    ####
+    #
+    # Write Data to the Sheet
+    #
+    ####, 
+    # 'batch_update',
+    # 'update', 
+    # 'update_acell', 
+    # 'update_cell', 
+    # 'update_cells', 
+    # 'update_note', 
+    # 'updated',  
 
     # write the data out to the google worksheet
     def commit(self):
@@ -118,11 +173,38 @@ class Worksheet(BaseClass):
         self.__getWorksheetObj().batch_update(batch_update)
 
 
-    #will return something like -- "A1:CT356"
-    def getDataRange(self):
-        self.debug("getDataRange()")
-        sheetData = self.__getSheetData()
-        return sheetData.getDataRange()
+    ####
+    #
+    # Delete Data From the Sheet
+    #
+    ####
+    # 'clear', 
+    # 'batch_clear', 
+
+    # clears out all the data from the spreadsheet
+    #   Most of the time the workflow here is to clear your sheet, so you can write the worksheet data to it
+    #   consider carefully what could go wrong if you don't have data in the worksheet and you do not commit
+    #   the worksheetData object's data to the sheet. That's dangerous!
+    def clearAllRecords(self, deleteWorksheetData = False):
+        self.debug("clearAllRecords()")
+        self.__getWorksheetObj().clear()
+        # This is DANGEROUS, bc you can lose ALL of your data
+        if deleteWorkSheetData:
+            self._sheetData = WorksheetData()
+
+
+
+
+    ####
+    #
+    # Data Cache - Create
+    #
+    ####
+
+    # if we mess with _sheetData, then we need to update headersList, HeadersFlatCache
+    def _setSheetData(self):
+        self.debug("_setSheetData()")
+        self._sheetData = WorksheetData(self.getAllValues())
 
 
 
@@ -130,69 +212,23 @@ class Worksheet(BaseClass):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    # pull everything by value store as _cells bc this is the same thing
-    # create the ordered dict of columns, with the location of the item as the value
-        # then, we can look anything up by row/header or col/row, we can get a1 from utils
-    # Anything that happens to a header, or a cell has to be updated in both places
-    def getCell(self, header=None, row=None, column=None, a1=None, use_cache = True, update_cache = True):
-        someData = [header, row, column, a1, use_cache, update_cache]
-        self.debug("getCell(header={},row={},column={},a1={}, use_cache={}, update_cache={})", (header, row, column, a1, use_cache, update_cache))
-        
-        cell = None
-
-        # we have a1, convert to row/column
-        if None != a1:
-            row, column = gspread_utils.a1_to_rowcol(a1)
-
-        # we have a header and row, convert to column
-        if None != header:
-            if None == row:
-                raise Exception("Row must be passed with a header name to get a cell")
-            column = self.getColumnByHeader(header)
-
-        # if use_cache:
-        #     cell = self._getCellFromCache(row, col)
-        # else:
-        #     cell = self.getCell(row, column)
-        #     if update_cache:
-        #         self.updateCellCache()
-
-
-    # def createCell(self, row=None, col=None, a1=None):
-
-    # 'acell', 'add_cols', 'add_dimension_group_columns', 
-    # 'add_dimension_group_rows', 'add_protected_range', 'add_rows', 'append_row', 'append_rows', 'batch_clear', 
-    # 'batch_format', 'batch_get', 'batch_update', 'cell', 'clear', 'clear_basic_filter', 'clear_note', 'client', 
-    # 'col_count', 'col_values', 'columns_auto_resize', 'copy_range', 'copy_to', 'cut_range', 'define_named_range', 
-    # 'delete_columns', 'delete_dimension', 'delete_dimension_group_columns', 'delete_dimension_group_rows', 
-    # 'delete_named_range', 'delete_protected_range', 'delete_row', 'delete_rows', 'duplicate', 'export', 'find', 
-    # 'findall', 'format', 'freeze', 'frozen_col_count', 'frozen_row_count', 'get', 'get_all_cells', 'get_all_records', 
-    # 'get_all_values', 'get_note', 'get_values', 'hide', 'hide_columns', 'hide_rows', 'id', 'index', 'insert_cols', 
-    # 'insert_note', 'insert_row', 'insert_rows', 'isSheetHidden', 'list_dimension_group_columns', 'list_dimension_group_rows', 
-    # 'merge_cells', 'range', 'resize', 'row_count', 'row_values', 'rows_auto_resize', 'set_basic_filter', 'show', 'sort', 
-    # 'spreadsheet', 'tab_color', 'title', 'unhide_columns', 'unhide_rows', 'unmerge_cells', 'update', 'update_acell', 
-    # 'update_cell', 'update_cells', 'update_index', 'update_note', 'update_tab_color', 'update_title', 'updated', 'url'
-
-
-
-
-
-
-
-
-
+    #####
+    #
+    # Column Methods
+    #
+    #####
+    # 'add_cols', 
+    # 'add_dimension_group_columns', 
+    # 'col_count', 
+    # 'col_values', 
+    # 'delete_columns', 
+    # 'frozen_col_count', 
+    # 'hide_columns', 
+    # 'insert_cols', 
+    # 'unhide_columns', 
+    # 'list_dimension_group_columns', 
+    # 'columns_auto_resize', 
+    # 'sort'
 
 
     # set first_row to the names of the columns in the worksheet and update the column count
@@ -236,15 +272,8 @@ class Worksheet(BaseClass):
             self.error("The column list and the worksheet are NOT the same!")
             return False
 
-    # getter for the param worksheetObj
-    def __getWorksheetObj(self):
-        self.debug("__getWorksheetObj")
-        return self._worksheetObj
 
-    def __setWorksheetObj(self, worksheetObj):
-        self.debug("__setWorksheetObj(worksheetObj={})".format(worksheetObj))
-        self._worksheetObj = worksheetObj
-        return self.__getWorksheetObj()
+
 
     # The only place to retrieve the first row of data from the sheet
     # use_cache = True will return the cache, if False it gets data from the live worksheet
@@ -264,33 +293,24 @@ class Worksheet(BaseClass):
         return self._column_count
 
 
-    def getTitle(self):
-        self.debug("getTitle()")
-        return self._title
 
 
-    def setTitle(self, title):
-        self.debug("setTitle(title={})".format(title))
-        self._title = title
-        return self.getTitle()
-
-
-    def getMissingColumns(self):
+    def X_getMissingColumns(self):
         self.debug("getMissingColumns()")
         return self._missing_columns
 
 
-    def setMissingColumns(self, columns):
+    def X_setMissingColumns(self, columns):
         self.debug("setMissingColumns(columns={})".format(columns))
         self._missing_columns = columns
         return self.getMissingColumns()
 
-    def setExpectedColumns(self, columns):
+    def X_setExpectedColumns(self, columns):
         self.debug("setExpectedColumns(columns={})".format(columns))
         self._expectedColumns = columns
         return self.getExpectedColumns()
 
-    def getExpectedColumns(self):
+    def X_getExpectedColumns(self):
         self.debug("getExpectedColumns()")
         return self._expectedColumns
 
@@ -307,7 +327,7 @@ class Worksheet(BaseClass):
     #       [1:a,2:b,3:c,4:d,5:"",6:e,7:f,8:g]
     #       so, when you go to delete 7, it either isn't there or now "f" is in the 7th spot, so if you pass [7:7]
     #           to the worksheet delete function, it will delete "f" instead of deleting the correct item
-    def removeEmptyColumns(self, removeTrailingEmpties = False):
+    def X_removeEmptyColumns(self, removeTrailingEmpties = False):
         self.debug("removeEmptyColumns(removeTrailingEmpties={})".format(removeTrailingEmpties))
 
         counter = 1
@@ -394,7 +414,7 @@ class Worksheet(BaseClass):
 
     # Check that the columns in the worksheet match what is expected
     # addMissingColumns will cause anything that is missing to be added to the spreadsheet
-    def checkColumns(self, cols_expected, cols_expected_extra):
+    def X_checkColumns(self, cols_expected, cols_expected_extra):
         self.debug("Workheet.checkColumns(cols_expected={},cols_expected_extra={})".format(cols_expected, cols_expected_extra))
 
         # What columns do we need to care about?
@@ -419,7 +439,7 @@ class Worksheet(BaseClass):
 
     # Create a list of columns that we are expecting to find in this worksheet
     # @return the list of expected columns
-    def calculateExpectedColumns(self, cols_expected: list, cols_expected_extra: dict, checkExtras: bool = True):
+    def X_calculateExpectedColumns(self, cols_expected: list, cols_expected_extra: dict, checkExtras: bool = True):
         self.debug("calculateExpectedColumns(cols_expected={},cols_expected_extra={}, checkExtras={})".format(cols_expected, cols_expected_extra, checkExtras))
         # set the columns to the default
         expectedCols = cols_expected
@@ -462,7 +482,7 @@ class Worksheet(BaseClass):
 #
 #   https://docs.gspread.org/en/latest/user-guide.html#getting-all-values-from-a-worksheet-as-a-list-of-lists
 
-    def addMissingColumns(self):
+    def X_addMissingColumns(self):
         self.debug("addMissingColumns()")
 
         self.debug("Attempting to add these columns: {}".format(self.getMissingColumns()))
@@ -522,36 +542,10 @@ class Worksheet(BaseClass):
 
     #     return self.getColumns()
 
-
-    # takes a set of the worksheet values and converts them to the list of dicts to mimic the getAllRecords data
-    #   This means that columns with no header need to be converted to 'no_column_title_{#}'
-    #   Will keep track of whether there was ever data in the column to allow for deleting the column at the end
-    def convertValuesToDicts(self, values, delete_cols_without_header=False, delete_empty_cols=False):
-        self.debug("convertValuesToDicts(values={})".format(values))
-
-        columns = values[0]
-
-
-        # To count the instances of the data: 
-        #
-        # >>> from collections import Counter
-        # >>> data = [{'a':1, 'b':1}, {'a':1, 'c':1}, {'b':1, 'c':1}, {'a':1, 'c':1}, {'a':1, 'd':1}]
-        # >>> counter = sum((Counter(d) for d in data[1:]), Counter(data[0]))
-        # >>> counter
-        # Counter({'a': 4, 'c': 3, 'b': 2, 'd': 1})
-        # >>>
-
-
-    def removeAllButExpectedColumns(self, storeToWorksheet=True, returnAsOrderedDicts = False):
-        self.debug("removeAllButExpectedColumns()")
-        cols_expected = self.getExpectedColumns()
-        self.sortTheColumns(cols_to_keep=cols_expected, storeToWorksheet=storeToWorksheet, returnAsOrderedDicts=returnAsOrderedDicts)
-
-
     # make sure the columns are in the order we want for human readability
     #   you can write it to the worksheet if you would like, or not with storeToWorkSheet = True/False
     #   @returns the ordered list or a list of orderedDicts for use in other methods
-    def sortTheColumns(self, cols_to_keep, data, storeToWorksheet = True, returnAsOrderedDicts = False):
+    def X_sortTheColumns(self, cols_to_keep, data, storeToWorksheet = True, returnAsOrderedDicts = False):
         self.debug(
             "Worksheet.sortTheColumns(cols_to_keep={}, data={}, storeToWorksheet={},returnAsOrderedDicts={})"
                 .format(
@@ -609,7 +603,153 @@ class Worksheet(BaseClass):
         #by default we return the list object
         return output_list
 
+    def X_removeAllButExpectedColumns(self, storeToWorksheet=True, returnAsOrderedDicts = False):
+        self.debug("removeAllButExpectedColumns()")
+        cols_expected = self.getExpectedColumns()
+        self.sortTheColumns(cols_to_keep=cols_expected, storeToWorksheet=storeToWorksheet, returnAsOrderedDicts=returnAsOrderedDicts)
 
-# do we still have these: 
-    # Generate (add an 'x' for the one you want to generate 
-    # Inspect/Clean CSV before Import?  
+
+
+
+
+    ####
+    #
+    # Row Methods
+    #
+    ####
+    # 'add_dimension_group_rows', 
+    # 'add_rows', 
+    # 'append_row', 
+    # 'append_rows', 
+    # 'delete_dimension_group_rows', 
+    # 'delete_row', 
+    # 'delete_rows', 
+    # 'frozen_row_count', 
+    # 'hide_rows', 
+    # 'insert_row', 
+    # 'insert_rows', 
+    # 'row_count', 
+    # 'row_values', 
+    # 'rows_auto_resize', 
+    # 'unhide_rows', 
+
+
+    ####
+    #
+    # Cell Methods
+    #
+    ####
+    # 'acell'
+    # 'cell',
+    # 'get_all_cells', 
+    # 'merge_cells', 
+    # 'unmerge_cells', 
+
+    # pull everything by value store as _cells bc this is the same thing
+    # create the ordered dict of columns, with the location of the item as the value
+        # then, we can look anything up by row/header or col/row, we can get a1 from utils
+    # Anything that happens to a header, or a cell has to be updated in both places
+    def X_getCell(self, header=None, row=None, column=None, a1=None, use_cache = True, update_cache = True):
+        someData = [header, row, column, a1, use_cache, update_cache]
+        self.debug("getCell(header={},row={},column={},a1={}, use_cache={}, update_cache={})", (header, row, column, a1, use_cache, update_cache))
+        
+        cell = None
+
+        # we have a1, convert to row/column
+        if None != a1:
+            row, column = gspread_utils.a1_to_rowcol(a1)
+
+        # we have a header and row, convert to column
+        if None != header:
+            if None == row:
+                raise Exception("Row must be passed with a header name to get a cell")
+            column = self.getColumnByHeader(header)
+
+        # if use_cache:
+        #     cell = self._getCellFromCache(row, col)
+        # else:
+        #     cell = self.getCell(row, column)
+        #     if update_cache:
+        #         self.updateCellCache()
+
+
+    def X_createCell(self, row=None, col=None, a1=None):
+        raise Exception("nothing here")
+
+    ####
+    #
+    # Filters
+    #
+    ####
+    # 'clear_basic_filter', 
+    # 'set_basic_filter',
+
+    ####
+    #
+    # Ranges
+    #
+    ####
+    # 'client', 
+    # 'copy_range', 
+    # 'cut_range', 
+    # 'define_named_range', 
+    # 'delete_named_range', 
+    # 'delete_protected_range', 
+    # 'add_protected_range', 
+     # 'range', 
+
+
+    ####
+    #
+    # Notes
+    #
+    ####
+    # 'clear_note', 
+    # 'get_note', 
+    # 'insert_note', 
+
+    ####
+    #
+    # Copy
+    #
+    ####
+    # 'copy_to', 
+    # 'duplicate', 
+
+    ####
+    #
+    # Dimensions
+    #
+    ####
+    # 'delete_dimension', 
+    # 'delete_dimension_group_columns', 
+    # 'list_dimension_group_rows', 
+
+    ####
+    #
+    # Search the data
+    #
+    ####
+    # 'find', 
+    # 'findall', 
+
+    ####
+    #
+    # Style methods
+    #
+    ####
+    # 'batch_format'
+    # 'update_tab_color', 
+    # 'tab_color', 
+    # 'format', 
+    # 'resize',
+
+
+    ####
+    #
+    # Data visibility
+    #
+    ####
+    # 'freeze', 
+    # 'hide', 
+    # 'show',

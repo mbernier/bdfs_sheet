@@ -13,29 +13,33 @@ class BdfsCache(BaseClass):
         pass
 
     def set(self):
-        self.debug("bdfsCache.set()")
+        self.debug("set()")
         pass
 
     def unset():
-        self.debug("bdfsCache.unset()")
+        self.debug("unset()")
         pass
 
     def update(self):
-        self.debug("bdfsCache.update()")
+        self.debug("update()")
         pass
 
     def get(self):
-        self.debug("bdfsCache.get()")
+        self.debug("get()")
         pass
 
     def clear(self):
-        self.debug("bdfsCache.clear()")
+        self.debug("clear()")
         pass
 
     def __write(self):
-        self.debug("bdfsCache.__write()")
+        self.debug("__write()")
         pass
 
     def delete(self):
-        self.debug("bdfsCache.delete()")
+        self.debug("delete()")
         pass
+
+    def getStorage(self):
+        self.debug("getStorage()")
+        return self._storage

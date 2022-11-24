@@ -16,8 +16,20 @@ if __name__ == "__main__":
     # run = SheetProcessor()
     # run.main(sys.argv[1:])
 
-    # Bdfs Sheet Processor functionality
 
+    # data = [
+    #         ['1', "somedata", {"a": "b"}], 
+    #         ['2', "anotehr datas", {"c": "d"}]
+    #         ]
+
+    # headers = ['h1', 'h2', 'h3'] 
+    # from modules.caches.nested import NestedCache
+    # nestedCache = NestedCache(headers, data)
+
+    # print(nestedCache)
+
+
+    # Bdfs Sheet Processor functionality
     run = Bdfs_SheetProcessor()
     run.main(sys.argv[1:])
 
