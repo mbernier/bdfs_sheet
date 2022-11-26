@@ -1,5 +1,4 @@
 import sys, getopt, os, gspread
-from modules.spreadsheet import Spreadsheet
 from modules.base import BaseClass
 
 # @todo refactor to pull out the getops functionality from this script
@@ -23,8 +22,6 @@ class SheetProcessor(BaseClass):
     def __init__(self):
         # set the default spreadsheet id from the constants or configuration
         self.spreadsheet = None
-
-        self.getSheet()
 
 
     def main(self, argv):
@@ -50,9 +47,17 @@ class SheetProcessor(BaseClass):
                 self.console(self.help_output)
                 sys.exit()
 
-            # everything from here on needs the spreadsheet to be setup.
-            self.getSheet()
-            
+
+            ####
+            #
+            # Setup the spreadsheet Object now, so we don't need it if someone is just requesting help info
+            #
+            ####
+            self.__setUpSpreadsheet() 
+
+
+
+
             if opt in ("-c", "--check-worksheet-cols"):
                 # check the column titles and see if they fit our preferences
                 self.debug("user selected -c option")
@@ -76,7 +81,7 @@ class SheetProcessor(BaseClass):
             elif opt in ("-l", "--list-worksheets"):
                 self.debug("user selected -l option")
                 self.console("Current Worksheet List:")
-                self.outputWorksheets()
+                self.listWorksheets()
                 sys.exit()
             
             elif opt in ("-w", "--worksheets"):
@@ -94,7 +99,7 @@ class SheetProcessor(BaseClass):
 
 
     # setup the sheet object if not setup, return it either way
-    def getSheet(self):
+    def __setUpSpreadsheet(self):
         self.debug("getSheet()")
         if None == self.spreadsheet:
             # self.spreadsheet = getattr(sys.modules[self.spreadsheet_class["module"]], self.spreadsheet_class["class"])
@@ -108,13 +113,8 @@ class SheetProcessor(BaseClass):
     # if use_cached is false, go retrieve it again
     def listWorksheets(self, use_cache = True):
         self.debug("listWorksheets(%s)" % str(use_cache))
-        return self.spreadsheet.listWorksheets(use_cache)
+        return self.spreadsheet.getWorksheets(use_cache)
 
-
-    # print out the worksheets to the console
-    def outputWorksheets(self):
-        self.debug("outputWorksheets()")
-        self.spreadsheet.outputWorksheets()
 
     # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
     #   to make sure that the spreadsheet is valid for what we want to do

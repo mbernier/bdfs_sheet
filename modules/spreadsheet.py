@@ -1,28 +1,28 @@
 import gspread,datetime,sys
 from modules.base import BaseClass
-from modules.worksheet import Worksheet
 
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import utils as gspread_utils
+from pprint import pprint
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
 #   spreadsheet ID.
 
-class Spreadsheet(BaseClass):
+class Spreadsheet(BaseClass): 
 
     spreadsheetId = None
     service_account = None
     worksheetKeeperPattern = None
 
     spreadsheet = None
-    worksheet_list = None
-
-    cols_expected = []
-    cols_expected_extra = []
+    worksheet_list = []
+    _worksheet_objs = {}
 
     # from BaseClass - allows us to set sub loggers
     logger_name = "Spreadsheet"
+
+    worksheetClassName = None
 
     # pass in the sheet ID if it was passed
     def __init__(self):
@@ -33,19 +33,24 @@ class Spreadsheet(BaseClass):
         self.debug("__init__()")
 
         # let's make sure that the wrapper class is playing by the rules
-        self.checkSetup()
+        self.__checkSetup()
+
+        self.getWorksheetClassName()
 
         # make sure we have a service account setup
-        self.getServiceAccount()
+        self.__setupServiceAccount()
 
         # if we get this far, then we should setup the spreadsheet object
-        self.getSheet()
+        self.__setupSpreadsheet()
+
+        # get the worksheets ahead of any work to be done
+        self.__setupWorksheetList()
 
 
     # quick check that the things we want passed in are in fact passed
     # otherwise, just fail
-    def checkSetup(self):
-        self.debug("checkSetup()")
+    def __checkSetup(self):
+        self.debug("__checkSetup()")
 
         #if we don't have the spreadsheetId we cannot connect to it
         if None == self.getSpreadsheetId():
@@ -53,34 +58,13 @@ class Spreadsheet(BaseClass):
             #fail if no one set the spreadsheetId on the wrapper class
             raise Exception("class Spreadsheet cannot implement __init__ on it's own. Extend and pass a Spreadsheet Id")
 
-        # if we don't know what cols are expected, we cannot check the sheet is setup properly
-        if [] == self.getExpectedColumns():
-            #fail if no one set the spreadsheetId on the wrapper class
-            self.critical("Cols expected was not set before instantiating Spreadsheet class")
-            raise Exception("cols_expected parameter is not set")
-
         # we don't NEED the keeperPattern, but if we want to reduce the work and prevent errors later it's a good idea
         if None == self.getWorksheetKeeperPattern():
             self.warning("worksheetKeeperPattern is not set, this is OK")
 
+        if None == self.worksheet_class:
+            self.critical("You must set a worksheet_class in your Spreadsheet Object: ".self.__class__.__name__)
     
-    def setExpectedColumns(self, expectedColumns):
-        self.debug("setExpectedColumns({})".format(expectedColumns))
-        self.cols_expected = expectedColumns
-        return self.getExpectedColumns()
-
-    def getExpectedColumns(self):
-        self.debug("getExpectedColumns()")
-        return self.cols_expected
-
-    def getExtraExpectedColumns(self):
-        self.debug("getExtraExpectedColumns()")
-        return self.cols_expected_extra
-
-    def setExtraExpectedColumns(self, extraColumns):
-        self.debug("setExtraExpectedcolumns({})".format(extraColumns))
-        self.cols_expected_extra = extraColumns
-        return self.getExtraExpectedColumns()
 
     def getWorksheetKeeperPattern(self):
         self.debug("getWorksheetKeeperPattern()")
@@ -97,7 +81,6 @@ class Spreadsheet(BaseClass):
         self.spreadsheetId = id
         return self.getSpreadsheetId()
 
-
     # get the id that we have set and return it
     def getSpreadsheetId(self):
         self.debug("getSpreadsheetId()")
@@ -105,16 +88,16 @@ class Spreadsheet(BaseClass):
 
 
     # setup the service account if not setup, return it either way
-    def getServiceAccount(self):
-        self.debug("getServiceAccount()")
+    def __setupServiceAccount(self):
+        self.debug("__setupServiceAccount()")
         if None == self.service_account: 
             self.service_account = gspread.service_account()
         return self.service_account
 
 
     # setup the sheet object if not setup, return it either way
-    def getSheet(self, use_cache = True):
-        self.debug("getSheet(%s)" % str(use_cache))
+    def __setupSpreadsheet(self, use_cache = True):
+        self.debug("__setupSpreadsheet(%s)" % str(use_cache))
 
         if None == self.spreadsheet or False == use_cache:
             self.spreadsheet = self.service_account.open_by_key(self.spreadsheetId)
@@ -124,50 +107,115 @@ class Spreadsheet(BaseClass):
 
     # scrub out the worksheets we don't care about based on the pattern
     # pattern: sheets we care about include "inventory" in the title
-    def setWorksheetList(self, worksheetList) -> list:
-        self.debug("setWorksheetList(%s)" % str(worksheetList))
-        if None == self.getWorksheetKeeperPattern():
-            # no pattern is set, allow all the sheets through
-            self.worksheet_list = worksheetList
+    def __setupWorksheetList(self) -> list:
+        self.debug("setupWorksheetList()")
+
+        # retrieve the worksheets from the gpsread spreadsheet obj
+        worksheetList = self.spreadsheet.worksheets()
+
+        keeperPattern = self.getWorksheetKeeperPattern()
+
+        # clear out the worksheets we don't need
+        for sheet in worksheetList:
+            # only restrict the worksheet list if there is a keeper pattern
+            if None == keeperPattern or keeperPattern in sheet.title:
+                self.__appendWorksheetTitle(sheet.title)
+                self.__setWorksheetObj(worksheetTitle=sheet.title, worksheetObj=sheet)
+
+        return self.getWorksheets()
+
+    # Allow passing in the correct object type to storage
+    def __setWorksheetObj(self, worksheetTitle, worksheetObj):
+        self.debug("__setWorksheetObj(worksheetTitle={},worksheetObj={})", (worksheetTitle, worksheetObj))
+        
+        tempObj = self.__getWorksheetObjs().get(worksheetTitle)
+        
+        typeOfWorksheet = worksheetObj.__class__.__name__
+
+        if None == tempObj:
+            tempObj = {typeOfWorksheet: worksheetObj}
         else:
-            # if we have a pattern, we should follow it
-            tempSheets = []
-            # clear out the worksheets we don't need
-            for sheet in worksheetList:
-                if self.getWorksheetKeeperPattern() in sheet.title:
-                    tempSheets.append(sheet)
-            self.worksheet_list = tempSheets
-        return self.getWorksheetList()
+            tempObj[typeOfWorksheet] = worksheetObj
+
+        self._worksheet_objs[worksheetTitle] = tempObj
 
 
-    # quick setter for the worksheet list
-    def getWorksheetList(self, use_cache = True) -> list:
+    def __getWorksheetObjs(self):
+        self.debug("__getWorksheetObjs()")
+        return self._worksheet_objs
+
+
+    def __getWorksheetStorage(self, worksheetTitle):
+        self.debug("__getworksheetStorage(worksheetTitle={})".format(worksheetTitle))
+        allworksheets = self.__getWorksheetObjs()
+        return allworksheets.get(worksheetTitle)        
+
+
+    def __getWorksheetObj(self, worksheetTitle, worksheetClassName):
+        self.debug("__getWorksheetObj(worksheetTitle={},className={})",(worksheetTitle,worksheetClassName))
+
+        worksheetStorage = self.__getWorksheetStorage(worksheetTitle)
+        if None == worksheetStorage:
+            return None
+
+        worksheetObj = worksheetStorage.get(worksheetClassName)
+        if None == worksheetObj:
+            return None
+
+        return worksheetObj
+
+
+    def __appendWorksheetTitle(self, worksheetTitle):
+        self.debug("__appendWorksheetTitle({})".format(worksheetTitle))
+        self.worksheet_list.append(worksheetTitle)
+
+
+    # quick getter for the worksheet list
+    def getWorksheets(self) -> list:
         self.debug("getWorksheets()")
-        if None == self.worksheet_list or False == use_cache:
-            self.listWorksheets()
         return self.worksheet_list
 
 
-    # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
-    # if use_cached is false, go retrieve it again
-    def listWorksheets(self, use_cache = True) -> list:
-        self.debug("listWorksheets(%s)" % str(use_cache))
-
-        # if the worksheet list is false or the code wants to retrieve a new list, retrieve it
-        if None == self.worksheet_list or False == use_cache:
-            # make sure we are setting the sheets appropriately
-            self.setWorksheetList(self.spreadsheet.worksheets())
-
-        return self.getWorksheetList()
+    def getWorksheet(self, worksheetTitle):
+        self.debug("getWorksheet(worksheetName={})".format(worksheetTitle))
+        if [] == self.worksheet_list:
+            raise Exception("Worksheets were not added to the Spreadsheet properly.")
+        return self.__setupWorksheet(worksheetTitle)
 
 
-    # print the worksheets to the console
-    def outputWorksheets(self):
-        self.debug("outputWorksheets()")
-        # make sure that we have worksheets before we try to output them
-        self.listWorksheets()
-        for sheet in self.getWorksheetList():
-            self.console(str(sheet.title))
+    def getWorksheetClassName(self):
+        self.debug("getWorksheetClassName()")
+        if None == self.worksheetClassName:
+            self.worksheetClassName = self.worksheet_class.split(".").pop()
+        return self.worksheetClassName
+
+
+    def getWorksheetClass(self):
+        self.debug("getWorksheetClass()")
+        return self.importClass(self.worksheet_class)
+
+
+    # Check if this class' worksheetObj is setup in our storage, if it isn't - instantiate it and store it
+    #      Will use the other object that is setup, which is the one from gspread
+    #       We do this without hardcoding the gspread classname in, so that we never need to know it
+    def __setupWorksheet(self, worksheetTitle):
+        self.debug("__setupWorksheet(worksheetObj={})".format(worksheetTitle))
+        
+        # if it's not setup, then set it up
+        worksheetClassName = self.getWorksheetClassName()
+
+        worksheetObj = self.__getWorksheetObj(worksheetTitle, worksheetClassName)
+                
+        # if it's not setup, go ahead and do that
+        if None == worksheetObj:
+            worksheetClass = self.getWorksheetClass()
+            worksheetStorage = self.__getWorksheetStorage(worksheetTitle)
+            key = list(worksheetStorage.keys())[0]
+            worksheetObjToPass = worksheetStorage[key]
+            self.__setWorksheetObj(worksheetTitle=worksheetTitle, worksheetObj=worksheetClass(worksheetObjToPass))
+        
+        # return the object that we want to workwith
+        return self.__getWorksheetObj(worksheetTitle=worksheetTitle, worksheetClassName=worksheetClassName)
 
 
     # only checks the columns, doesn't do anything to adjust or fix them
@@ -176,12 +224,18 @@ class Spreadsheet(BaseClass):
     def checkWorksheetColumns(self, colsToCheck = None, checkExtras = True, addMissingColumns = False):
         self.debug("checkWorksheetColumns(colsToCheck={},checkExtras={},addMissingColumns={})".format(colsToCheck,checkExtras,addMissingColumns))
         # if nothing was passed through, then use the default. Otherwise, use what was passed
-        if None == colsToCheck:
-            colsToCheck = self.getExpectedColumns()
 
-        for worksheet in self.getWorksheetList():
-            # setup the worksheet, do an initial pull of the data, then we can modify all we want and commit
-            worksheet = Worksheet(worksheet)
+        for worksheetTitle in self.getWorksheets():
+            worksheet = self.getWorksheet(worksheetTitle)
+
+            worksheet.playground()
+
+            sys.exit()
+
+            #do this at the END of your processing, to make sure the data gets stored in the worksheet properly
+            # up to this point, everything is just done in the copy of the worksheet
+            # this helps keep the number of API calls to a minimum, so we don't get in trouble
+            worksheet.commit()
 
             # Right now, this can get all the data and sets up the cache in the WorksheetData class wrapped around NestedCache
             # We need to figure out how to do the functionality below within the cached sheetData
@@ -198,41 +252,3 @@ class Spreadsheet(BaseClass):
                 #     - offer a flag to ignore columns in spreadsheet that are not in expected (keep them)
                 #     - if flag is not set to ignore, then throw an error
                 # 3. Add the missing expected columns to the spreadsheet
-                # 
-                #
-                #
-
-
-
-            raise Exception("Processing is stopped in Spreadsheet line ~190")
-            sys.exit()
-
-
-
-
-
-
-            # 
-            # Original info, assumed the sheet was source of truth, needs to be converted to object as source of truth
-            #             
-
-            worksheet.checkColumns(self.getExpectedColumns(), self.getExtraExpectedColumns())
-            if addMissingColumns:
-                # remove the empty columns
-                # clean up the empties so that we have a good measure of the sheet
-                worksheet.removeEmptyColumns()
-
-                # add in the new columns, so that we have everything we need
-                addedColumns = worksheet.addMissingColumns()
-
-                self.info("{} columns were added to {}".format(addedColumns, worksheet.getTitle()))
-
-                # double check that we don't have extra empties at the end of the sheet, just in case
-                worksheet.removeEmptyColumns(removeTrailingEmpties=True)
-
-                # since we can't control how the data gets added in previous steps or how it was in the original sheet, 
-                #   make sure it is clean here. By default, this stores to the worksheet when it's done running. To cancel that
-                #   add storeToWorksheet = False
-                sheetData = worksheet.sortTheColumns()
-            self.console("We are only running one worksheet right now, see Spreadhsheet.py line 188")
-            sys.exit()

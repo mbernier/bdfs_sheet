@@ -67,7 +67,7 @@ class BaseClass:
             dataBgColor = "on_" + dataBgColor
 
         # add the classname
-        msg = self.__className() + "." + msg
+        msg = self.__className() + ":: " + msg
 
         # change the color to make it pretty
         msg = colored(msg, textColor, bgcolor)
@@ -123,11 +123,21 @@ class BaseClass:
 
 
     def importClass(self, name): 
-        components = name.split('.')
-        mod = __import__(components[0])
-        for comp in components[1:]:
-            mod = getattr(mod, comp)
-        return mod
+        self.debug("importClass(name={})".format(name))
+        # components = name.split('.')
+        # mod = __import__(components[0])
+        # for comp in components[1:]:
+        #     mod = getattr(mod, comp)
+        # return mod
+
+        spltz = name.split(".")
+        classname = spltz.pop()
+        path = ".".join(spltz)
+        mod = __import__(path, fromlist=[classname])
+        klass = getattr(mod, classname)
+        return klass
+
+
 
     def __checkArgs(self, required=[], **kwargs):
         for arg in kwargs:

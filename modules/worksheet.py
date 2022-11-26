@@ -5,9 +5,9 @@ from gspread import utils as gspread_utils
 
 from modules.base import BaseClass
 from collections import OrderedDict
-from modules.cell import Cell
+from pprint import pprint 
+
 from modules.worksheets.data import WorksheetData
-from pprint import pprint
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -31,40 +31,42 @@ from pprint import pprint
 # 'spreadsheet', 'tab_color', 'title', 'unhide_columns', 'unhide_rows', 'unmerge_cells', 'update', 'update_acell', 
 # 'update_cell', 'update_cells', 'update_index', 'update_note', 'update_tab_color', 'update_title', 'updated', 'url']
 
-
+#
+# Rules; 
+#   pulls the worksheet data, does all the changes, only pushes changes when commit() is called.
+#
 class Worksheet(BaseClass):
 
     logger_name = "Worksheet"
 
+    _worksheetObj = None            # The worksheet object itself, allows us to run gspread functions
+    _expectedColumns: list = []           # A list of columns we expect to have in the sheet
+    _title = None                   # The Sheet title
+
     def __init__(self, worksheetObj):
 
-        self.debug("init() for worksheet: " + str(worksheetObj.title))
+        self.debug("__init()__ for worksheet: " + str(worksheetObj.title))
+
+        # store the worksheetObj for use later
+        self.__setWorksheetObj(worksheetObj)
+
+        # double check we have the required params from the extension class
+        self.__checkSetup()
 
         # source of truth for the data of the worksheet
         self._sheetData = []
- 
-        self.setTitle(worksheetObj.title)
-
-        # NOTE stopped working here to build the caching functionality, which will help make some functionality a little more reusable
-
-        self.__setWorksheetObj(worksheetObj)
 
         self._setSheetData()
 
 
-        # 
-        # 
-        # Need to figure out which of these needs to move to WorksheetData and which are staying here
-        # 
-        #         
-        self._worksheetObj = None            # The worksheet object itself, allows us to run gspread functions
-        self._expectedColumns: list = []           # A list of columns we expect to have in the sheet
-        self._columns: list = []                   # The columns we actually have in the sheet
-        self._column_count: int = None            # The count of columns in the sheet
-        self._title = None                   # The Sheet title
-        self._missing_columns: list = []           # The columns we are missing, between Expected and actual
-        self._data: list[OrderedDict] = []   # The data in the worksheet, available by column header
-        self._cells: list[list] = []          # The data in the worksheet, available by location
+
+    def __checkSetup(self):
+        # if we don't know what cols are expected, we cannot check the sheet is setup properly
+        if [] == self.getExpectedColumns():
+            #fail if no one set the spreadsheetId on the wrapper class
+            self.critical("Cols expected was not set before instantiating Spreadsheet class")
+            raise Exception("cols_expected parameter is not set")
+
 
 
     ####
@@ -99,7 +101,7 @@ class Worksheet(BaseClass):
     # 'update_title', 
     def getTitle(self):
         self.debug("getTitle()")
-        return self._title
+        self._title = self.__getWorksheetObj().title
 
 
     def setTitle(self, title):
@@ -169,8 +171,14 @@ class Worksheet(BaseClass):
 
         self.debug("Updating the spreadsheet with this data: ", batch_update)
 
+        worksheet = self.__getWorksheetObj()
+
+        # if the title is changed, push it
+        if self.getTitle() != worksheet.title:
+            worksheet.update_title(self.getTitle())
+        
         # do a batch update, because doing this one column at a time hit the rate limits super fast
-        self.__getWorksheetObj().batch_update(batch_update)
+        worksheet.batch_update(batch_update)
 
 
     ####
@@ -206,8 +214,9 @@ class Worksheet(BaseClass):
         self.debug("_setSheetData()")
         self._sheetData = WorksheetData(self.getAllValues())
 
-
-
+    def getData(self):
+        self.debug("getData()")
+        return self._sheetData
 
 
 
@@ -231,89 +240,84 @@ class Worksheet(BaseClass):
     # 'sort'
 
 
-    # set first_row to the names of the columns in the worksheet and update the column count
-    def __updateColumnListFromWorksheet(self):
-        self.debug("__updateColumnListFromWorksheet()")
-        self._columns = self.getColumns(False)
-        self.__updateColumnCount()
+    def getExpectedColumns(self):
+        self.debug("getExpectedColumns()")
+        return self.__mergeExpectedColumns()
 
 
-    # this should ONLY be done when you are modifying columns and you know that you don't need to pull again from the spreadsheet
-    #   e.g. removeEmptyColumns() is using this bc we have just audited and removed all empty columns, leaving only the remaining columns
-    #       that have a name in them
-    def __setColumnList(self, listOfColumns):
-        self.debug("__setColumnList(listOfColumns={})".format(listOfColumns))
-        self._columns = listOfColumns
-        self.__updateColumnCount()
-
-
-    # allows updating the cache of the column titles without pulling from the worksheet again
-    def __addToColumnList(self, columnTitle:str):
-        self.debug("__addToColumnList(columnTitle={})".format(columnTitle))
-        self._columns.append(columnTitle)
-        self.__updateColumnCount()
-        return self.getColumns()
-
-
-    # count the nubmer of columns in the first_row
-    # this should never be called except where we are updating the columns themselves
-    def __updateColumnCount(self):
-        self.debug("__updateColumnCount()")
-        self._column_count = len(self.getColumns())
-        return self.getColumnCount()
-
-    # method to double check that our cache and the worksheet are the same
-    def testColumnCacheAgainstWorksheet(self):
-        self.debug("__testColumnCacheAgainstWorksheet()")
-        if self.compareLists(self.getColumns(use_cache=True), self.getColumns(use_cache=False)):
-            self.info("The column list and the worksheet are the same!")
-            return True 
-        else:
-            self.error("The column list and the worksheet are NOT the same!")
-            return False
-
-
+    # since we have multiple options for how the columns should be setup
+    #   Get the columns that we care about and return them
+    def __mergeExpectedColumns(self):
+        self.debug("__mergeExpectedColumns()")
+        expectedCols = self.cols_expected
+        for index in self.cols_expected_extra:
+            if index in self.getTitle():
+                expectedCols.extend(self.cols_expected_extra[index])
+        return expectedCols
 
 
     # The only place to retrieve the first row of data from the sheet
     # use_cache = True will return the cache, if False it gets data from the live worksheet
     #   if there are empty columns at the end, the row_values() method will not get them, it will get everything from
     #       the first column to the last value in the row
-    def getColumns(self, use_cache = True):
+    def getColumns(self):
         self.debug("getColumns(use_cache={})".format(use_cache))
-        if use_cache:
-            return self._columns
-        else:
-            return self.__getWorksheetObj().row_values(1)
+        return self.getData().getHeaders()
+        
 
-
-    # return the numCols value
+    # return the number of columns in the worksheet
     def getColumnCount(self):
         self.debug("getColumnCount()")
-        return self._column_count
+        return self.getData().width()
+
+    def __getWorksheetColumnCount(self):
+        self.debug("__getWorksheetColumnCount()")
+        return self._worksheetObj.col_count
+
+
+    def removeEmptyColumnsTrailing(self):
+        self.debug("removeEmptyColumnsTrailing()")
+
+        #we don't want to remove the last column in the data, we want the next column
+        dataColumnCount = self.getColumnCount() + 1
+        worksheetObjColumnCount = self.__getWorksheetColumnCount()
+
+        if worksheetObjColumnCount > dataColumnCount:
+            self.removeWorksheetColumns(start=dataColumnCount, end=worksheetObjColumnCount)
+            
+
+    def removeColumns(self, column=None, start=None, stop=None):
+        self.debug("removeWorksheetColumns(column={},range={})", (column, range))
+        if None != column:
+            start = column
+            end = column
+
+        if None == start or None == end:
+            raise Exception("You must provide a start and end range for removeWorkSheetColumns()")
+
+        self.__removeColumns_Data(start, end)
+
+    # def __removeColumns_Worksheet(self, start, end):
+    #     self.debug("__removeWorksheetColumns(start={}, end={})", (start, end))
+    #     startCell = self.getA1(1, start)
+    #     endCell = self.getA1(1, end)
+    #     self.__getWorksheetObj().delete_columns(startCell, endCell)
+
+    def __removeColumns_Data(self, start, end):
+        self.debug("__removeDataColumns(start={}, end={})", (start, end))
+        self._sheetData.removeHeaders(start, end)
+
+
+    def playground(self):
+        self.info("# of columns in worksheet: {}".format(self.__getWorksheetColumnCount()))
+        self.info("# of columns in dataStore: {}".format(self.getColumnCount()))
+        self.removeEmptyColumnsTrailing()
+
+        # @todo make sure that any data that gets updated in the data object have their "updated_date" field changed to time.now()
 
 
 
-
-    def X_getMissingColumns(self):
-        self.debug("getMissingColumns()")
-        return self._missing_columns
-
-
-    def X_setMissingColumns(self, columns):
-        self.debug("setMissingColumns(columns={})".format(columns))
-        self._missing_columns = columns
-        return self.getMissingColumns()
-
-    def X_setExpectedColumns(self, columns):
-        self.debug("setExpectedColumns(columns={})".format(columns))
-        self._expectedColumns = columns
-        return self.getExpectedColumns()
-
-    def X_getExpectedColumns(self):
-        self.debug("getExpectedColumns()")
-        return self._expectedColumns
-
+    
     # This one was fun, in order to reduce the number of API calls that we need to make, we want to remove empty columns from the spreadsheets
     #   In order to do this, we have to walk forward through the columns and the the sheet to find empty columns
     #   Then, figure out what the ranges of the empty columns are, so we can hold them
@@ -399,8 +403,8 @@ class Worksheet(BaseClass):
             del columns[rangeToKill["start"]:rangeToKill["end"]]
 
             self.info("Removing item from {}:{} from worksheet".format(
-                    gspread_utils.rowcol_to_a1(1, rangeToKill["start"]), 
-                    gspread_utils.rowcol_to_a1(1, rangeToKill["end"])))
+                    self.getA1(1, rangeToKill["start"]), 
+                    self.getA1(1, rangeToKill["end"])))
             self.__getWorksheetObj().delete_columns(rangeToKill["start"], rangeToKill["end"])
             didWeRemoveRanges = True
 
@@ -414,6 +418,32 @@ class Worksheet(BaseClass):
 
     # Check that the columns in the worksheet match what is expected
     # addMissingColumns will cause anything that is missing to be added to the spreadsheet
+
+    # # 
+    # # Original info, assumed the sheet was source of truth, needs to be converted to object as source of truth
+    # #             
+
+    # worksheet.checkColumns(self.getExpectedColumns(), self.getExtraExpectedColumns())
+    # if addMissingColumns:
+    #     # remove the empty columns
+    #     # clean up the empties so that we have a good measure of the sheet
+    #     worksheet.removeEmptyColumns()
+
+    #     # add in the new columns, so that we have everything we need
+    #     addedColumns = worksheet.addMissingColumns()
+
+    #     self.info("{} columns were added to {}".format(addedColumns, worksheet.getTitle()))
+
+    #     # double check that we don't have extra empties at the end of the sheet, just in case
+    #     worksheet.removeEmptyColumns(removeTrailingEmpties=True)
+
+    #     # since we can't control how the data gets added in previous steps or how it was in the original sheet, 
+    #     #   make sure it is clean here. By default, this stores to the worksheet when it's done running. To cancel that
+    #     #   add storeToWorksheet = False
+    #     sheetData = worksheet.sortTheColumns()
+    # self.console("We are only running one worksheet right now, see Spreadhsheet.py line 188")
+
+
     def X_checkColumns(self, cols_expected, cols_expected_extra):
         self.debug("Workheet.checkColumns(cols_expected={},cols_expected_extra={})".format(cols_expected, cols_expected_extra))
 
@@ -585,7 +615,7 @@ class Worksheet(BaseClass):
             output_list.append(temp_list)
 
         # calculate the A1 Notation of the range from A1 -> the height and width of our new List
-        end_cell = gspread_utils.rowcol_to_a1(len(output_list),len(temp_list))
+        end_cell = gself.getA1(len(output_list),len(temp_list))
 
         self.debug("The output_list data is {}".format(output_list))
 
@@ -634,6 +664,11 @@ class Worksheet(BaseClass):
     # 'unhide_rows', 
 
 
+    def getRowCount(self):
+        self.debug("getRowCount()")
+        return self.getData().height()
+
+
     ####
     #
     # Cell Methods
@@ -643,38 +678,14 @@ class Worksheet(BaseClass):
     # 'cell',
     # 'get_all_cells', 
     # 'merge_cells', 
-    # 'unmerge_cells', 
+    # 'unmerge_cells',
 
-    # pull everything by value store as _cells bc this is the same thing
-    # create the ordered dict of columns, with the location of the item as the value
-        # then, we can look anything up by row/header or col/row, we can get a1 from utils
-    # Anything that happens to a header, or a cell has to be updated in both places
-    def X_getCell(self, header=None, row=None, column=None, a1=None, use_cache = True, update_cache = True):
-        someData = [header, row, column, a1, use_cache, update_cache]
-        self.debug("getCell(header={},row={},column={},a1={}, use_cache={}, update_cache={})", (header, row, column, a1, use_cache, update_cache))
-        
-        cell = None
-
-        # we have a1, convert to row/column
-        if None != a1:
-            row, column = gspread_utils.a1_to_rowcol(a1)
-
-        # we have a header and row, convert to column
-        if None != header:
-            if None == row:
-                raise Exception("Row must be passed with a header name to get a cell")
-            column = self.getColumnByHeader(header)
-
-        # if use_cache:
-        #     cell = self._getCellFromCache(row, col)
-        # else:
-        #     cell = self.getCell(row, column)
-        #     if update_cache:
-        #         self.updateCellCache()
+    # creates A1 notation for the row and column given
+    def getA1(self, row, column):
+        self.debug("getA1(row={}, col={})", (row, col))
+        return gspread_utils.rowcol_to_a1(row, col)
 
 
-    def X_createCell(self, row=None, col=None, a1=None):
-        raise Exception("nothing here")
 
     ####
     #

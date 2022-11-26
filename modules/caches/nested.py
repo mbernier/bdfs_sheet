@@ -21,6 +21,8 @@ class NestedCache(BdfsCache):
 
     logger_name = "NestedCache"
 
+    _height = 0
+
     # locations are the indexes for the FlatCache
     #   We will make sure that they are setup properly as the caches are built
     def __init__(self, locations, data):
@@ -47,17 +49,6 @@ class NestedCache(BdfsCache):
         self._locations = locations
 
 
-
-
-
-
-    # allows adding a new Location to the entire data set
-    def X_addLocation(self, position, newLocation):
-        # need to add to the headers in the correct location
-        # need to add to all the rows, with the location indicated
-        sys.exit()
-
-
     ####
     #
     # Rows
@@ -66,14 +57,16 @@ class NestedCache(BdfsCache):
 
     # check if the row exists already
     def __rowExists(self, row):
-
+        self.debug("__rowExists(row={})".format(row))
         return (0 <= row < self.height())
+
 
     # used in order to setup the locations row, so that we can check against it in the future
     def __addLocations(self, locations):
         self.debug("__addLocations({})".format(locations))
         newRow = self.__createLocationsRowItem(locations)
         self.appendRow(newRow)
+
 
     # formats the data for the locations row and returns a FlatCache item of that data
     def __createLocationsRowItem(self, locations):
@@ -139,6 +132,7 @@ class NestedCache(BdfsCache):
     def appendRow(self, flatCacheItem):
         self.debug("append({})", flatCacheItem)
         self._storage.insert(len(self._storage),flatCacheItem)
+        self.__increaseHeight()
 
 
 
@@ -146,67 +140,44 @@ class NestedCache(BdfsCache):
 
 
 
-    # allows inserting a new row into the cache
-    def X_insertRow(self, row, rowItem, updateCache = True):
-        if type(rowItem) != Flatcache:
-            raise NestedCacheException("When inserting a Row, FlatCache was expected {} was found".format(type(rowItem)))
+    # # allows inserting a new row into the cache
+    # def X_insertRow(self, row, rowItem, updateCache = True):
+    #     if type(rowItem) != Flatcache:
+    #         raise NestedCacheException("When inserting a Row, FlatCache was expected {} was found".format(type(rowItem)))
 
-        height = self.height()
+    #     height = self.height()
 
-        if height < row-1:
-            diff = row - height
-            newRows = [data]
-            for i in range(diff):
-                new.insert(0, None)
-            self.extend(newRows)
-        else:
-            self._storage.insert(row, rowItem)
+    #     if height < row-1:
+    #         diff = row - height
+    #         newRows = [data]
+    #         for i in range(diff):
+    #             new.insert(0, None)
+    #         self.extend(newRows)
+    #     else:
+    #         self._storage.insert(row, rowItem)
 
-        return list
+    #     self.__increaseHeight()
 
-    # adds rows to the end of _storage
-    def X_extendRows(self, rows):
-        self.debug("extend({})".format(rows))
-        self._storage.extend(rows)
-
-    # handle passing in data, creating the row, and storing it. 
-    # replace other functionality that does this
-    # Then replace the functionality in Data() that does this with this call
-    def X_addRowFromData(self, row, data):
-        self.debug("addRowFromData(row={},data={})".format(row, data))
-        newRow = FlatCache.create(data)
-        self._addRow(row=row,flatCacheItem=newRow)
-
-    def X__addRow(self, row, flatCacheItem):
-        self.debug("addRow(row={},flatCacheItem={})".format(row, flatCacheItem))
-        if None == row:
-            raise NestedCacheException("Now row number was passed to addRow()")
-        if self.__rowExists(row):
-            raise NestedCacheException("Row {} already exists, cannot add a new row at {}", (row, row))
-
-        self._storage.insert(row,flatCacheItem)
-
-    # Replace some data into the flat cache at the row specified
-    def X_updateRow(self, row, location, data):
-        self.debug("update(row={}, location={}, data={})", (row, location, data))
-        self._storage[row].update(location=location, data=data)
+    #     return list
 
 
-    # set the data in the row and location to None
-    def X_unsetRow(self, row):
-        self.debug("unset(row={})", row)
-        if self.getRow(row=row):
-            self._storage[row].unset()
 
-    def X_deleteRow(self, row):
-        self.debug("deleteRow(row={})", row)
-        del self._storage[row]
+
 
     ####
     #
     # Column Methods
     #
     ####
+
+    def deleteColumns(self, index, header):
+        # if both header and index, check that they point to eachother in the data store - otherwise raise Exception
+
+        # if they are not both there, get the index or the header thats missing from data store
+
+        # remove the header and index from each row of the data store
+            #How does this affect the indexes that are stored -- do we need to decrement them?
+        raise Exception("deleteColumsn is not implented yet")
 
 
     ####
@@ -222,45 +193,6 @@ class NestedCache(BdfsCache):
         else:
             return None
 
-    # Set some data into the flat cache at the row specified, if it's empty, otherwise error out
-    def X_setItem(self, row, location, data):
-        self.debug("set(row={}, location={}, data={})", (row, location, data))
-
-        self.__writeItem(row=row, location=location, data=data)
-
-
-    # use the flatCache.set() method on the data in this cache's row
-    def X___writeItem(self, row, location, data):
-        self.debug("__write(row={}, location={}, data={})", (row, location, data))
-        print(self._storage)
-        for rowIndex in range(0, row+1):
-            self.debug("On Row {}", rowIndex)
-            # check this row, if it exists, do nothing
-            #   if it isn't set, but isn't our row, then set to None. Otherwise. create a Flat Cache there
-            if None == self.getRow(rowIndex):
-                if row != rowIndex:
-                    self.debug("Appending an empty row to storage at row {}",rowIndex)
-                    self._storage.insert(rowIndex,{})
-                else:
-                    self.debug("Appending a FlatCache obj to storage at row {}",rowIndex)
-                    self._storage.insert(rowIndex,FlatCache())
-        
-        print(self._storage)
-
-        # give the data to the flatCache to handle\
-        self.set(row=row, location=location, data=data)
-
-
-    # set the data in the row and location to None
-    def X_unsetItem(self, row, location):
-        self.debug("unset(row={}. location={})", (row, location))
-        if self.get(row=row, location=location):
-            self._storage[row].unset(location)
-
-
-    def X_deleteItem(self, row, location):
-        self.debug("delete(row={},location={})", (row,location))
-        self._storage[row].delete(location=location)
 
 
     ####
@@ -270,7 +202,7 @@ class NestedCache(BdfsCache):
     ####
 
     # nuclear option   
-    def X_clear(self):
+    def clear(self):
         self.debug("clear()")
         self._storage = []
 
@@ -278,19 +210,27 @@ class NestedCache(BdfsCache):
         self.debug("height()")
         return len(self._storage)
 
+    def __increaseHeight(self, increaseBy = 1):
+        self.debug("__increaseHeight(increaseBy={})".format(increaseBy))
+        if 0 > increaseBy:
+            raise NestedCacheException("You can only increase height by positive integers")
+        self._height += increaseBy
+
+    def __decreaseHeight(self, decreaseBy = 1):
+        self.debug("__increaseHeight(decreaseBy={})".format(increaseBy))
+        if 0 > decreaseBy:
+            raise NestedCacheException("You can only decrease height by positive integers")
+        self._height -= decreaseBy
+
+
     def width(self):
         self.debug("width()")
         return self.getRow(0).size()
 
-    # will return only the count of the data, will not include the header row
-    #   This will create an off by one confusion at some point...
-    def X_dataSize(self):
-        return len(self._storage)
 
-    def X_totalSize(self):
-        return self.dataSize() + 1
 
     def __str__(self) -> str:
+        self.debug("__str__()")
         output = "NestedCache: \n"
         for item in self.getStorage():
             output += "\t"+str(item) + "\n"
