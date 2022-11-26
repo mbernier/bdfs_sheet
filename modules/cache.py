@@ -7,10 +7,7 @@ from modules.caches.exception import CacheException
 class BdfsCache(BaseClass):
 
     logger_name = "BdfsCache"
-
-    def __init__(self):
-        self._storage = {}
-        pass
+    _storage = {}
 
     def set(self):
         self.debug("set()")

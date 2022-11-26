@@ -12,6 +12,9 @@ class FlatCache(BdfsCache):
 
     _storage = {}
 
+    def __init__(self):
+        self._storage = {}
+
     # put data in a location if it doesn't have that data, if it does, error out
     def set(self, location, data):
         self.debug("set(location={}, data={})", (location, data))
@@ -68,6 +71,7 @@ class FlatCache(BdfsCache):
 
     def size(self):
         return len(self.getStorage())
+
 
     # creates a new flatcache item from some data
     @staticmethod

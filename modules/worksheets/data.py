@@ -135,22 +135,60 @@ class WorksheetData(BaseClass):
             return end-start
 
 
-    def removeHeader(self, index):
+    def removeHeader(self, index=None, header=None):
         self.debug("removeHeader(index={})".format(index))
-        # get the header name
-        headerName = self.__removeFrom_headers_byIndex(index)
+
+        # causes lookup of the name from the index
+        if None != index:
+            # get the header name
+            header = self.__removeHeader_byIndex(index)
+        elif None != header:
+            self.__removeHeader_byName(header)
+        else:
+            raise new Exception("You must pass either an index or a header to removeHeader()")
+
+
+    # removed the header from the headers list
+    # @return the value from the headers list that was removed
+    def __removeHeader_byIndex(self, index):
+        self.debug("__removeHeader_ByIndex(index={})".format(index))
+        header = self._headers.pop(index)
+
+        self.__removeHeader(index=index, header=header)
+        return header
+
+
+    def __removeHeader_byName(self, header):
+        self.debug("__removeHeader_ByName(header={})".format(header))
+        index = self._headers.index(header)
+        self._headers.pop(index)
+
+        self.__removeHeader(index=index, header=header)
+        return header
+
+
+    def __removeHeader(self, index, header):
+        self.debug("__removeHeader(index={}, header={})", (index, header))
 
         # remove the name from all the places
-        self.__removeFrom_uniqueHeaders_byName(headerName)
-        self.__removeFrom_duplicateHeaders_byName(headerName)
-        self.__removeFrom_emptyHeaders_byIndex(index)
+        self.__removeHeaderFrom_uniqueHeaders_byName(header=header)
+        
+        # remove from duplicateHeaders
+        self.__removeHeaderFrom_duplicateHeaders_byName(header=header)
 
+        # remove from emptyHeaders
+        self.__removeHeaderFrom_emptyHeaders_byIndex(index=index)
+        
         # store the removed name in the removedHeaders array
-        self.__appendRemovedHeader(headerName)
+        self.__appendRemovedHeader(header)
 
-    def __removeFrom_headers_byIndex(self, index):
-        self.debug("__removeFromHeaderByIndex(index={})".format(index))
-        return self._headers.pop(index)
+        # make sure to clean up the location storage
+        self.__removeHeaderFrom_sheetData(index=index, name=headerName)
+
+
+    def __removeHeaderFrom_sheetData(self, index, name):
+        self.debug("__removeHeaderFrom_sheetData(index={},name={})", (index, name))
+        self._sheetData.deleteColumn(index=index, location=name)
 
 
     ####

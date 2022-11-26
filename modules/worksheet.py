@@ -274,35 +274,34 @@ class Worksheet(BaseClass):
         self.debug("__getWorksheetColumnCount()")
         return self._worksheetObj.col_count
 
+    # # get rid of any trailing columns that exist
+    # # don't need todo this, because we're doing everything locally and then committing, so we don't really
+    # # care what is in the spreadsheet at the end, we will just remove it by not having it and not committing it later
+    # def removeColumns_EmptyTrailing(self):
+    #     self.debug("removeEmptyColumnsTrailing()")
 
-    def removeEmptyColumnsTrailing(self):
-        self.debug("removeEmptyColumnsTrailing()")
+    #     #we don't want to remove the last column in the data, we want the next column
+    #     dataColumnCount = self.getColumnCount() + 1
+    #     worksheetObjColumnCount = self.__getWorksheetColumnCount()
 
-        #we don't want to remove the last column in the data, we want the next column
-        dataColumnCount = self.getColumnCount() + 1
-        worksheetObjColumnCount = self.__getWorksheetColumnCount()
+    #     if worksheetObjColumnCount > dataColumnCount:
+    #         self.removeColumns(start=dataColumnCount, end=worksheetObjColumnCount)
 
-        if worksheetObjColumnCount > dataColumnCount:
-            self.removeWorksheetColumns(start=dataColumnCount, end=worksheetObjColumnCount)
-            
-
+    # wrapper function to take care of some pre-work on removing columns
     def removeColumns(self, column=None, start=None, stop=None):
-        self.debug("removeWorksheetColumns(column={},range={})", (column, range))
+        self.debug("removeColumns(column={},range={})", (column, range))
         if None != column:
             start = column
             end = column
 
         if None == start or None == end:
-            raise Exception("You must provide a start and end range for removeWorkSheetColumns()")
+            raise Exception("You must provide a start and end range for removeColumns()")
 
         self.__removeColumns_Data(start, end)
 
-    # def __removeColumns_Worksheet(self, start, end):
-    #     self.debug("__removeWorksheetColumns(start={}, end={})", (start, end))
-    #     startCell = self.getA1(1, start)
-    #     endCell = self.getA1(1, end)
-    #     self.__getWorksheetObj().delete_columns(startCell, endCell)
 
+    # remove the columns from our data storage
+    # we are not removing from the worksheet, because we need to commit() to do that
     def __removeColumns_Data(self, start, end):
         self.debug("__removeDataColumns(start={}, end={})", (start, end))
         self._sheetData.removeHeaders(start, end)
@@ -311,7 +310,11 @@ class Worksheet(BaseClass):
     def playground(self):
         self.info("# of columns in worksheet: {}".format(self.__getWorksheetColumnCount()))
         self.info("# of columns in dataStore: {}".format(self.getColumnCount()))
-        self.removeEmptyColumnsTrailing()
+
+        # we don't need to remove the empty columns at the end, because we already pulled the data
+        #   and we will commit what we want to keep, so we don't need to clean up the sheet we only need
+        #   to keep the local data clean.      
+        # self.removeEmptyColumnsTrailing()
 
         # @todo make sure that any data that gets updated in the data object have their "updated_date" field changed to time.now()
 
