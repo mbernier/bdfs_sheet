@@ -397,7 +397,10 @@ class NestedCache(BdfsCache):
         self.debug("getData(row={},location={})", (row, location))
         self.__validateRowLocationIndex(methodName="getData()", row=row, location=location, ignore="index")
         if self.__rowExists(row):
-            return self.__getItem(row=row, location=location)['data']
+            data = self.__getItem(row=row, location=location)
+            if None == data:
+                return None
+            return data['data']
         else:
             return None
 

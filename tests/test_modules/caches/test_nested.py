@@ -157,14 +157,24 @@ def test_delete2():
     assert cache.getRow(3).value() == {'d': 5}
 
 
+def test_getLocationThatExists():
+    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
+    assert cache.getData(3, "b") == 5
+
+
+def test_getLocationThatExists2():
+    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
+    assert cache.getData(row=3,location="b") == 5
+
+
 def test_getLocationThatDoesntExist():
     cache = NestedCache(['b','c','d'],[[3],[4],[5]])
-    cache.getData(3, "e")
+    assert cache.getData(3, "e") == None
 
 
 def test_getLocationThatDoesntExist2():
     cache = NestedCache(['b','c','d'],[[3],[4],[5]])
-    cache.getData(row=3,location="e")
+    assert cache.getData(row=3,location="e") == None
 
 
 
