@@ -22,15 +22,21 @@ def test_empty_cache_getData():
     assert value == None
 
 
-def test_cache_set():
+def test_cache_trySetOnNewRow():
     cache = NestedCache(['a'],[[1]])
-    value = cache.getData(1, "a")
+    cache.set(2, location="a", data=1)
+    value = cache.getData(2, "a")
     assert value == 1
 
-def test_cache_set2():
+def test_cache_trysetOnNewRow2():
     cache = NestedCache(['a'],[[1]])
-    cache.set(row=1, location="a", data=1)
-    value = cache.getData(1, "a")
+    with pytest.raises(NestedCacheException) as excinfo:
+        cache.set(row=2, location="a", data=1)
+    excinfo.value.message == "Row [2] doesn't exist, to add it use append(row,location,data)"
+    
+    cache.append(location='a', data=1)
+
+    value = cache.getData(2, "a")
     assert value == 1
 
 
@@ -40,7 +46,7 @@ def test_cache_set_again():
 
     with pytest.raises(NestedCacheException) as excinfo:
         cache.set(1, "a", 1)
-    assert excinfo.value.message == "Cache has 2 at 1:a. To update data in the cache, use update()"
+    assert excinfo.value.message == "There is already data at row:1 location:a/index:0, to change this data use update(row, location/index, data)"
 
 
 def test_cache_set_again2():
@@ -50,34 +56,40 @@ def test_cache_set_again2():
     with pytest.raises(NestedCacheException) as excinfo:
         cache.set(row=1, location="a", data=1)
     # assert excinfo.value.message == "NestedCache has 2 at a. To update data in the cache, use update()"
-    assert excinfo.value.message == "Cache has 2 at 1:a. To update data in the cache, use update()"
+    assert excinfo.value.message == "There is already data at row:1 location:a/index:0, to change this data use update(row, location/index, data)"
 
 
 def test_unset():
     cache = NestedCache(['b'],[[3]])
-    cache.unset(1, "b")
+    cache.unsetData(1, "b")
     assert None == cache.getData(1, "b")
 
 def test_unset2():
     cache = NestedCache(['b'],[[3]])
-    cache.unset(row=1, location="b")
+    cache.unsetData(row=1, location="b")
     assert None == cache.getData(row=1, location="b")
 
 
 def test_unset_fail():
     cache = NestedCache(['b'],[[3]])
-    cache.unset(1, "c")
+    cache.unsetData(1, location="c")
     assert 3 == cache.getData(1, "b")
 
 def test_unset_fail2():
     cache = NestedCache(['b'],[[3]])
-    cache.unset(row=1, location="c")
+    cache.unsetData(row=1, location="c")
     assert 3 == cache.getData(row=1, location="b")
+
+def test_unset_fail3():
+    cache = NestedCache(['b'],[[3]])
+    with pytest.raises(NestedCacheException) as excinfo:
+        cache.unset(row=1, location="c")
+    assert excinfo.value.message == "unset() is not valid for NestedCache, use either unsetRow() or unsetData()"
 
 
 def test_update():
     cache = NestedCache(['b'],[[3]])
-    cache.update(1, "b", 5)
+    cache.update(1, location="b", data=5)
     assert 5 == cache.getData(1, "b")
 
 
@@ -89,32 +101,32 @@ def test_update2():
 
 def test_update_exception():
     cache = NestedCache(['b'],[[3]])
-    with pytest.raises(FlatCacheException) as excinfo:
-        cache.update(1, "c", 5)
-    assert excinfo.value.message == "There is nothing to update at c"
+    with pytest.raises(NestedCacheException) as excinfo:
+        cache.update(1, index=2, data=5)
+    assert excinfo.value.message == "Index '2' doesn't exist, to add it use addColumn(location=)"
     assert 3 == cache.getData(1, "b")
 
 
 def test_update_exception2():
     cache = NestedCache(['b'],[[3]])
-    with pytest.raises(FlatCacheException) as excinfo:
+    with pytest.raises(NestedCacheException) as excinfo:
         cache.update(row=1,location="c",data=5)
-    assert excinfo.value.message == "There is nothing to update at c"
+    assert excinfo.value.message == "Location 'c' doesn't exist, to add it use addColumn(location=c)"
     assert 3 == cache.getData(row=1, location="b")
 
 
 def test_getAsList():
-    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
-    assert cache.getRow(1).getAsList() == [3]
-    assert cache.getRow(2).getAsList() == [4]
-    assert cache.getRow(3).getAsList() == [5]
+    cache = NestedCache(['b','c','d'],[[3],[None, 4, None],[None, None, 5]])
+    assert cache.getRow(1) == [3, None, None]
+    assert cache.getRow(2) == [None, 4, None]
+    assert cache.getRow(3) == [None, None, 5]
 
 
 def test_getAsDict():
-    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
-    assert cache.getRow(1).getAsDict() == {'b': 3}
-    assert cache.getRow(2).getAsDict() == {'c': 4}
-    assert cache.getRow(3).getAsDict() == {'d': 5}
+    cache = NestedCache(['b','c','d'],[[3],[None, 4, None],[None, None, 5]])
+    assert cache.getRow(1, asObj="dict") == {'b': 3, 'c': None, 'd': None}
+    assert cache.getRow(2, asObj="dict") == {'b': None, 'c': 4, 'd': None}
+    assert cache.getRow(3, asObj="dict") == {'b': None, 'c': None, 'd': 5}
 
 
 def test_clear():
@@ -130,31 +142,21 @@ def test_clear2():
 
 
 def test_delete():
-    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
-    assert cache.getRow(1).value() == {'b': 3}
-    assert cache.getRow(2).value() == {'c': 4}
-    assert cache.getRow(3).value() == {'d': 5}
+    cache = NestedCache(['b','c','d'],[[3, 2, 1],[4, 3, 2],[5, 4, 3]])
     cache.delete(2, "c")
-    assert 3 == cache.getData(1, "b")
-    assert 5 == cache.getData(3, "d")
     assert None == cache.getData(2, "c")
-    assert cache.getRow(1).value() == {'b': 3}
-    assert cache.getRow(2).value() == {}
-    assert cache.getRow(3).value() == {'d': 5}
+    assert cache.getRow(1) == [3, 2, 1] 
+    assert cache.getRow(3) == [5, 4, 3]
+    assert cache.getRow(2) == [4, None, 2]
 
 
 def test_delete2():
-    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
-    assert cache.getRow(1).value() == {'b': 3}
-    assert cache.getRow(2).value() == {'c': 4}
-    assert cache.getRow(3).value() == {'d': 5}
+    cache = NestedCache(['b','c','d'],[[3, 2, 1],[4, 3, 2],[5, 4, 3]])
     cache.delete(row=2, location="c")
-    assert 3 == cache.getData(row=1, location="b")
-    assert 5 == cache.getData(row=3, location="d")
+    assert cache.getRow(row=1) == [3, 2, 1]
+    assert cache.getRow(row=3) == [5, 4, 3]
+    assert cache.getRow(row=2) == [4, None, 2]
     assert None == cache.getData(row=2,location="c")
-    assert cache.getRow(1).value() == {'b': 3}
-    assert cache.getRow(2).value() == {}
-    assert cache.getRow(3).value() == {'d': 5}
 
 
 def test_getLocationThatExists():

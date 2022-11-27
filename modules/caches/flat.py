@@ -35,7 +35,7 @@ class FlatCache(BdfsCache):
     def update(self, location, data):
         self.debug("update(location={}, data={})", (location, data))
         if None == self.get(location):
-            raise FlatCacheException("There is nothing to update at {}".format(location))
+            raise FlatCacheException("There is nothing to update at position '{}'".format(location))
         self.__write(location=location, data=data)
 
 
@@ -75,10 +75,11 @@ class FlatCache(BdfsCache):
 
     # creates a new flatcache item from some data
     @staticmethod
-    def create(data):
+    def create(data=None):
         flatCache = FlatCache()
-        for index in data:
-            flatCache.set(index, data[index])
+        if not None == data:
+            for index in data:
+                flatCache.set(index, data[index])
         return flatCache
 
     def __str__(self) -> str:
