@@ -147,3 +147,39 @@ class BaseClass:
     # cheater method to make setting debug statements a little faster
     def __className(self):
         return self.__class__.__name__
+
+
+    # created the debug string, by calling like so:
+    # e.g. self.__method("nameofMethod", locals())
+    def _method(self, method, args, kwargs):
+        self.debug(self.__prepareMethodString(method, args, kwargs)) 
+
+
+    def __prepareMethodString(self, method, args, kwargs):
+        tupleAdditions = self.__createTupleAdditions(args)
+        methodAdditions = self.__createMethodAdditions(kwargs)
+        return self.__createMethodString(method, tupleAdditions, methodAdditions)
+
+
+    def __createTupleAdditions(self, args):
+        if () == args: return []
+        return list(args)
+
+
+    def __createMethodAdditions(self, data):
+        if {} == data: return []
+
+        methodAdditions = []            
+        for paramName in data:
+            methodAdditions.append(self.__createParamDataValueString(paramName=paramName, paramData=data[paramName]))
+        return methodAdditions
+
+    def __createParamDataValueString(self, paramName, paramData):
+        return "{}={}".format(paramName, paramData)
+
+    def __createMethodString(self, methodName: str, tupleAdditions, methodAdditions: list):
+        # print(tupleAdditions)
+        # print(methodAdditions)
+        additions = tupleAdditions + methodAdditions
+        # print(additions)
+        return "{}({})".format(methodName, (",").join(map(str, additions)))
