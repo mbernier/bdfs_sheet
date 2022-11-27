@@ -13,10 +13,6 @@ if __name__ == "__main__":
     # Bdfs Sheet Processor functionality
     # run = BdfsInventory_SheetProcessor()
     # run.main(sys.argv[1:]) 
-
-    cache = NestedCache(['b','c','d'],[[3],[3,4],[5,1,5]])
-    cache.set(row=3,location="d",data=4)
-    cache.delete(row=2, location="c")
-    assert 2 == cache.width()
-    cache.delete(row=1, location="c")
-    assert 1 == cache.width()
+    cache = NestedCache(['b','c','d'],[[3],[4],[4]])
+    cache.deleteRow(2)
+    print(cache.getRow(2))

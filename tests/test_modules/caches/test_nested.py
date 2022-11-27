@@ -156,57 +156,107 @@ def test_delete2():
     assert cache.getRow(2).value() == {}
     assert cache.getRow(3).value() == {'d': 5}
 
+
+def test_getLocationThatDoesntExist():
+    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
+    cache.getData(3, "e")
+
+
+def test_getLocationThatDoesntExist2():
+    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
+    cache.getData(row=3,location="e")
+
+
+
 def test_getRow():
     cache = NestedCache(['b','c','d'],[[3],[4],[5]])
-    cache.set(3, "e", 6)
-    assert cache.getRow(3).value() == {'d': 5, 'e': 6}
+    assert cache.getRow(3) == [5, None, None]
 
 def test_getRow2():
     cache = NestedCache(['b','c','d'],[[3],[4],[5]])
-    cache.set(row=3,location="e",data=6)
-    assert cache.getRow(row=3).value() == {'d': 5, 'e': 6}
+    assert cache.getRow(row=3) == [5, None, None]
+
+def test_getRowAsList():
+    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
+    assert cache.getRow(row=3, asObj="list") == [5, None, None]
+
+
+def test_getRowAsDict():
+    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
+    assert cache.getRow(3, asObj="dict") == {'b': 5, 'c': None, 'd': None}
+
+def test_getRowAsDict2():
+    cache = NestedCache(['b','c','d'],[[3],[4],[5]])
+    assert cache.getRow(row=3, asObj="dict") == {'b': 5, 'c': None, 'd': None}
+
+
 
 
 def test_unsetRow():
     cache = NestedCache(['b','c'],[[3],[4]])
     cache.unsetRow(2)
-    assert cache.getRow(2).value() == {}
+    assert cache.getRow(2) == [None, None]
 
 def test_unsetRow2():
     cache = NestedCache(['b','c'],[[3],[4]])
     cache.unsetRow(row=2)
-    assert cache.getRow(row=2).value() == {}
+    assert cache.getRow(row=2) == [None, None]
+
+def test_unsetRow_asDict():
+    cache = NestedCache(['b','c'],[[3],[4]])
+    cache.unsetRow(2)
+    assert cache.getRow(2, asObj="dict") == {'b':None, 'c':None}
+
+def test_unsetRow_asDict2():
+    cache = NestedCache(['b','c'],[[3],[4]])
+    cache.unsetRow(row=2)
+    assert cache.getRow(row=2, asObj="dict") == {'b':None, 'c':None}
+
 
 
 def test_deleteRow():
     cache = NestedCache(['b','c','d'],[[3],[4],[4]])
     cache.deleteRow(2)
-    assert cache.getRow(2).value() == {'d':4}
+    assert cache.getRow(2) == [4, None, None]
+
+def test_deleteRow_getAsDict():
+    cache = NestedCache(['b','c','d'],[[3],[4],[4]])
+    cache.deleteRow(2)
+    assert cache.getRow(2, asObj="dict") == {'b': 4, 'c': None, 'd': None}
 
 
+# Adding data to columns that exist should change nothing about the width
 def test_width_fromAdds():
     cache = NestedCache(['b','c','d'],[[3]])
-    assert 1 == cache.width()
-    cache.set(row=2,location="c",data=4)
-    assert 2 == cache.width()
-    cache.set(row=3,location="d",data=4)
+    assert 3 == cache.width()
+    cache.set(row=1,location="c",data=4)
+    assert 3 == cache.width()
+    cache.set(row=1,location="d",data=4)
     assert 3 == cache.width()
 
 
-def test_width_fromDeletes():
+
+# adding columns that don't exist should fail gloriously
+def test_fail_fromAddingColsThatDontExist():
+    # Adding these should change nothing about the width
+    cache = NestedCache(['b','c','d'],[[3]])
+    with pytest.raises(NestedCacheException) as excinfo:
+        cache.set(row=1,location="e",data=4)
+    assert excinfo.value.message == "Location 'e' doesn't exist, to add it - addLocation()"
+
+
+def test_height_fromDeletes():
     cache = NestedCache(['b','c','d'],[[3],[3,4],[5,1,5]])
     with pytest.raises(NestedCacheException) as excinfo:
         cache.set(row=3,location="d",data=4)
     assert excinfo.value.message == "There is already data at row:3 location:d/index:2, to change this data use update(row, location/index, data)"
     
-    cache.delete(row=2, location="c")
-    assert 2 == cache.width()
-    cache.delete(row=1, location="c")
-    assert 1 == cache.width()
+    cache.deleteRow(row=2)
+    print(cache.height())
+    assert 2 == cache.height()
+    cache.deleteRow(row=1)
+    assert 1 == cache.height()
 
-
-
-# def test_height():
 
 def test_addUnrecognizedLocation():
     cache = NestedCache(['b'],[[3]])
@@ -225,3 +275,6 @@ def test_addUnrecognizedLocation():
 # def test_deleteColumn_noLocation():
 
 # def test_deleteRow():
+
+# try to delete row 0
+# try to delete item from row 0
