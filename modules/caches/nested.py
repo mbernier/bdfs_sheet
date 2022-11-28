@@ -4,6 +4,7 @@ from modules.caches.flat import FlatCache
 from modules.caches.exception import NestedCacheException, FlatCacheException
 from pprint import pprint
 from collections import OrderedDict
+from modules.decorators import debug, validate
 
 # @todo add a toString method
 
@@ -29,11 +30,14 @@ class NestedCache(BdfsCache):
 
     # locations are the indexes for the FlatCache
     #   We will make sure that they are setup properly as the caches are built
+    @debug
+    @validate('locations', ['notNone'])
+    @validate('data', ['notNone'])
     def __init__(self, locations, data):
         self.debug("__init__()")
 
-        self.__validateData(data=locations, methodName="__init__()", dataName="locations")
-        self.__validateData(data=data, methodName="__init__()")
+        # # self.__validateData(data=locations, methodName="__init__()", dataName="locations")
+        # # self.__validateData(data=data, methodName="__init__()")
         
         self._storage = []
 
@@ -45,16 +49,12 @@ class NestedCache(BdfsCache):
     # Setup methods
     #
     ####
-
+    @debug
+    @validate('locations', ['notNone'])
+    @validate('data', ['notNone'])
     def __setup(self, locations, data):
-        self.__setupMethod(validate=['data:locations', 'data'], params=locals(), methodName="__setup")
-
-        self.__validateData(data=locations, methodName="__setup()", dataName="locations")
-        self.__validateData(data=data, methodName="__setup()")
-
         self.__addLocations(locations)
         self.__addDataRowsWhereHeadersAreConfirmed(data)
-
 
 
     ####
@@ -62,15 +62,14 @@ class NestedCache(BdfsCache):
     # Locations functionality
     #
     ####
-
+    @debug
     def __getLocations(self):
-        self.__setupMethod(methodName="\t__getLocations")
-
         return self._locations
 
     # create the available locations from a list
+    @debug
+    @validate('locations', ['notNone'])
     def __setLocations(self, locations):
-        self.__setupMethod(validate=['data:locations'], params=locals(), methodName="__setLocations")
 
         if [] != self.__getLocations():
             raise NestedCacheException("The locations are already set, we shoudn't reset them this way.")
@@ -78,9 +77,11 @@ class NestedCache(BdfsCache):
 
 
     # do we know about this location?
+    @debug
+    @validate('location', ['orExists:index', 'locationExists'])
+    @validate('index', ['orExists:location'])
     def __locationExists(self, location=None, index=None):
-        self.debug("\t__locationExists(location={})".format(location))
-        self.__validateLocationIndex(methodName="__locationExists()", location=location, index=index)
+        # self.debug("\t__locationExists(location={})".format(location))
         
         print(self.__getLocations())
 
@@ -90,10 +91,12 @@ class NestedCache(BdfsCache):
             return True
         return False
 
-
+    @debug
+    @validate('location', ['orExists:index', 'locationExists'])
+    @validate('index', ['orExists:location'])
     def __getLocationIndex(self, location=None, index=None):
-        self.debug("\t__getLocationIndex(location={}, index={})", (location, index))
-        self.__validateLocationIndex(methodName="__getLocationIndex()", location=location, index=index)
+        # self.debug("\t__getLocationIndex(location={}, index={})", (location, index))
+        # self.__validateLocationIndex(methodName="__getLocationIndex()", location=location, index=index)
 
 
         if None == location and None == index:
@@ -117,17 +120,20 @@ class NestedCache(BdfsCache):
     ####
 
     # check if the row exists already
+    @debug
+    @validate('row', ['notNone'])
     def __rowExists(self, row):
-        self.debug("\t__rowExists(row={})".format(row))
+        # self.debug("\t__rowExists(row={})".format(row))
         # This method we are in exists to validate rows... so we are OK to check any row, to see if it exists
-        #       self.__validateRow(row=row, methodName="__rowExists()")
+        #       # self.__validateRow(row=row, methodName="__rowExists()")
         return (0 <= row <= self.height())
 
-
+    @debug
+    @validate('locations', ['notNone'])
     # used in order to setup the locations row, so that we can check against it in the future
     def __addLocations(self, locations):
-        self.debug("\t__addLocations({})".format(locations))
-        self.__validateData(methodName="__addLocations()", data=locations, dataName="locations")
+        # self.debug("\t__addLocations({})".format(locations))
+        # self.__validateData(methodName="__addLocations()", data=locations, dataName="locations")
 
         newRow = self.__createLocationsRowItem(locations)
         self.debug("\t\tnewRow: {}".format(newRow))
@@ -136,10 +142,11 @@ class NestedCache(BdfsCache):
 
 
     # formats the data for the locations row and returns a FlatCache item of that data
+    @debug
+    @validate('locations', ['notNone'])
     def __createLocationsRowItem(self, locations):
-        self.debug("\t__createLocationsRowItem({})".format(locations))
-
-        self.__validateData(methodName="__addLocations()", data=locations, dataName="locations")
+        # self.debug("\t__createLocationsRowItem({})".format(locations))
+        # self.__validateData(methodName="__addLocations()", data=locations, dataName="locations")
 
         newRowData = {}
         for index, location in enumerate(locations):
@@ -161,9 +168,11 @@ class NestedCache(BdfsCache):
     
     #Allows us to look up the location string by an index
     # this is used when we are looping through data and want to know what the header of the data is
+    @debug
+    @validate('index', ['notNone'])
     def __getLocationFromIndex(self, index):
-        self.debug("\t__getLocationFromIndex(index={})".format(index))
-        self.__validateLocationIndex(methodName="__setRow()", index=index, ignore="location")
+        # self.debug("\t__getLocationFromIndex(index={})".format(index))
+        # self.__validateLocationIndex(methodName="__setRow()", index=index, ignore="location")
 
         if not self.__locationExists(index=index):
             raise NestedCacheException("Index '{}' doesn't exist, to add it use addColumn(location=)".format(index))
@@ -172,9 +181,11 @@ class NestedCache(BdfsCache):
         return self.__getLocations()[index]
 
     # Looks into the locations array and then returns the index of the item in the array
+    @debug
+    @validate('location', ['notNone'])
     def __getIndexFromLocation(self, location):
-        self.debug("\t__getLocationFromIndex(location={})".format(location))
-        self.__validateLocationIndex(methodName="__getIndexFromLocation()", location=location, ignore="index")
+        # self.debug("\t__getLocationFromIndex(location={})".format(location))
+        # self.__validateLocationIndex(methodName="__getIndexFromLocation()", location=location, ignore="index")
 
         if not self.__locationExists(location=location):
             raise NestedCacheException("Location '{}' doesn't exist, to add it use addColumn(location={})".format(location, location))
@@ -187,11 +198,41 @@ class NestedCache(BdfsCache):
         return locationIndex
 
 
+
+
+
+
+
+
+
+
+
+
+' NEED TO FINISH decorators on these methods '
+sys.exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     # allows adding multiple rows of data at the same time.
     # do not use this unless you confirmed the headers match what is expected
     def __addDataRowsWhereHeadersAreConfirmed(self, data):
         self.debug("\t__addDataRowsWhereHeadersAreConfirmed({})".format(data))
-        self.__validateData(data=data, methodName="__addDataRowsWhereHeadersAreConfirmed()")
+        # self.__validateData(data=data, methodName="__addDataRowsWhereHeadersAreConfirmed()")
         for rowData in data:
             newRow = self.__createRowItem_FromData_WhereHeadersAreConfirmed(rowData)
             self.appendRow(newRow)
@@ -202,7 +243,7 @@ class NestedCache(BdfsCache):
     # Only use this when you KNOW that the headers and the data match (like on an insert where headers are passed)
     def __createRowItem_FromData_WhereHeadersAreConfirmed(self, data):
         self.debug("\t__createRowItem_FromData_WhereHeadersAreConfirmed({})".format(data))
-        self.__validateData(data=data, methodName="__createRowItem_FromData_WhereHeadersAreConfirmed()")
+        # self.__validateData(data=data, methodName="__createRowItem_FromData_WhereHeadersAreConfirmed()")
 
         newRowData = {}
         for index, item in enumerate(data):
@@ -219,7 +260,7 @@ class NestedCache(BdfsCache):
     #   returns the FlatCache object in this location
     def getRow(self, row, asObj="list"):
         self.debug("getRow(row={})", row)
-        self.__validateRow(row=row, methodName="getRow()")
+        # self.__validateRow(row=row, methodName="getRow()")
 
         if self.__rowExists(row):
             if asObj == "list":
@@ -233,7 +274,7 @@ class NestedCache(BdfsCache):
 
     def __getRowAsList(self, row):
         self.debug("__getRowAsList(row={})", row)
-        self.__validateRow(row=row, methodName="__getRowAsList()")
+        # self.__validateRow(row=row, methodName="__getRowAsList()")
         obj = []
         row = self.__getRawRow(row)
         for location in self.__getLocations():
@@ -246,7 +287,7 @@ class NestedCache(BdfsCache):
 
     def __getRowAsDict(self, row):
         self.debug("__getRowAsDict(row={})", row)
-        self.__validateRow(row=row, methodName="__getRowAsDict()")
+        # self.__validateRow(row=row, methodName="__getRowAsDict()")
         obj = {}
         row = self.__getRawRow(row)
         for location in self.__getLocations():
@@ -260,7 +301,7 @@ class NestedCache(BdfsCache):
 
     def __getRawRow(self, row):
         self.debug("__getRawRow(row={})".format(row))
-        self.__validateRow(row=row, methodName="getRow()")
+        # self.__validateRow(row=row, methodName="getRow()")
 
         if self.__rowExists(row):
             return self._storage[row]
@@ -272,10 +313,10 @@ class NestedCache(BdfsCache):
     def set(self, row, location, data):
         self.debug("set(row={},location={},data={})", (row,location,data))
 
-        self.__validateRowLocationIndex(methodName="set()", row=row, location=location, ignore="index")
+        # self.__validateRowLocationIndex(methodName="set()", row=row, location=location, ignore="index")
         
         # it is valid for data == None here
-        # self.__validateData(data=data, methodName="set()")
+        # # self.__validateData(data=data, methodName="set()")
 
         if not self.__rowExists(row):
             raise NestedCacheException("Row [{}] doesn't exist, to add it use append(row,location,data)".format(row))
@@ -287,8 +328,8 @@ class NestedCache(BdfsCache):
 
     def __setRow(self, row, index=None, location=None, data=None):
         self.debug("\t__setRow(row={}, index={}, location={}, data={})", (row, index, location, data))
-        self.__validateRowLocationIndex(methodName="__setRow()", row=row, location=location, index=index)
-        self.__validateData(data=data, methodName="__setRow()")
+        # self.__validateRowLocationIndex(methodName="__setRow()", row=row, location=location, index=index)
+        # self.__validateData(data=data, methodName="__setRow()")
         
         location, index = self.__getLocationIndex(index = index, location=location)
 
@@ -306,19 +347,19 @@ class NestedCache(BdfsCache):
     def appendRow(self, location=None, index=None, data=None):
         self.debug("appendRow(location={}, index={}, data={})", (location, index, data))
 
-        self.__validateLocationIndex(methodName="appendRow()", location=location, index=index)
+        # self.__validateLocationIndex(methodName="appendRow()", location=location, index=index)
 
-        self.__validateData(methodName="appendRow()", data=data)
+        # self.__validateData(methodName="appendRow()", data=data)
 
         newRowData = self.__createRowItemData(location=location, index=index, data=data)
-        flatCache = self.__createRowObject(newDataRow)
+        flatCache = self.__createRowObject(newRowData)
 
         self.__appendRow(flatCache)
 
 
     def __appendRow(self, flatCacheItem:FlatCache):
         self.debug("__appendRow(flatCacheItem={})".format(flatCacheItem))
-        self.__validateData(methodName="__appendRow()", data=flatCacheItem, dataName="flatCacheItem")
+        # self.__validateData(methodName="__appendRow()", data=flatCacheItem, dataName="flatCacheItem")
 
         if type(flatCacheItem) != FlatCache:
             raise NestedCacheException("FlatCache item expected in __appendRow(), received ''".format(type(flatCacheItem)))
@@ -341,10 +382,10 @@ class NestedCache(BdfsCache):
     def __createRowItemData(self, location=None, index=None, data=None):
         self.debug("\t__createRowItemData(location={}, index={}, data={})", (location, index, data))
         
-        self.__validateLocationIndex(methodName="__createRowItemData()", location=location, index=index)
+        # self.__validateLocationIndex(methodName="__createRowItemData()", location=location, index=index)
 
         # It is completely valid for data to be == None here, if there is no data in a specific location        
-        # self.__validateData(data=data, methodName="__createRowItemData()")
+        # # self.__validateData(data=data, methodName="__createRowItemData()")
 
         newRowData = {}
 
@@ -368,7 +409,7 @@ class NestedCache(BdfsCache):
 
     def deleteRow(self, row):
         self.debug("deleteRow(row={})".format(row))
-        self.__validateRow(methodName="deleteRow()", row=row)
+        # self.__validateRow(methodName="deleteRow()", row=row)
 
         self.info("deleting: {}".format(self._storage.pop(row)))
         self.__decreaseHeight()
@@ -376,7 +417,7 @@ class NestedCache(BdfsCache):
 
     def unsetRow(self, row):
         self.debug("unsetRow(row={})".format(row))
-        self.__validateRow(methodName="unsetRow()", row=row)
+        # self.__validateRow(methodName="unsetRow()", row=row)
 
         self.info("unsetting row: {}".format((row)))
         # call the flatCache unset method for this row
@@ -393,7 +434,7 @@ class NestedCache(BdfsCache):
     def deleteColumn(self, index=None, location=None):
         self.debug("deleteColumn(index={},location={})",(index, location))
 
-        self.__validateRowLocationIndex(methodName="()", row=row, location=location, index=index)
+        # self.__validateRowLocationIndex(methodName="()", row=row, location=location, index=index)
 
         location, index = self.__getLocationIndex(location=location, index = index)
 
@@ -407,7 +448,7 @@ class NestedCache(BdfsCache):
     # remove both the index and location from all rows in the sheetData
     def __removeHeaderIndexes(index, location):
         self.debug("\t__removeHeaderIndexes(index={},location={})", (index, location))
-        self.__validateRowLocationIndex(methodName="__removeHeaderIndexes()", row=row, location=location, ignore="index")
+        # self.__validateRowLocationIndex(methodName="__removeHeaderIndexes()", row=row, location=location, ignore="index")
 
         # delete the header from every single row in the storage
         for row in range(0, self.height()):
@@ -423,7 +464,7 @@ class NestedCache(BdfsCache):
     # uses the dict get() to return None or the value if the item exists
     def getData(self, row, location):
         self.debug("getData(row={},location={})", (row, location))
-        self.__validateRowLocationIndex(methodName="getData()", row=row, location=location, ignore="index")
+        # self.__validateRowLocationIndex(methodName="getData()", row=row, location=location, ignore="index")
         if self.__rowExists(row):
             data = self.__getItem(row=row, location=location)
             print(data)
@@ -436,7 +477,7 @@ class NestedCache(BdfsCache):
 
     def __getItem(self, row, location):
         self.debug("\t__getItem(row={},location={})", (row, location))
-        self.__validateRowLocationIndex(methodName="__getItem()", row=row, location=location, ignore="index")
+        # self.__validateRowLocationIndex(methodName="__getItem()", row=row, location=location, ignore="index")
         if self.__rowExists(row):
             return self.__getRawRow(row).get(location)
         else:
@@ -446,13 +487,13 @@ class NestedCache(BdfsCache):
     # wrapper for deleteItem
     def delete(self, row, location=None, index=None):
         self.debug("delete(row={}, location={}, index={})", (row, location, index))
-        self.__validateRowLocationIndex(methodName="delete()", row=row, location=location, index=index)
+        # self.__validateRowLocationIndex(methodName="delete()", row=row, location=location, index=index)
         self.deleteItem(row=row, location=location, index=index)
 
 
     def deleteItem(self, row, location=None, index=None):
         self.debug("deleteItem(row={}, location={}, index={})", (row, location, index))
-        self.__validateRowLocationIndex(methodName="deleteItem()", row=row, location=location, index=index)
+        # self.__validateRowLocationIndex(methodName="deleteItem()", row=row, location=location, index=index)
         if 0 == row:
             raise NestedCacheException("You cannot delete from row[0], if you want to modify locations, use deleteColumn()")
         
@@ -465,10 +506,10 @@ class NestedCache(BdfsCache):
 
     def update(self, row, index=None, location=None, data=None):
         self.debug("update(row={}, index={}, location={}, data={})", (row, index, location, data))
-        self.__validateRowLocationIndex(methodName="__setRow()", row=row, location=location, index=index)
+        # self.__validateRowLocationIndex(methodName="__setRow()", row=row, location=location, index=index)
         
         # it is completely valid for data == None
-        # self.__validateData(data=data, methodName="__setRow()")
+        # # self.__validateData(data=data, methodName="__setRow()")
 
         location, index = self.__getLocationIndex(location=location, index = index)
 
@@ -486,7 +527,7 @@ class NestedCache(BdfsCache):
     def unsetData(self, row, location=None, index=None):
         self.debug("unsetData(row={}, location={}, index={})", (row, location, index))
 
-        self.__validateRowLocationIndex(methodName="unsetData()", row=row, location=location, index=index)
+        # self.__validateRowLocationIndex(methodName="unsetData()", row=row, location=location, index=index)
 
         self._storage[row].unset(location=location)
         self._storage[row].unset(location=index)
@@ -506,13 +547,18 @@ class NestedCache(BdfsCache):
         self.debug("height()")
         # decrement bc the user doesn't need to know we are overloading the 0th row
         return (self._height - 1)
-
+    
+    @debug
+    @validate('increaseBy', ['notNone','gt:0'])
     def __increaseHeight(self, increaseBy = 1):
         self.debug("\t__increaseHeight(increaseBy={})".format(increaseBy))
         if 0 > increaseBy:
             raise NestedCacheException("You can only increase height by positive integers")
         self._height += increaseBy
 
+
+    @debug
+    @validate('decreaseBy', ['notNone','gt:0'])
     def __decreaseHeight(self, decreaseBy = 1):
         self.debug("\t__increaseHeight(decreaseBy={})".format(decreaseBy))
         if 0 > decreaseBy:
@@ -562,148 +608,145 @@ class NestedCache(BdfsCache):
             output.append(rowData)
         return output
 
-    ####
-    #
-    # Validation Methods
-    #
-    ####
+    # ####
+    # #
+    # # Validation Methods
+    # #
+    # ####
 
-    # lots of lines of code to cleanup the other methods in this class
-    # checks row, location, data, and allows for checking the row or location exists all with passing some basic config
-    #   e.g. self.__setupMethod(methodName="someMethod()", validate=['location', 'row'], params=locals())
-    # copypaste version:
-    #       self.__setupMethod(methodName="()", validate=[], params=locals())
-    def __setupMethod(self, methodName=None, validate=[], params=None):
-        self.debug("__setupMethod(methodName={}, validate={}, params={}", (methodName, validate, params))
+    # # lots of lines of code to cleanup the other methods in this class
+    # # checks row, location, data, and allows for checking the row or location exists all with passing some basic config
+    # #   e.g. # self.__setupMethod(methodName="someMethod()", validate=['location', 'row'], params=locals())
+    # # copypaste version:
+    # #       # self.__setupMethod(methodName="()", validate=[], params=locals())
+    # def __setupMethod(self, methodName=None, validate=[], params=None):
+    #     self.debug("__setupMethod(methodName={}, validate={}, params={}", (methodName, validate, params))
 
-        ####
-        #
-        # Setup the methodName and send a Debug Message if we have it
-        #
-        ####
-        if None == methodName:
-            raise NestedCacheException("methodName is required for __setupMethod() it was not found") 
-        else:
-            if "__" in methodName:
-                methodName += "\t"
+    #     ####
+    #     #
+    #     # Setup the methodName and send a Debug Message if we have it
+    #     #
+    #     ####
+    #     if None == methodName:
+    #         raise NestedCacheException("methodName is required for __setupMethod() it was not found") 
+    #     else:
+    #         if "__" in methodName:
+    #             methodName += "\t"
 
-        if [] != validate and None == params: # we have validations to run, but params are not passed
+    #     if [] != validate and None == params: # we have validations to run, but params are not passed
             
-            raise NestedCacheException("'{}' validations are requested in __setupMethod(), but params were not passed".format(validate))
-        elif [] == validate:  # there's nothing to validate
+    #         raise NestedCacheException("'{}' validations are requested in __setupMethod(), but params were not passed".format(validate))
+    #     elif [] == validate:  # there's nothing to validate
             
-            return
-        else: # validations and params are passed
-            ####
-            #
-            # What are we going to check and setup params
-            #
-            ####
+    #         return
+    #     else: # validations and params are passed
+    #         ####
+    #         #
+    #         # What are we going to check and setup params
+    #         #
+    #         ####
 
-            #param          paramExistsInValidate       addToMethodName #return the updated validate object
-            row,            rowInValidate,              rowMethod,      validate = self.__checkSetupMethodParams(paramName="row",            validate=validate, params=params)
-            _,              rowExistsInValidate,        _,              validate = self.__checkSetupMethodParams(paramName="rowExists",      validate=validate, params=params)
-            location,       locationInValidate,         locationMethod, validate = self.__checkSetupMethodParams(paramName="location",       validate=validate, params=params)
-            _,              locationExistsInValidate,   _,              validate = self.__checkSetupMethodParams(paramName="locationExists", validate=validate, params=params)
-            index,          indexInValidate,            indexMethod,    validate = self.__checkSetupMethodParams(paramName="index",          validate=validate, params=params)
-            ignore,         _,                          ignoreMethod,   validate = self.__checkSetupMethodParams(paramName="ignore",         validate=validate, params=params)
-            data,           dataInValidate,             dataMethod,     validate = self.__checkSetupMethodParams(paramName="data",           validate=validate, params=params)
-            dataName,       _,                          dataNameMethod, validate = self.__checkSetupMethodParams(paramName="dataName",       validate=validate, params=params)
+    #         #param          paramExistsInValidate       addToMethodName #return the updated validate object
+    #         row,            rowInValidate,              rowMethod,      validate = self.__checkSetupMethodParams(paramName="row",            validate=validate, params=params)
+    #         _,              rowExistsInValidate,        _,              validate = self.__checkSetupMethodParams(paramName="rowExists",      validate=validate, params=params)
+    #         location,       locationInValidate,         locationMethod, validate = self.__checkSetupMethodParams(paramName="location",       validate=validate, params=params)
+    #         _,              locationExistsInValidate,   _,              validate = self.__checkSetupMethodParams(paramName="locationExists", validate=validate, params=params)
+    #         index,          indexInValidate,            indexMethod,    validate = self.__checkSetupMethodParams(paramName="index",          validate=validate, params=params)
+    #         ignore,         _,                          ignoreMethod,   validate = self.__checkSetupMethodParams(paramName="ignore",         validate=validate, params=params)
+    #         data,           dataInValidate,             dataMethod,     validate = self.__checkSetupMethodParams(paramName="data",           validate=validate, params=params)
+    #         dataName,       _,                          dataNameMethod, validate = self.__checkSetupMethodParams(paramName="dataName",       validate=validate, params=params)
 
-            for item in validate:
-                if 'data:' in item:
-                    #do some dynamic validation on this
+    #         for item in validate:
+    #             if 'data:' in item:
+    #                 #do some dynamic validation on this
 
+    #         ####
+    #         #
+    #         # Set the debug string, now that we have all the params
+    #         #
+    #         ####
+    #         extendedMethodString = rowMethod+locationMethod+indexMethod+ignoreMethod+dataMethod+dataNameMethod
+    #         self.debug("{}({})".format(methodName, extendedMethodString))
 
-            ####
-            #
-            # Set the debug string, now that we have all the params
-            #
-            ####
-            extendedMethodString = rowMethod+locationMethod+indexMethod+ignoreMethod+dataMethod+dataNameMethod
-            self.debug("{}({})".format(methodName, extendedMethodString))
+    #         ####
+    #         #
+    #         # Do things with the information we have
+    #         #
+    #         ####
 
-            ####
-            #
-            # Do things with the information we have
-            #
-            ####
+    #         if rowInValidate:
+    #             # self.__validateRow(methodName=methodName, row=row, validateExists=rowExistsInValidate)
 
-            if rowInValidate:
-                self.__validateRow(methodName=methodName, row=row, validateExists=rowExistsInValidate)
+    #         if locationExistsInValidate:
+    #             if not locationInValidate and indexInValidate:                
+    #                 raise NestedCacheException("'locationExists' validation was requested, but no location or index was passed to __setupMethod()")
 
-            if locationExistsInValidate:
-                if not locationInValidate and indexInValidate:                
-                    raise NestedCacheException("'locationExists' validation was requested, but no location or index was passed to __setupMethod()")
+    #         if locationInValidate or indexInValidate:
+    #             if None == index and None == location:
+    #                 raise NestedCacheException("You must provide either location or index to {}, neither were found".format(methodName))
 
-            if locationInValidate or indexInValidate:
-                if None == index and None == location:
-                    raise NestedCacheException("You must provide either location or index to {}, neither were found".format(methodName))
+    #             if locationInValidate:
+    #                 # self.__validateLocation(methodName=methodName, location=location, ignore=ignoreItems, validateExists=locationExistsInValidate)
 
-                if locationInValidate:
-                    self.__validateLocation(methodName=methodName, location=location, ignore=ignoreItems, validateExists=locationExistsInValidate)
+    #             if indexInValidate:
+    #                 # self.__validateIndex(methodName=methodName, index=index, ignore=ignoreItems, validateExists=locationExistsInValidate)
 
-                if indexInValidate:
-                    self.__validateIndex(methodName=methodName, index=index, ignore=ignoreItems, validateExists=locationExistsInValidate)
-
-            if dataInValidate:
-                self.__validateData(methodName=methodName, data=data, dataName=dataName)
-
-
-    # dynamically checks if params are in validate, and if so are they in params?
-    # @return param, Whether item is in the validate list, an updated MethodString, and the validation
-    def __checkSetupMethodParams(self, paramName=None, validate=[], params={}):
-        self.debug("__checkSetupMethodParams(paramname={}, validate={}, params={})", (paramName, validate, params))
-        param = None
-        inValidate = False
-        methodString = ""
-        inParams = True
-
-        if paramName in params:
-            param = params[paramName]
-            methodString = "{}={}".format(paramName, param)
-        else:
-            inParams = False
-
-        if paramName in validate:
-            inValidate = True
-            if not inParams:
-                raise NestedCacheException("'{}' was requested as validation in __setupMethod(), but it was not passed in params to be validated".format(paramName))
-
-        return param, inValidate, methodString, validate.remove(paramName)
+    #         if dataInValidate:
+    #             # self.__validateData(methodName=methodName, data=data, dataName=dataName)
 
 
-    def __validateRow(self, row=None, methodName=None, validateExists=False):
-        self.debug("\t\t__validateRow(row={})".format(row))
+    # # dynamically checks if params are in validate, and if so are they in params?
+    # # @return param, Whether item is in the validate list, an updated MethodString, and the validation
+    # def __checkSetupMethodParams(self, paramName=None, validate=[], params={}):
+    #     self.debug("__checkSetupMethodParams(paramname={}, validate={}, params={})", (paramName, validate, params))
+    #     param = None
+    #     inValidate = False
+    #     methodString = ""
+    #     inParams = True
 
-        if None == row:
-            raise NestedCacheException("You must provide a row number to {}".format(methodName))
+    #     if paramName in params:
+    #         param = params[paramName]
+    #         methodString = "{}={}".format(paramName, param)
+    #     else:
+    #         inParams = False
 
-        if 0 == row:
-            raise NestedCacheException("Silly, you cannot directly access row 0 via {}".format(methodName))
+    #     if paramName in validate:
+    #         inValidate = True
+    #         if not inParams:
+    #             raise NestedCacheException("'{}' was requested as validation in __setupMethod(), but it was not passed in params to be validated".format(paramName))
 
-        if validateExists and not self.__rowExists(row=row):
-            raise NestedCacheException("Row [{}] doesn't exist, to add it use append(row,location,data)".format(row))
+    #     return param, inValidate, methodString, validate.remove(paramName)
 
 
-    def __validateLocation(self, methodName=None, location=None, ignore=None, validateExists=False):
-        self.debug("\t\t__validateLocationIndex(location={}, index={}, ignore={})", (location, index, ignore))
+    # def __validateRow(self, row=None, methodName=None, validateExists=False):
+    #     self.debug("\t\t__validateRow(row={})".format(row))
+
+    #     if None == row:
+    #         raise NestedCacheException("You must provide a row number to {}".format(methodName))
+
+    #     if 0 == row:
+    #         raise NestedCacheException("Silly, you cannot directly access row 0 via {}".format(methodName))
+
+    #     if validateExists and not self.__rowExists(row=row):
+    #         raise NestedCacheException("Row [{}] doesn't exist, to add it use append(row,location,data)".format(row))
+
+    @debug
+    def validate_locationExists(self, methodName=None, location=None, ignore=None, validateExists=False):
         
-        if validateExists and not self.__locationExists(location=location):
+        if not self.__locationExists(location=location):
             raise NestedCacheException("Location '{}' doesn't exist, to add it use addLocation(location)".format(location))
 
+    # def __validateIndex(self, methodName=None, index=None, validateExists=False):
 
-    def __validateIndex(self, methodName=None, index=None, validateExists=False):
+    #     self.debug("\t\t__validateIndex(index={}, ignore={}, validateExists={})", (index, ignore, validateExists))
 
-        self.debug("\t\t__validateIndex(index={}, ignore={}, validateExists={})", (index, ignore, validateExists))
-
-        if validateExists and not self.__locationExists(index=index):
-            raise NestedCacheException("Location '{}' doesn't exist, to add it use addLocation(location)".format(index))
+    #     if validateExists and not self.__locationExists(index=index):
+    #         raise NestedCacheException("Location '{}' doesn't exist, to add it use addLocation(location)".format(index))
 
 
-    def __validateData(self, data=None, methodName=None, dataName="data"):
-        self.debug("\t\t__validateData(data={})".format(data))
+    # def __validateData(self, data=None, methodName=None, dataName="data"):
+    #     self.debug("\t\t__validateData(data={})".format(data))
         
-        if None == data:
-            raise NestedCacheException("{} shouldn't be None for  {}".format(dataName, methodName))
+    #     if None == data:
+    #         raise NestedCacheException("{} shouldn't be None for  {}".format(dataName, methodName))
 

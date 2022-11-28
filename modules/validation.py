@@ -1,120 +1,128 @@
 import sys
-from modules.base import BaseClass
+from modules.logger import Logger
 from modules.validations.exception import ValidationException
 
+class FieldValidation(Logger):
 
-class MethodValidation(BaseClass):
-    _params = []
-    _paramsToValidate = []
-
+    _paramToValidate = None
+    _paramValues = {}
     _validatedData = {}
-    _methodName = ""
     _methodAdditions = []
 
     _validationsToRun = {}
 
-    def __init__(self, methodName, params, validations):
-        self._paramsToValidate = params
+    _otherObj = None
+
+    def __init__(self, field, validations, **kwargs):
+
+        self._paramToValidate = field
         self._validationsToRun = validations
-        self._methodName = methodName
 
-        self.__checkParams()
+        self._paramValues = kwargs
 
-        self.__setupMethodName()
+        self.__setupParam()
 
-        self.__doValidation()
+        self.__doValidations()
 
 
     def getParams(self):
         return self.__validatedData
 
 
-    def getParamsToValidation(self):
-        return self._paramsToValidate
+    def __getParamToValidate(self):
+        return self._paramToValidate
 
 
-    def getMethodName(self):
-        return "{}({})".format(self._methodName, (",").join(self._methodAdditions))
+    def __setupParam(self):
+        self._validated = {"inValidate": False, "inParams": False, "data" : None}
+
+        if self._paramToValidate in self._paramValues:
+            self.__updateValidated(field='inParams', data=True)
+        self.__updateValidated(field='data', data=self._paramValues[self._paramToValidate])
 
 
-    def __checkParams(self): 
-        for param in self._params:
-            self.__setupParam(param)
+    def __updateValidated(self, field, data):
+        self._method("__updateValidated", locals())
+        self._validatedData[field] = data
 
 
-    def __setupParams(self, param):
-        self.debug("__checkParams(param={})".format(param))
+    def __doValidations(self):
+        self._method("__runValidations", locals())
 
-        self._validated[param] = {"inValidate": False, "inParams": False, "data" : None}
+        self.console("{}".format(self._validationsToRun))
 
-        if paramName in self.getParams():
-            self.__updateValidated(param=param, 'data', self._params[param])
-            self.__updateValidated(param=param, 'inParams', True)
-            self.__appendMethod("{}={}".format(paramName, param))
+        param = self._paramToValidate
+        paramValue = self.getParamValue(param)
 
-    def __doValidations(self)
-        self.debug("__doValidations()")
+        for validationToRun in self._validationsToRun:
+            dataToPass = None
+            if ":" in validationToRun:
+                validationToRun, dataToPass = validationToRun.split(":")
 
-        if paramName in self.getParamsToValidate():
-            self.__updateValidated(param=param, 'inValidations', True)
+            do = f"validation_{validationToRun}"
 
-            self.__runValidations(param=param)
-
-            if not inParams:
-                raise ValidationException("'{}' was requested as validation in __setupMethod(), but it was not passed in params to be validated".format(paramName))
-
-    def __getValidationsToRunByParam(self):
-        self.debug("__getValidationsToRunByParam(param={})".format(param))
-        return self._validationsToRun
-
-    def __getParams(self):
-        self.__method("__getParams")
-        return self._params
+            if hasattr(self, do) and callable(validFunc := getattr(self, do)):
+                if None != dataToPass:
+                    validFunc(item = dataToPass, param=param, paramValue=paramValue)
+                else: 
+                    validFunc(param=param, paramValue=paramValue)
+            else:
+                raise ValidationException("Tried to validate {} but no method for this validation exists".format(validationToRun))
     
-    def __updateValidated(param, field, data):
-        self.__method("__updateValidated", locals())
-        self._validatedData[param][field] = data
+
+    ####
+    #
+    # Validators: Existence
+    #
+    ####
+
+    # due to the way we're writing the wrapper, all params will always exist, so long as they are in the signature
+    #   this could cause bad behavior in coding methods...
+    def validation_exists(self, param, paramValue=None):
+        self._method("validation_exists()")
+        # check if the field is in the _paramValues and is not None
+
+        if not self.__existsInList(param, paramValue):
+            raise ValidationException("{} was not in the passed parameters".format(param))
+        return True
 
 
-    def __runValidations(self, param):
-        self.__method("__runValidations", locals())
+    def validation_orExists(self, item, param, paramValue=None):
+        self._method("validation_OrExists", item)
+        paramExists = self.__existsInList(param, paramValue)
+        otherParamExists = self.__existsInList(item, paramValue)
 
-        for validationToRun, paramData in self.__getValidationsToRunByParam(param):
-            if "orExists" == validationToRun:
-                self._validation_OrExists(paramData)
+        if not paramExists or otherParamExists:
+            raise ValidationException("Either {} or {} was expected but neither was found".format(param, item))
 
-            if "exists" == validationToRun:
-                self._validation_Exists(paramData)
+    def validation_notNone(self, param, paramValue=None):
+        self._method("validation_notNone")
 
+        if None == paramValue:
+            raise ValidationException("{} was passed as None, but needs to be set".format(param))
+        return True
 
-    def __validation_OrExists(self, params):
-        self.__method("__validation_OrExists", params)
+    ####
+    #
+    # Validators: Math
+    #
+    ####
 
-    # created the debug string, by calling like so:
-    # e.g. self.__method("nameofMethod", locals())
-    def __method(self, method, data=None):
-        self.debug(self.__prepareMethodString(method, data)) 
+    def validation_gt(self, item, param, paramValue=None):
+        self._method("validation_gt")
+        if paramValue < int(item):
+            raise ValidationException("{} was expected to be gt than {}".format(paramValue, item))
 
+    ####
+    #
+    # Helper Methods
+    #
+    ####
 
-    def __prepareMethodString(self, method, data=None):
-        methodAdditions = self.__createMethodAdditions(data)
-        return self.__createMethodString(method, methodAdditions)
+    def __existsInList(self, item, lookIn):
+        if item in lookIn:
+            return True
+        return False
 
-
-    def __createParamDataValueString(self, localsData):
-        return "{}={}".format(paramName, paramValue)
-
-
-    def __createMethodAdditions(self, data):
-        methodAdditions = []
-        if None != data:
-            for paramName, paramValue in data:
-                methodAdditions.append(self.__createParamDataValueString(data))
-        return methodAdditions
-
-
-    def __createMethodString(self, methodName: string, methodAdditions: list):
-        return "{}({})".format(method, (",").join(self._methodAdditions))
-
-
-
+    def getParamValue(self, param):
+        return self._paramValues[param]
