@@ -89,4 +89,9 @@ Provides functionality that allows for:
     d. Take in command line information about what to update?
 6. Ability to push Shopify data over the API
     a. Cache data -> API object processor
-    b. Make the API call with the whole object, or just the changes? 
+    b. Make the API call with the whole object, or just the changes?
+7. Versioning of the sheet - storing locally in a database
+    a. requires a way to pull the sheet version into memory to be used like the sheet
+    b. Needs a way to go back and forth between versions
+    c. Maybe a way to show the diffs?
+    d. Possible to record the actions taken? remove empties, added columns, added rows, removed rows, updated data?
