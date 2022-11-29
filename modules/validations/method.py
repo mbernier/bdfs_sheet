@@ -32,6 +32,6 @@ class MethodValidation(Validation):
             passTheseArgs[key] = paramData[key]['data']
 
         for key in paramData:
-            print((self._classBeingValidated, key,  paramData[key]['validations'], passTheseArgs))
+            # print((self._classBeingValidated, key,  paramData[key]['validations'], passTheseArgs))
             #            FieldValidations(classBeingValidated, field, validations, args)
             validation = FieldValidation(self._classBeingValidated, key,  paramData[key]['validations'], passTheseArgs)

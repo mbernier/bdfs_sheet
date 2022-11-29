@@ -264,7 +264,7 @@ def test_height_fromDeletes():
     assert excinfo.value.message == "There is already data at row:3 location:d/index:2, to change this data use update(row, location/index, data)"
     
     cache.deleteRow(row=2)
-    print(cache.height())
+    # print(cache.height())
     assert 2 == cache.height()
     cache.deleteRow(row=1)
     assert 1 == cache.height()

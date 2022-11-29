@@ -97,8 +97,14 @@ class Logger:
 
         msg = self.prefixStr(msg, prefix=prefix)
         msg = self.postfixStr(msg,postfix=postfix, new_lines=new_lines)
-        return msg
 
+        return self.insert_newlines(msg)
+
+    def insert_newlines(self, string, every=100):
+        # return '\n\t\t\t\t\t\t'.join(string[i:i+every] for i in range(0, len(string), every))
+
+        import textwrap
+        return textwrap.fill(string, every).replace("\n", "\n\t\t\t\t\t\t")
 
     def prefixStr(self, msg:str, prefix: str=""):
         if None != prefix:
