@@ -61,9 +61,9 @@ class Helper:
         
         elif Helper.is_str(lookIn):
             return Helper.existsInStr(item, lookIn)
-        
+
         else:
-            raise HelperException("No existsIn validation method exists for {}".format(lookInType))
+            raise HelperException("No existsIn validation method exists for {}".format(type(lookIn)))
 
 
     @staticmethod
@@ -82,29 +82,29 @@ class Helper:
 
     
     @staticmethod
-    def isType(type, item):
-        type = type.lower()
+    def isType(typeName, item):
+        typeName = typeName.lower()
 
-        if type == 'dict':
+        if typeName == 'dict':
             return Helper.is_dict(item)
 
-        if type == 'list':
+        if typeName == 'list':
             return Helper.is_list(item)
 
-        if type == 'int':
+        if typeName == 'int':
             return Helper.is_int(item)
 
-        if type == 'str':
+        if typeName == 'str':
             return Helper.is_str(item)
 
-        if type == 'flatcache':
+        if typeName == 'flatcache':
             return Helper.is_flatcache(item)
 
-        if type == 'Nestedcache':
+        if typeName == 'Nestedcache':
             return Helper.is_nestedcache(item)
 
         # raise Exception for everything else
-        raise HelperException("isType doesn't know about type '{}'".format(type))
+        raise HelperException("isType doesn't know about type '{}'".format(typeName))
 
     @staticmethod
     def is_dict(item):

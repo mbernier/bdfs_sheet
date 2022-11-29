@@ -1,9 +1,9 @@
-#setup logging
 import sys
 from modules.config import config
-from modules.decorators import debug, validate
-from modules.logger import Logger
+from modules.decorator import debug, validate
 from modules.helper import Helper
+from modules.logger import Logger
+
 
 class BaseClass(Logger):
 

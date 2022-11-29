@@ -85,12 +85,15 @@ class Logger:
                 elif type(data) is tuple:
                     msg = msg.format(*data)
                 else:
+                    print(msg)
                     msg = msg.format(data)
 
             elif (None != data):
                 data = colored(data, dataColor, dataBgColor)
-                for _ in data:
-                    msg += "{}".format(data)
+                if type(data) is str:
+                    msg += data
+                else:
+                    msg += ",".join(data)
 
         msg = self.prefixStr(msg, prefix=prefix)
         msg = self.postfixStr(msg,postfix=postfix, new_lines=new_lines)
@@ -102,6 +105,21 @@ class Logger:
             msg = prefix + msg
         return msg
 
+    # returns the methodName with the prefix
+    @staticmethod
+    def prefixMethodName(methodName):
+        return Logger.methodNamePrefix(methodName) + methodName
+
+    # returns only the prefix
+    @staticmethod
+    def methodNamePrefix(methodName):
+        prefix = ""
+        if not methodName in ["__init__"]:
+            spltz = methodName.count("_")
+            for _ in range(0,spltz): 
+                prefix += "\t"
+
+        return prefix
 
     def postfixStr(self, msg:str, postfix:str="", new_lines:int =0):
         msg = self.appendNewLines(msg, new_lines=new_lines)
@@ -127,13 +145,13 @@ class Logger:
     # e.g. self.__method("nameofMethod", locals())
     def _method(self, method, data=None):
         #indent the method
-        method = "\t\t\t\t"+method
+        method = Logger.prefixMethodName(method)
 
         if not None == data:
             if not Helper.is_dict(data):
                 raise Exception("_method expects params as a dict, suggest using locals(). {} was passed".format(data))
 
-        self.debug(self.__prepareMethodString(method, data)) 
+        self.debug(msg=method, data=data)
 
 
     def __prepareMethodString(self, method, data):

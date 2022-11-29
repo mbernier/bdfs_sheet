@@ -13,11 +13,11 @@ class FlatCacheException(CacheException):
         message -- explanation of the error
     """
 
-    def __init__(self, message="Cache Exception raised"):
+    def __init__(self, message="FlatCache Exception raised"):
         self.message = message
         super().__init__(self.message)
 
 class NestedCacheException(CacheException):
-    def __init__(self, message="Cache Exception raised"):
+    def __init__(self, message="NestedCache Exception raised"):
         self.message = message
         super().__init__(self.message)
