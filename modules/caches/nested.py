@@ -610,9 +610,8 @@ class NestedCache(BdfsCache):
     # ####
 
     @debug
-    def validation_locationExists(self, methodName=None, location=None, ignore=None, validateExists=False):
-        self.console('\n\n\n Location Exists is running \n\n\n')
-        if not self.__locationExists(location=location):
+    def validation_locationExists(self, param, paramValue=None):
+        if not self.__locationExists(location=paramValue):
             raise NestedCacheException("Location '{}' doesn't exist, to add it use addLocation(location)".format(location))
 
     @debug

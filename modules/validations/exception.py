@@ -1,4 +1,6 @@
-class ValidationException(Exception):
+from modules.exception import BdfsException
+
+class ValidationException(BdfsException):
     def __init__(self, message="Cache Exception raised"):
         self.message = message
         super().__init__(self.message)    
