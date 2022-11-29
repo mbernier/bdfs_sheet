@@ -1,6 +1,7 @@
 # setup_logger.py
 import logging, sys
 from modules.config import config
+from modules.helper import Helper
 from termcolor import colored, cprint
 
 #get the log_level from the config.ini
@@ -63,8 +64,8 @@ class Logger:
 
 
     # handle prefix and new_lines being added to the string, one call to do everything, reduce repetition above
-    def _prepareString(self, msg, data=None, prefix=None, new_lines=0, postfix="", textColor="white", bgcolor=None, dataColor="white", dataBgColor=None) -> str:
-        
+    def _prepareString(self, msg, data=None, prefix=None, new_lines=0, postfix="", textColor="white", bgcolor=None, dataColor="white", dataBgColor=None, bypassReplace=False) -> str:
+        # logger.debug("_prepareString(self={}, msg={},data={},prefix={},new_lines={},postfix={},textcolor={},bgcolor={},dataColor={},dataBgColor={},bypassReplace={})".format(locals()))
         if None != bgcolor:
             bgcolor = "on_" + bgcolor
 
@@ -77,18 +78,19 @@ class Logger:
         # change the color to make it pretty
         msg = colored(msg, textColor, bgcolor)
 
-        if "{}" in msg:
-            if isinstance(data, str):
-                msg = msg.format(data)
-            elif type(data) is tuple:
-                msg = msg.format(*data)
-            else:
-                msg = msg.format(data)
+        if bypassReplace == False:
+            if "{}" in msg:
+                if isinstance(data, str):
+                    msg = msg.format(data)
+                elif type(data) is tuple:
+                    msg = msg.format(*data)
+                else:
+                    msg = msg.format(data)
 
-        elif (None != data):
-            data = colored(data, dataColor, dataBgColor)
-            for _ in data:
-                msg += "{}".format(data)
+            elif (None != data):
+                data = colored(data, dataColor, dataBgColor)
+                for _ in data:
+                    msg += "{}".format(data)
 
         msg = self.prefixStr(msg, prefix=prefix)
         msg = self.postfixStr(msg,postfix=postfix, new_lines=new_lines)
@@ -123,35 +125,40 @@ class Logger:
 
    # created the debug string, by calling like so:
     # e.g. self.__method("nameofMethod", locals())
-    def _method(self, method, *args, **kwargs):
-        self.debug(self.__prepareMethodString(method, args, kwargs)) 
+    def _method(self, method, data=None):
+        #indent the method
+        method = "\t\t\t\t"+method
+
+        if not None == data:
+            if not Helper.is_dict(data):
+                raise Exception("_method expects params as a dict, suggest using locals(). {} was passed".format(data))
+
+        self.debug(self.__prepareMethodString(method, data)) 
 
 
-    def __prepareMethodString(self, method, args, kwargs):
-        tupleAdditions = self.__createTupleAdditions(args)
-        methodAdditions = self.__createMethodAdditions(kwargs)
-        return self.__createMethodString(method, tupleAdditions, methodAdditions)
-
-
-    def __createTupleAdditions(self, args):
-        if () == args: return []
-        return list(args)
+    def __prepareMethodString(self, method, data):
+        methodAdditions = self.__createMethodAdditions(data)
+        return self.__createMethodString(method, methodAdditions)
 
 
     def __createMethodAdditions(self, data):
+        # if this is empty, return empty list
         if {} == data: return []
 
         methodAdditions = []            
-        for paramName in data:
-            methodAdditions.append(self.__createParamDataValueString(paramName=paramName, paramData=data[paramName]))
+        if not data == None:
+            if Helper.is_str(data):
+                methodAdditions.append(data)
+            else:
+                for paramName in data:
+                    dataToPass = data[paramName]
+                    methodAdditions.append(self.__createParamDataValueString(paramName=paramName, paramData=dataToPass))
         return methodAdditions
+
+
+    def __createMethodString(self, methodName: str, methodAdditions: list):
+        return "{}({})".format(methodName, (",").join(map(str, methodAdditions)))
+
 
     def __createParamDataValueString(self, paramName, paramData):
         return "{}={}".format(paramName, paramData)
-
-    def __createMethodString(self, methodName: str, tupleAdditions, methodAdditions: list):
-        # print(tupleAdditions)
-        # print(methodAdditions)
-        additions = tupleAdditions + methodAdditions
-        # print(additions)
-        return "{}({})".format(methodName, (",").join(map(str, additions)))

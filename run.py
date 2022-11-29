@@ -17,4 +17,4 @@ if __name__ == "__main__":
     # run.main(sys.argv[1:]) 
 
 
-    cache = NestedCache([], [])
+    cache = NestedCache(["col1", "col2", "col3"], [["a","b", "c"], [1,2,3],[4,5,6]])

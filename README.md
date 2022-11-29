@@ -62,6 +62,8 @@ Provides functionality that allows for:
 
 
 ## To Add:
+0. Validations
+    a. Add return data validation?
 1. Parsing through the information in the sheet - in a Shopify generic (NOT DOOR SPECIFIC) way
     *DECIDE:* how do we want the information organized in the spreadsheet? Should it be organized by the categories that are in Shopify? Should there be a categorization mapping and a products table - referenced so that we can go back and forth? This needs to be figured out, as the structure can determine many things in the future. Right now, the spreadsheet is organized by door type.
     a. Throw errors when the data is incorrect or weird
@@ -95,3 +97,5 @@ Provides functionality that allows for:
     b. Needs a way to go back and forth between versions
     c. Maybe a way to show the diffs?
     d. Possible to record the actions taken? remove empties, added columns, added rows, removed rows, updated data?
+8. Consider moving the validators to another class object with static methods, allowing them to be used elsewhere too?
+9. 

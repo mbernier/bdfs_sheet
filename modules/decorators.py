@@ -1,4 +1,5 @@
 import sys
+from modules.logger import Logger
 from modules.validation import FieldValidation
 import functools
 from inspect import signature, Parameter
@@ -7,15 +8,30 @@ def debug(func):
     """Print the function signature and return value"""
     @functools.wraps(func)
     def wrapper_debug(*args, **kwargs):
-        classObj = args[0]
+        # allows us to call the Logger methods, even if we are processing an __init__ method, where we don't know the class
+        classObj = Logger()
+        if len(args) > 0:
+            classObj = args[0]
+
         args_repr, kwargs_repr, signature = prepArgs(args, kwargs)
-        classObj.debug(f"Calling {func.__name__}({signature})")
+
+        prefix = ""
+        spltz = func.__name__.count("_")
+
+        if 0 < spltz <= 2:
+            for _ in range(0,spltz): 
+                prefix += "\t"
+
+        classObj.debug(f"{prefix} Calling {func.__name__}({signature})")
         value = func(*args, **kwargs)
-        classObj.debug(f"{func.__name__!r} returned {value!r}")      # 4
+        classObj.debug(f"{prefix} {func.__name__!r} returned {value!r}")      # 4
         return value
     return wrapper_debug
 
-# wrapper for 
+
+# Validation Decorator
+#   To validate method params, add something like this:
+#   @validate(paramName, validationsToRun) where validationsToRun is a list of validations from methods.validation.FieldValidation
 def validate(field, validations):
     def decorator_validate(func, *args, **kwargs):
         @functools.wraps(func)
@@ -61,11 +77,11 @@ def validate(field, validations):
 
             kwargs.update(allArgs)
 
+            # print(kwargs)
 
-            print(kwargs)
-
-            validator = FieldValidation(field, validations, **kwargs)
-    
+            validator = FieldValidation(tempSelf, field, validations, **kwargs)
+            
+            # add self back into the args
             kwargs['self'] = tempSelf
 
             value = func(**kwargs)
