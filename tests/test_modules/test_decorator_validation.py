@@ -41,6 +41,61 @@ class B():
     def __init__(self, arbitvalue:str=None):
         pass
 
+class C():
+
+    @validate()
+    def foo(self, var1:int = 100):
+        return True
+
+    @validate()
+    def bar(self, var1:int):
+        return True
+
+    @validate()
+    def bat(self, var1 = 50):
+        return True
+
+
+def test_default_and_annotation_sets_isSetType():
+    c = C()
+    assert True == c.foo(200)
+
+
+# if default value and annotation, should be testing isSetType
+#   - send in an unexpected type
+def test_default_and_annotation_sets_isSetType_wrongType():
+    c = C()
+    with pytest.raises(ValidationException) as excinfo:
+        c.foo("string")
+    excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found for var1"
+
+
+# if an annotation, and no default
+#   isType should be checked
+def test_annotation_no_default():
+    c = C()
+    assert True == c.bar(200)
+
+def test_annotation_no_default():
+    c = C()
+    with pytest.raises(ValidationException) as excinfo:
+        c.bar("string")
+    excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found for var1"
+
+
+# if no annotaion, with a default
+#   notNone should be checked
+def test_no_annotation_default_set():
+    c = C()
+    assert True == c.bat(100)
+
+def test_no_annotation_default_set_fail():
+    c = C()
+    with pytest.raises(ValidationException) as excinfo:
+        c.bat(None)
+    excinfo.value.message == "var1 was passed as None, but needs to be set"
+
+
 
 def test_init_validation():
     with pytest.raises(ValidationException) as excinfo:

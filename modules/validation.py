@@ -36,6 +36,12 @@ class Validation(Logger):
             raise ValidationException("{} was expected to be type {}, but {} was found for {}".format(param, item, str(type(paramValue)), param))
         return True
 
+    def validation_ifSetType(self, item, param, paramValue=None):
+        self._method("validation_ifSetType", locals())        
+
+        if not None == paramValue:
+            self.validation_isType(item, param, paramValue)
+
     def validate_oneOf(self, item, param, paramValue):
         self._method("validate_oneOf", locals())
 

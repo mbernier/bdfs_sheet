@@ -5,6 +5,7 @@ from modules.helper import Helper
 from modules.logger import Logger
 from modules.validations.method import MethodValidation
 
+SHITTY_NONE_DEFAULT_VALUE = 'NoneZeroDefaultFail'
 
 def debug(func):
     """Print the function signature and return value"""
@@ -34,8 +35,6 @@ def validate(*validateargs, **validateParams):
     def decorator_validate(func, *decoratorargs, **decoratorkwargs):
         @functools.wraps(func)
         def wrapper_validate(*funcParams, **wrapperkwargs):
-
-
 
             funcSig = signature(func).parameters
             funcKeys = funcSig.keys()
@@ -82,32 +81,41 @@ def validate(*validateargs, **validateParams):
                 currentValue = None  # set this to something, we will set to something else below
                 defaultValue = getFieldDefault(funcSig, key)
                 paramValidations = []
+                # do we get a free validator from the method definition?
+                annotation = getFieldAnnotation(funcSig, key)
+
                 # print("")
                 # print(defaultValue)
                 # print(key)
                 # print(index)
                 # print(len(funcParamsList))
+
+                # set the value, based on values available from args, kwargs, and defaults
                 if index < len(funcParamsList):
-                    # print("we have a logical error")
                     currentValue = funcParamsList[index]
                 elif key in wrapperkwargs:
-                    # print("wrapperk")
                     currentValue = wrapperkwargs[key]
-                elif 'NoneZeroDefaultFail' == defaultValue: # this value is some bullshit I made up, that I hope no one would ever use, fail on me if they do
+                elif SHITTY_NONE_DEFAULT_VALUE == defaultValue: # this value is some bullshit I made up, that I hope no one would ever use, fail on me if they do
                     raise DecoratorException("Positional arg '{}'' was not set and has no default".format(key))
                 else: 
                     currentValue = defaultValue
 
-                # do we get a free validator from the method definition?
-                annotation = getFieldAnnotation(funcSig, key)
 
-                # if it don't exist, we can't add it
+                # check if validitors were passed
                 if key in validateParams:
                     paramValidations = validateParams[key]
 
-                # if we have an annotation, add it to paramValidations
-                if not None == annotation:
-                    paramValidations.append(f'isType:{annotation}')
+                # add validators based on annotations and default values
+                if SHITTY_NONE_DEFAULT_VALUE != defaultValue and None != annotation:
+                    # we have an annotation and we have a default value
+                    addParamValidation(f'ifSetType:{annotation}', paramValidations)
+                else:
+                    if None != annotation: # if we have an annotation, add it to paramValidations
+                        addParamValidation(f'isType:{annotation}', paramValidations)
+
+                    if None != defaultValue:
+                        # no default is set, so set notNone
+                        addParamValidation('notNone', paramValidations)
 
                 validationArgs[key] = {
                     'validations': paramValidations,
@@ -131,7 +139,7 @@ def validate(*validateargs, **validateParams):
             return annotation.__name__
 
         def getFieldDefault(sig, field):
-            defaultValue = 'NoneZeroDefaultFail'  # this value is some bullshit I made up, that I hope no one would ever use, fail on me if they do
+            defaultValue = SHITTY_NONE_DEFAULT_VALUE  # this value is some bullshit I made up, that I hope no one would ever use, fail on me if they do
             # print("\n\n")
             # print(sig)
             # print(sig[field])
@@ -140,11 +148,17 @@ def validate(*validateargs, **validateParams):
                 # print(defaultValue)
                 if hasattr(defaultValue, "__name__"):
                     if defaultValue.__name__  == "_empty":
-                        return 'NoneZeroDefaultFail'
+                        return SHITTY_NONE_DEFAULT_VALUE
                     else:
                         raise DecoratorException("default value did something unexpected in decorators, found defaultvalue.__name__ = {}".format(defaultValue.__name__))
 
             return defaultValue
+
+        def addParamValidation(validation, paramValidations):
+            if not validation in paramValidations:
+                paramValidations.append(validation)
+
+            return paramValidations
 
         return wrapper_validate
     return decorator_validate

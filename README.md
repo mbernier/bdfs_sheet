@@ -39,27 +39,87 @@ This was setup to allow for multiple functions to be possible, without changing 
 *run.py*
 - Calls the `Processor` functionality that we care about
 
-*modules/sheetProcessor.py*
-**gives us the command line functionality that maps the sheets functionality to the command line**
-Take in command line arguments and then calls the Spreadsheet functionality, support for:
+*sheetProcessor*
+Conductor code that allows specific functionality to be run against a sheet. Take in command line arguments and then calls the Spreadsheet functionality, support for:
     a. Listing all worksheets
     b. Passing in specific worksheet names (but doing nothing with them)
     c. Overriding the default spreadsheet ID
     d. Outputting all the worksheets names to the console
 
-*modules/sheetProcessors/bdfs_inventory.py*
+Relevant Files
+- modules/sheetProcessor.py - Base Conductor
+- modules/sheetProcessors/bdfs_inventory.py - configuration for BDFS
+- modules/sheetProcessors/exception.py
 
 
-
-*modules/spreadsheet.py*
-- Wrapper for core spreadsheet functionality
-- If you want to do something for a specific spreadsheet or style of sheet, then extend this class into the specific class
+*spreadsheet*
+Wrapper for core google spreadsheets. If you want to do something for a specific spreadsheet or style of sheet, then extend this class into the specific class.
 Provides functionality that allows for:
     a. Listing all worksheets
-    b. Passing in specific worksheet names (but doing nothing with them)
-    c. Overriding the default spreadsheet ID
-    d. Outputting all the worksheet names to the console
+    b. Passing in specific worksheet names
+    c. Outputting all the worksheet names to the console
+Relevant Files:
+- modules/spreadsheet.py - Base class for handling a google spreadsheet, wraps gspread
+- modules/spreadsheets/bdfs_inventory.py - BDFS spreadsheet specifics
+- modules/spreadsheets/exception.py - defined an exception so we can see what code threw an error
 
+
+*worksheet*
+Wrapper for a specific worksheet in a google sheet. Pulls all the rows data from the worksheet and stores it in a data store. Current Data Store: Nested Cache
+
+Relevant Files:
+- modules/worksheet.py - Base class for a google spreadsheet worksheet (a tab)
+- modules/worksheets/bdfs_inventory.py - specifics for the BDFS inventory worksheets
+- modules/worksheets/exception.py
+- modules/worksheets/data.py - Worksheet Data class, wraps the NestedCache functionality to create a local copy of the data in the worksheet 
+
+*validation*
+Method and field validation code
+Will validate features of parameters, is employed by decorators
+
+*decorators*
+@ methods that can be specified before a method call, to add functionality
+
+Decorators:
+    - debug - will call a logger method to add information about the method that is decorated 
+    - validator - takes in some information to validate the parameters of the method
+
+Relevant Files
+- modules/decorator.py
+- modules/decorators/exception.py
+
+*helpers*
+Shared methods in a Helper class that are used in multiple places to reduce duplication of code and standardize some specific actions.
+
+Relevant Files
+- modules/helper.py - Helper class with many shared static methods
+- modules/helpers/exception.py
+
+*caches*
+- similar to an in-memory database, without all the features. 
+- this functionality creates a controlled in memory storage
+- allows storing rows of data and accessing the data by row, headername, or index
+- keeps a copy of the data by header or index in each row
+- index data has information about the headers and vice versa
+- setters will make sure that the data is written/updated in both places
+
+Relevant Files:
+- modules/cache.py - roughly an abstract class
+- modules/caches/flat.py - a wrapper for accessing and getting data from a dict
+- modules/caches/nested.py - a list of flatCaches, pushes the parallel index/header data and manages accessing/writing it
+
+*logger*
+Wrapper for logging functionality, making it easier to pass information to the logger. 
+Extending Logger or BaseClass will get you the logging methods in your class
+
+Relevant Files
+- modules/logger.py
+
+*BaseClass*
+Originally, this had the logging functionality, but that was broken out. Now this has a couple of helper methods wrapped up that were used in various places, but doesn't do much else.
+
+*DataStore*
+Was the first pass at WorksheetData and NestedCache, when the data was being used in the sheet and not locally. This is still here, because there is functionality that may be reusable, post refactor towards local data processing
 
 ## To Add:
 0. Validations
@@ -98,4 +158,4 @@ Provides functionality that allows for:
     c. Maybe a way to show the diffs?
     d. Possible to record the actions taken? remove empties, added columns, added rows, removed rows, updated data?
 8. Consider moving the validators to another class object with static methods, allowing them to be used elsewhere too?
-9. 
+9. Hit the sarto inventory page to pull everything, update the main spreadsheet with inventory, and update the websites with inventory - so we can pull products up/down as inventory changes

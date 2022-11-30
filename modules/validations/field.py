@@ -65,13 +65,13 @@ class FieldValidation(Validation):
     def __doValidations(self):
         self._method("__runValidations", locals())
 
-        # setup the dict of params we want to pass to our method
-        methodParams = {
-            'param': self._paramToValidate,
-            'paramValue': self.__getParamValue(self._paramToValidate)
-        }
-
         for validationToRun in self._validationsToRun:
+
+            # setup the dict of params we want to pass to our method
+            methodParams = {
+                'param': self._paramToValidate,
+                'paramValue': self.__getParamValue(self._paramToValidate)
+            }
 
             # default methodName, set as own variable for using in 2 places later
             methodName = f"validation_{validationToRun}"
