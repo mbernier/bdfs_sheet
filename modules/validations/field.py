@@ -6,7 +6,8 @@ from modules.validations.exception import FieldValidationException
 
 
 class FieldValidation(Validation):
-
+    _classBeingValidated = None
+    _field: str = None
     _paramToValidate = None
     _paramValues = {}
     _validatedData = {}
@@ -16,12 +17,12 @@ class FieldValidation(Validation):
 
     _otherObj = None
 
-    def __init__(self, classBeingValidated, field, validations, paramValues):
+    def __init__(self, classBeingValidated, method, field, validations, paramValues):
         self._method("__init__", locals())
         self._classBeingValidated = classBeingValidated
+        self._field = method
         self._paramToValidate = field
         self._validationsToRun = validations
-
         self._paramValues = paramValues
 
         self.__setupParam()
@@ -95,7 +96,7 @@ class FieldValidation(Validation):
             elif Helper.classHasMethod(self, methodName):
                 Helper.callMethod(self, **methodParams)
             else: 
-                raise FieldValidationException("Could not find a {} method on FieldValidations or {}".format(methodName, Helper.className(self._classBeingValidated)))
+                raise FieldValidationException("Could not find a {} method on FieldValidations or {} for method {}".format(methodName, Helper.className(self._classBeingValidated), self._field))
 
 
     ####
@@ -106,10 +107,13 @@ class FieldValidation(Validation):
     def validation_oneIsNotNone(self, item, param, paramValue=None):
         self._method("validation_oneIsNotNone", locals())
         
-        # if either of these are false, then we are good to go
-        paramNotNone = (None == paramValue)
-        otherParamNotNone = (None == self.__getParamValue(item))
+        print("\n\n{}={}".format(param, paramValue))
+        print("{}={}\n\n".format(item, self.__getParamValue(item)))
 
-        if True == paramNotNone and True == otherParamNotNone:
-            raise FieldValidationException("Either {} or {} was expected to not be 'None'".format(param, item))
+        # if either of these are false, then we are good to go
+        paramNotNone = (None != paramValue)
+        otherParamNotNone = (None != self.__getParamValue(item))
+
+        if False == paramNotNone and False == otherParamNotNone:
+            raise FieldValidationException("Either {} or {} was expected to not be 'None' for method {}".format(param, item, self._field))
         return True

@@ -106,7 +106,7 @@ class Helper:
         # raise Exception for everything else
         raise HelperException("isType doesn't know about type '{}'".format(typeName))
 
-    @staticmethod
+    @staticmethod 
     def is_dict(item):
         return isinstance(item, dict)
 

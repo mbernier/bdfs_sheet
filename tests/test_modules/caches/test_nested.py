@@ -32,7 +32,7 @@ def test_cache_trysetOnNewRow2():
     cache = NestedCache(['a'],[[1]])
     with pytest.raises(NestedCacheException) as excinfo:
         cache.set(row=2, location="a", data=1)
-    excinfo.value.message == "Row [2] doesn't exist, to add it use append(row,location,data)"
+    assert excinfo.value.message == "Row [2] doesn't exist, to add it use append(row,location,data)"
     
     cache.append(location='a', data=1)
 

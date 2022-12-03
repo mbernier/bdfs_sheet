@@ -6,5 +6,8 @@ config_obj.read("config.ini")
 #to make the code use production, set environment = production in the config.ini
 current_config = config_obj["current"]
 
-# get the environment that we care about right now
-config = config_obj[current_config["environment"]]
+# set up the defaults first
+config = config_obj["default"]
+
+# merge in the environment we care about
+config.update(config_obj[current_config["environment"]])

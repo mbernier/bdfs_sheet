@@ -17,9 +17,10 @@ class MethodValidation(Validation):
     #         'validations': ['notNone', 'isType:list'], 
     #         'data': []}
     # }
-    def __init__(self, classBeingValidated, **kwargs):
+    def __init__(self, classBeingValidated, method, **kwargs):
 
         self._classBeingValidated = classBeingValidated
+        self._field = method
         self.__doValidations(kwargs)
 
 
@@ -34,4 +35,8 @@ class MethodValidation(Validation):
         for key in paramData:
             # print((self._classBeingValidated, key,  paramData[key]['validations'], passTheseArgs))
             #            FieldValidations(classBeingValidated, field, validations, args)
-            validation = FieldValidation(self._classBeingValidated, key,  paramData[key]['validations'], passTheseArgs)
+            validation = FieldValidation(classBeingValidated=self._classBeingValidated, 
+                                            method=self._field,
+                                            field=key,
+                                            validations=paramData[key]['validations'], 
+                                            paramValues=passTheseArgs)

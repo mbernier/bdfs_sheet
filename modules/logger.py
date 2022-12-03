@@ -16,38 +16,66 @@ class Logger:
     base_logger_name = "logs"
     logger_name = ""
     logger_configured = False
+    critical = True
+    debug = False
+    error = True
+    info = True
+    warning = True
+    output_to_console = False
+
+    def __init__(self):
+        # allow this to be overriden in child classes
+        if not self.debug:
+            if "DEBUG" == config.get("log_level"):
+                self.debug = True
+        if not self.output_to_console:
+            if config["output_to_console"]:
+                self.output_to_console = True
+        if config["critical_messages"]:
+            self.info = config["critical_messages"]
+        if config["error_messages"]:
+            self.info = config["error_messages"]
+        if config["info_messages"]:
+            self.info = config["info_messages"]
+        if config["warning_messages"]:
+            self.info = config["warning_messages"]
 
     def info(self, msg, data=None, new_lines=1, prefix=""):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="blue")
-        logger.info(msg)
+        if self.info:
+            logger.info(msg)
 
 
     def warning(self, msg, data=None, new_lines=2, prefix=""):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="magenta")
-        logger.warning(msg)
+        if self.warning:
+            logger.warning(msg)
 
 
     def error(self, msg, data=None, new_lines=3, prefix="\n\n\n"):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="yellow")
-        logger.error(msg)
+        if self.error:
+            logger.error(msg)
 
 
     def critical(self, msg, data=None, new_lines=3, prefix="\n\n\n"):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="red")
-        logger.critical(msg)
+        if self.critical:
+            logger.critical(msg)
         raise Exception("Logged a critical issue: " + msg)
 
 
     def debug(self, msg, data=None, new_lines=0, prefix=""):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="cyan")
-        logger.debug(msg)
+        if self.debug:
+            logger.debug(msg)
 
     # Output something to the console, if the config allows it
     # if we're in debug mode for the logs, set the console outputs aside by adding extra lines
     # default colors of Console: blue on grey
     def console(self, msg = None, data = None, new_lines=1, prefix="", postfix=""):
 
-        if "DEBUG" == config.get("log_level"):
+        if self.debug:
             if "" == prefix:
                 prefix = "\n\n" + colored("CONSOLE: ", "white")
             if 1 == new_lines:
@@ -55,7 +83,7 @@ class Logger:
 
         # only print to console if we are allowing it via config.ini `output_to_console`
 
-        if config["output_to_console"]: 
+        if self.output_to_console:
             msg = self._prepareString(msg=msg, data=data, prefix=prefix, new_lines=new_lines, postfix=postfix, textColor="blue", dataColor="blue", dataBgColor="grey")
 
             # only print something if we pass something
@@ -79,21 +107,21 @@ class Logger:
         msg = colored(msg, textColor, bgcolor)
 
         if bypassReplace == False:
-            if "{}" in msg:
-                if isinstance(data, str):
-                    msg = msg.format(data)
-                elif type(data) is tuple:
-                    msg = msg.format(*data)
+            if None != data:
+                if "{}" in msg:
+                    if isinstance(data, str):
+                        msg = msg.format(data)
+                    elif type(data) is tuple:
+                        msg = msg.format(*data)
+                    else:
+                        # print(msg)
+                        msg = msg.format(data)
                 else:
-                    print(msg)
-                    msg = msg.format(data)
-
-            elif (None != data):
-                data = colored(data, dataColor, dataBgColor)
-                if type(data) is str:
-                    msg += data
-                else:
-                    msg += ",".join(data)
+                    data = colored(data, dataColor, dataBgColor)
+                    if type(data) is str:
+                        msg += data
+                    else:
+                        msg += ",".join(data)
 
         msg = self.prefixStr(msg, prefix=prefix)
         msg = self.postfixStr(msg,postfix=postfix, new_lines=new_lines)
