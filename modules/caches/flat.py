@@ -1,14 +1,14 @@
 import sys
 from modules.cache import BdfsCache
-from modules.caches.exception import FlatCacheException
+from modules.caches.exception import Flat_Cache_Exception
 from collections import OrderedDict
 from pprint import pprint
 
 # @todo add a toString method
 
-class FlatCache(BdfsCache):
+class Flat_Cache(BdfsCache):
 
-    logger_name = "modules.caches.FlatCache"
+    logger_name = "modules.caches.Flat_Cache"
 
     _storage = {}
 
@@ -21,7 +21,7 @@ class FlatCache(BdfsCache):
         if None == self.get(location):
             self.__write(location=location, data=data)
         else:
-            raise FlatCacheException("FlatCache has {} at {}. To update data in the cache, use update()".format(self.get(location), location))
+            raise Flat_Cache_Exception("Flat_Cache has {} at {}. To update data in the cache, use update()".format(self.get(location), location))
 
 
     # remove the data from the location, but keep the location index
@@ -35,7 +35,7 @@ class FlatCache(BdfsCache):
     def update(self, location, data):
         self.debug("update(location={}, data={})", (location, data))
         if None == self.get(location):
-            raise FlatCacheException("There is nothing to update at position '{}'".format(location))
+            raise Flat_Cache_Exception("There is nothing to update at position '{}'".format(location))
         self.__write(location=location, data=data)
 
 
@@ -73,17 +73,17 @@ class FlatCache(BdfsCache):
         return len(self.getStorage())
 
 
-    # creates a new flatcache item from some data
+    # creates a new Flat_Cache item from some data
     @staticmethod
     def create(data=None):
-        flatCache = FlatCache()
+        Flat_Cache = Flat_Cache()
         if not None == data:
             for index in data:
-                flatCache.set(index, data[index])
-        return flatCache
+                Flat_Cache.set(index, data[index])
+        return Flat_Cache
 
     def __str__(self) -> str:
-        output = "FlatCache: \n\t"
+        output = "Flat_Cache: \n\t"
         for item in self.getStorage():
             output += "\t{}: {}\n".format(item, self.get(item))
         return output

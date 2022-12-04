@@ -1,7 +1,7 @@
 
 import sys
 from modules.base import BaseClass
-from modules.caches.nested import NestedCache
+from modules.caches.nested import Nested_Cache
 from pprint import pprint
 
 class WorksheetData(BaseClass):
@@ -26,7 +26,7 @@ class WorksheetData(BaseClass):
         self.__setDuplicateHeaders(duplicateHeaders)
         self.__setEmptyHeaderIndexes(emptyHeaderIndexes)
 
-        self.dataStore = NestedCache(headers, sheetData)
+        self.dataStore = Nested_Cache(headers, sheetData)
 
     # replaces empty headers with "NoHeaderFound_{index}"
     def __prepHeaders(self, headers):

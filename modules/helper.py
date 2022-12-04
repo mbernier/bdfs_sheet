@@ -1,8 +1,7 @@
-from modules.helpers.exception import HelperException
+from modules.helpers.exception import Helper_Exception
 
 class Helper:
     
-
     ####
     #
     # Dynamic calling functionality
@@ -19,7 +18,7 @@ class Helper:
         if Helper.classHasMethod(klass, methodName) and callable(validFunc := getattr(klass, methodName)):
             return validFunc(**kwargs)
         else:
-            raise HelperException("Tried to call {}.{} but no method with that name exists".format(Helper.className(klass), methodName))
+            raise Helper_Exception("Tried to call {}.{} but no method with that name exists".format(Helper.className(klass), methodName))
 
     @staticmethod
     def classHasMethod(klass, methodName):
@@ -47,7 +46,7 @@ class Helper:
     def checkArgs(required=[], **kwargs):
         for arg in kwargs:
             if arg in required and None == kwargs[arg]:
-                raise HelperException("You must pass {} to Cache, NoneType was found".format(arg))
+                raise Helper_Exception("You must pass {} to Cache, NoneType was found".format(arg))
 
 
     @staticmethod
@@ -63,7 +62,7 @@ class Helper:
             return Helper.existsInStr(item, lookIn)
 
         else:
-            raise HelperException("No existsIn validation method exists for {}".format(type(lookIn)))
+            raise Helper_Exception("No existsIn validation method exists for {}".format(type(lookIn)))
 
 
     @staticmethod
@@ -97,14 +96,14 @@ class Helper:
         if typeName == 'str':
             return Helper.is_str(item)
 
-        if typeName == 'flatcache':
-            return Helper.is_flatcache(item)
+        if typeName == 'Flat_Cache':
+            return Helper.is_Flat_Cache(item)
 
-        if typeName == 'Nestedcache':
-            return Helper.is_nestedcache(item)
+        if typeName == 'Nested_Cache':
+            return Helper.is_Nested_Cache(item)
 
         # raise Exception for everything else
-        raise HelperException("isType doesn't know about type '{}'".format(typeName))
+        raise Helper_Exception("isType doesn't know about type '{}'".format(typeName))
 
     @staticmethod 
     def is_dict(item):
@@ -123,14 +122,22 @@ class Helper:
         return isinstance(item, str)
 
     @staticmethod
-    def is_nestedcache(item):
-        return isinstance(item, NestedCache)
+    def is_Nested_Cache(item):
+        return isinstance(item, Nested_Cache)
 
     @staticmethod
-    def is_flatcache(item):
-        from modules.caches.flat import FlatCache
-        return isinstance(item, FlatCache)
+    def is_Flat_Cache(item):
+        from modules.caches.flat import Flat_Cache
+        return isinstance(item, Flat_Cache)
 
+    @staticmethod
     def is_tuple(item):
-        from modules.caches.nested import NestedCache
+        from modules.caches.nested import Nested_Cache
         return isinstance(item, tuple)
+
+    @staticmethod
+    def output_dir(item):
+        dirs = dir(item)
+        # print(dirs)
+        for dirItem in dirs:
+            print(f"{dirItem}:{getattr(item, dirItem)}")

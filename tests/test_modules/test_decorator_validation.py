@@ -1,12 +1,12 @@
 import pytest
 from modules.decorator import debug, validate
 from modules.base import BaseClass
-from modules.decorators.exception import DecoratorException
-from modules.validations.exception import ValidationException, FieldValidationException, MethodValidationException
+from modules.decorators.exception import Decorator_Exception
+from modules.validations.exception import Validation_Exception, Validation_Field_Exception, Validation_Method_Exception
 
-# We are testing both MethodValidation and FieldValidation in these tests
-# The @validate decorator looks at all of the validations -- MethodValidation
-#   It breaks up the validations by field, then passes each one to FieldValidation
+# We are testing both Validation_Method and Validation_Field in these tests
+# The @validate decorator looks at all of the validations -- Validation_Method
+#   It breaks up the validations by field, then passes each one to Validation_Field
 
 
 # create a dummy class to test Validations against
@@ -100,7 +100,7 @@ def test_default_and_annotation_sets_isSetType():
 #   - send in an unexpected type
 def test_default_and_annotation_sets_isSetType_wrongType():
     c = C()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         c.foo("string")
     assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found"
 
@@ -113,7 +113,7 @@ def test_annotation_no_default():
 
 def test_annotation_no_default():
     c = C()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         c.bar("string")
     assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found"
 
@@ -126,20 +126,20 @@ def test_no_annotation_default_set():
 
 def test_no_annotation_default_set_fail():
     c = C()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         c.bat(None)
     assert excinfo.value.message == "var1 was passed as None, but needs to be set"
 
 
 
 def test_init_validation():
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var = B(None)
     assert excinfo.value.message == "arbitvalue was passed as None, but needs to be set"
 
 
 def test_init_validation_wrong_type_passed():
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var = B(['string'])
     assert excinfo.value.message == "arbitvalue was expected to be type str, but <class 'list'> was found"
 
@@ -157,14 +157,14 @@ def test_passes_validate_positional_and_named_args():
 
 def test_fails_validate_using_isTypeInt():
     var = A()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.bat("this is a string", var2="3")
     assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found"
 
 
 def fails_validate_notNone():
     var = A()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.bat(1)
     assert excinfo.value.message == "var2 was passed as None, but needs to be set"
     
@@ -176,13 +176,13 @@ def test_success_validate_oneIsNotNone():
 
 def test_fails_validate_oneIsNotNone():
     var = A()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.foo2(1, var2=None, var3=None)
     assert excinfo.value.message == "Either var2 or var3 was expected to not be 'None'"
 
 def test_fails_validate_oneIsNotNone_using_defaults():
     var = A()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.foo(1)
     assert excinfo.value.message == "Either var2 or var3 was expected to not be 'None'"
 
@@ -190,7 +190,7 @@ def test_fails_validate_oneIsNotNone_using_defaults():
 def test_positional_arg_not_set_no_default():
     #"Positional Argument {} is not set and has no default".format(key)
     var = A()
-    with pytest.raises(DecoratorException) as excinfo:
+    with pytest.raises(Decorator_Exception) as excinfo:
         var.positional(1)
     assert excinfo.value.message == "Positional arg 'var2' was not set and has no default"
 
@@ -207,13 +207,13 @@ def test_annotations_without_validation_set():
 
 def test_annotations_with_validation_set_mismatch_types():
     var = A()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.annotations_with_validate_set(var1=1, var2={}, var3={}, var4="some string")
     assert excinfo.value.message == "var2 was expected to be type list, but <class 'dict'> was found"
 
 def test_annotations_with_validation_set_mismatch_types_missing_param():
     var = A()
-    with pytest.raises(DecoratorException) as excinfo:
+    with pytest.raises(Decorator_Exception) as excinfo:
         var.annotations_with_validate_set(var1=1, var2={}, var3={})
     assert excinfo.value.message == "Positional arg 'var4' was not set and has no default"
 
@@ -221,13 +221,13 @@ def test_annotations_with_validation_set_mismatch_types_missing_param():
 
 def test_annotations_without_validation_set_mismatch_types():
     var = A()
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.annotations_without_validate_set(var1=1, var2={}, var3={}, var4="some string")
     assert excinfo.value.message == "var2 was expected to be type list, but <class 'dict'> was found"
 
 def test_annotations_without_validation_set_mismatch_types_with_missing_param():
     var = A()
-    with pytest.raises(DecoratorException) as excinfo:
+    with pytest.raises(Decorator_Exception) as excinfo:
         var.annotations_without_validate_set(var1=1, var2={}, var3={})
     assert excinfo.value.message == "Positional arg 'var4' was not set and has no default"
 
@@ -236,14 +236,14 @@ def test_validation_gte():
     assert True == var.gte(2)
     assert True == var.gte(3)
 
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.gte(1)
     assert excinfo.value.message == "var1 was expected to be greater than or equal to 2, 1 was found"
 
 def test_validation_gte2():
     var = C()
 
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.gte({})
     assert excinfo.value.message == "var1 was expected to be type int, but <class 'dict'> was found"
 
@@ -253,11 +253,11 @@ def test_validation_gt():
 
     assert True == var.gt(2)
     assert True == var.gt(100)
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.gt(1)
     excinfo.value.message == "var1 was expected to be greater than 1, 1 was found"
 
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.gte("blah")
     assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found"    
 
@@ -269,7 +269,7 @@ def test_validation_ifSetType():
 
     assert True == var.ifSetType(None)
 
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.ifSetType([1,2,3])
     assert excinfo.value.message == "var1 was expected to be type dict, but <class 'list'> was found"
 
@@ -279,11 +279,11 @@ def test_validation_contains():
 
     assert True == var.contains('yes')
 
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.contains2("")
     assert excinfo.value.message == "'contains' validation expects a comma seperated list of items to check against, 'yes' was found"
 
 
-    with pytest.raises(ValidationException) as excinfo:
+    with pytest.raises(Validation_Exception) as excinfo:
         var.contains("something else")
     assert excinfo.value.message == "One of [yes,no] was expected, but 'something else' was found for parameter var1"

@@ -237,7 +237,7 @@ class Spreadsheet(BaseClass):
             # this helps keep the number of API calls to a minimum, so we don't get in trouble
             worksheet.commit()
 
-            # Right now, this can get all the data and sets up the cache in the WorksheetData class wrapped around NestedCache
+            # Right now, this can get all the data and sets up the cache in the WorksheetData class wrapped around Nested_Cache
             # We need to figure out how to do the functionality below within the cached sheetData
             # - making sure to keep the headers, data, etc up to date as we go
             # - once it's cleaned, organized, we need to commit the data to the google sheet

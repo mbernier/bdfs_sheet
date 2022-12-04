@@ -71,14 +71,20 @@ Relevant Files:
 - modules/worksheet.py - Base class for a google spreadsheet worksheet (a tab)
 - modules/worksheets/bdfs_inventory.py - specifics for the BDFS inventory worksheets
 - modules/worksheets/exception.py
-- modules/worksheets/data.py - Worksheet Data class, wraps the NestedCache functionality to create a local copy of the data in the worksheet 
+- modules/worksheets/data.py - Worksheet Data class, wraps the Nested_Cache functionality to create a local copy of the data in the worksheet 
 
 *validation*
 Method and field validation code
 Will validate features of parameters, is employed by decorators
 
+Notes:
+- has the ability to allow/deny debug using config.ini::debug_validations= True 
+
 *decorators*
 @ methods that can be specified before a method call, to add functionality
+
+Notes:
+- Has the ability to output to debug whatever the method returns with config.ini::debug_decorator_returns = True
 
 Decorators:
     - debug - will call a logger method to add information about the method that is decorated 
@@ -106,7 +112,7 @@ Relevant Files
 Relevant Files:
 - modules/cache.py - roughly an abstract class
 - modules/caches/flat.py - a wrapper for accessing and getting data from a dict
-- modules/caches/nested.py - a list of flatCaches, pushes the parallel index/header data and manages accessing/writing it
+- modules/caches/nested.py - a list of Flat_Caches, pushes the parallel index/header data and manages accessing/writing it
 
 *logger*
 Wrapper for logging functionality, making it easier to pass information to the logger. 
@@ -119,11 +125,26 @@ Relevant Files
 Originally, this had the logging functionality, but that was broken out. Now this has a couple of helper methods wrapped up that were used in various places, but doesn't do much else.
 
 *DataStore*
-Was the first pass at WorksheetData and NestedCache, when the data was being used in the sheet and not locally. This is still here, because there is functionality that may be reusable, post refactor towards local data processing
+Was the first pass at WorksheetData and Nested_Cache, when the data was being used in the sheet and not locally. This is still here, because there is functionality that may be reusable, post refactor towards local data processing
+
+*Config*
+Turns on environement specific functionality that is honored in the code. To change environment, modify the environment param to one of the Environments listed below.
+```
+[current]
+environment = development
+```
+Environments:
+- default - sets up all the configuration params, to cheat and not have to add checks for them in config.py
+- verbose_debug - turns on ALL debug functionality, including validation and method return data logging
+- development - all debug, except validation and method return logging
+- production - no debug, info+ logging
+
+Environment options are all explained in the comments of the `default` environment
+
 
 ## To Add:
 0. Validations
-    a. Add return data validation?
+    a. Add return data validation - use func annotations and see if the return is there, fail if return doesn't match in the validation decorator
 1. Parsing through the information in the sheet - in a Shopify generic (NOT DOOR SPECIFIC) way
     *DECIDE:* how do we want the information organized in the spreadsheet? Should it be organized by the categories that are in Shopify? Should there be a categorization mapping and a products table - referenced so that we can go back and forth? This needs to be figured out, as the structure can determine many things in the future. Right now, the spreadsheet is organized by door type.
     a. Throw errors when the data is incorrect or weird

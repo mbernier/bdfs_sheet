@@ -209,7 +209,7 @@ class Worksheet(BaseClass):
     #
     ####
 
-    # if we mess with _sheetData, then we need to update headersList, HeadersFlatCache
+    # if we mess with _sheetData, then we need to update headersList, HeadersFlat_Cache
     def _setSheetData(self):
         self.debug("_setSheetData()")
         self._sheetData = WorksheetData(self.getAllValues())

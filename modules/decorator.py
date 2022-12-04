@@ -1,64 +1,88 @@
 import sys, functools, pprint
 from inspect import signature, Parameter
-from modules.decorators.exception import DecoratorException
+from modules.config import config
 from modules.helper import Helper
-from modules.logger import Logger
-from modules.validations.method import MethodValidation
+from modules.decorators.exception import Decorator_Exception
+from modules.validations.annotation import Validation_Annotation
+from modules.validations.method import Validation_Method
+
 
 SHITTY_NONE_DEFAULT_VALUE = 'NoneZeroDefaultFail'
 
 def debug(func):
+    # print("decorator_debug")
     """Print the function signature and return value"""
     @functools.wraps(func)
     def wrapper_debug(*args, **kwargs):
         # allows us to call the Logger methods, even if we are processing an __init__ method, where we don't know the class
-        classObj = Logger()
+        # print("wrapper_debug")
+        # print(func)
+        # print(args)
+        # print(kwargs)
+
+        classObj = Helper.className(func)
+        # print(classObj)
         if len(args) > 0:
             classObj = args[0]
+        else:
+            # print(func)
+            # print(func.__name__)
+            # print(args)
+            # print(kwargs)
+            raise Decorator_Exception("We don't have args[0] in decorator, so we can't call logging on the wrapped class. What options do we have to provide default classObj?")
         
-        args_repr, kwargs_repr, signature = prepArgs(args, kwargs)
+        args_repr, kwargs_repr = prepArgs(args, kwargs)
 
-        # get a prefix to make the logs a little cleaner
-        prefix = Logger.methodNamePrefix(func.__name__)
-            
-        classObj.debug(f"{prefix} Calling {func.__name__}({signature})")
+        # print(classObj)
+        if hasattr(classObj, "_method"):
+            classObj._method(f"{func.__name__}", args_repr + kwargs_repr)
+        else:
+            print(f"\t {classObj} has no method _method()")
+        
+        # call the function
         value = func(*args, **kwargs)
-        classObj.debug(f"{prefix} {func.__name__!r} returned {value!r}")      # 4
+
+        # output to log whatever the function returned
+        if config.getboolean("debug_decorator_returns"):
+            classObj.debug(f"{func.__name__!r} returned {value!r}")      # 4
+
         return value
     return wrapper_debug
 
 
 # Validation Decorator
 #   To validate method params, add something like this:
-#   @validate(paramName, validationsToRun) where validationsToRun is a list of validations from methods.validation.FieldValidation
+#   @validate(paramName, validationsToRun) where validationsToRun is a list of validations from methods.validation.Validation_Field
 def validate(*validateargs, **validateParams):
     def decorator_validate(func, *decoratorargs, **decoratorkwargs):
         @functools.wraps(func)
         def wrapper_validate(*funcParams, **wrapperkwargs):
 
             funcSig = signature(func).parameters
-            funcKeys = funcSig.keys()
-            funcParamsList = list(funcParams)
-            # print("func: {}".format(func))
-            # print("funcParams: {}".format(funcParams))
-            # print("funcSig: {}".format(funcSig))
-            # print("validateParams: {}".format(validateParams))
-            # print("funcParamsList: {}".format(funcParamsList))
-            # print("wrapperkwargs: {}".format(wrapperkwargs))
-            # print("funcKeys: {}".format(funcKeys))
-            # print("\n\n")
 
+            funcKeys = funcSig.keys()
+            funcValues = funcSig.values()
+            funcParamsList = list(funcParams)
+
+            print("func: {}".format(func))
+            print("funcParams: {}".format(funcParams))
+            print("funcKeys: {}".format(funcKeys))
+            print("funcVals: {}".format(funcValues))
+            print("funcSig: {}".format(funcSig))
+            print("validateParams: {}".format(validateParams))
+            print("funcParamsList: {}".format(funcParamsList))
+            print("wrapperkwargs: {}".format(wrapperkwargs))
+            print("\n\n")
 
             # didn't code for these, so throw a hissy if they show up
             if not () == validateargs:
-                raise DecoratorException('Received unexpected validateargs in validate Decorator:: {} for method {}'.format(validateargs, func.__name__))
+                raise Decorator_Exception('Received unexpected validateargs in validate Decorator:: {} for method {}'.format(validateargs, func.__name__))
 
             if not () == decoratorargs:
-                raise DecoratorException('Received unexpected decoratorargs in validate Decorator:: {} for method {}'.format(decoratorargs, func.__name__))
+                raise Decorator_Exception('Received unexpected decoratorargs in validate Decorator:: {} for method {}'.format(decoratorargs, func.__name__))
             
-
             # hold onto self for a second, so we can pass all the other vars to Validate class
-            tempSelf = funcParamsList[0]
+            tempSelf = funcSig['self']
 
             validationArgs = {'classBeingValidated': tempSelf, 'method': func.__name__}
 
@@ -69,7 +93,7 @@ def validate(*validateargs, **validateParams):
             # go through the function keys
                 # find whether we have validations for them
                 # if we do, then create a dict of keys => validations, data
-            # pass the dict to MethodValidation
+            # pass the dict to Validation_Method
             for index, key in enumerate(funcKeys):
                 if 'self' == key:
                     newFuncParams['self'] = tempSelf
@@ -79,14 +103,15 @@ def validate(*validateargs, **validateParams):
                 currentValue = None  # set this to something, we will set to something else below
                 defaultValue = getFieldDefault(funcSig, key)
                 paramValidations = []
-                # do we get a free validator from the method definition?
-                annotation = getFieldAnnotation(funcSig, key)
+                
+                # do we get a free validator from the method definition
+                annotation = Validation_Annotation.getValidations(funcSig, key)
 
-                # print("")
-                # print(defaultValue)
-                # print(key)
-                # print(index)
-                # print(len(funcParamsList))
+                print("")
+                print(defaultValue)
+                print(key)
+                print(index)
+                print(len(funcParamsList))
 
                 # set the value, based on values available from args, kwargs, and defaults
                 if index < len(funcParamsList):
@@ -94,7 +119,7 @@ def validate(*validateargs, **validateParams):
                 elif key in wrapperkwargs:
                     currentValue = wrapperkwargs[key]
                 elif SHITTY_NONE_DEFAULT_VALUE == defaultValue: # this value is some bullshit I made up, that I hope no one would ever use, fail on me if they do
-                    raise DecoratorException("Positional arg '{}' was not set and has no default for method {}".format(key, func.__name__))
+                    raise Decorator_Exception("Positional arg '{}' was not set and has no default for method {}".format(key, func.__name__))
                 else: 
                     currentValue = defaultValue
 
@@ -122,19 +147,13 @@ def validate(*validateargs, **validateParams):
 
                 newFuncParams[key] = currentValue
 
-            # FieldValidation.__init__(self, classBeingValidated, field, validations, **kwargs):
-            validator = MethodValidation(**validationArgs)
+            # Validation_Field.__init__(self, classBeingValidated, field, validations, **kwargs):
+            validator = Validation_Method(**validationArgs)
             
             # if we got this far, we passed validation, pass in the original function params to the function            
             value = func(**newFuncParams)
             return value
 
-        def getFieldAnnotation(sig, field):
-            annotation = sig[field].annotation
-            if annotation.__name__ == "_empty":
-                return None
-
-            return annotation.__name__
 
         def getFieldDefault(sig, field):
             defaultValue = SHITTY_NONE_DEFAULT_VALUE  # this value is some bullshit I made up, that I hope no one would ever use, fail on me if they do
@@ -148,7 +167,7 @@ def validate(*validateargs, **validateParams):
                     if defaultValue.__name__  == "_empty":
                         return SHITTY_NONE_DEFAULT_VALUE
                     else:
-                        raise DecoratorException("default value did something unexpected in decorators, found defaultvalue.__name__ = {} for method {}".format(defaultValue.__name__, func.__name__))
+                        raise Decorator_Exception("default value did something unexpected in decorators, found defaultvalue.__name__ = {} for method {}".format(defaultValue.__name__, func.__name__))
 
             return defaultValue
 
@@ -166,6 +185,5 @@ def validate(*validateargs, **validateParams):
 def prepArgs(args, kwargs):
     args_repr = [repr(a) for a in args]                      # 1
     kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]  # 2
-    signature = ", ".join(args_repr + kwargs_repr)           # 3
     
-    return args_repr, kwargs_repr, signature
+    return args_repr, kwargs_repr

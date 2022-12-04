@@ -2,84 +2,84 @@
 import logging, sys
 from modules.config import config
 from modules.helper import Helper
+from modules.decorator import debug, validate
+from modules.loggers.exception import Logger_Exception
 from termcolor import colored, cprint
+from typing import TypeVar, List
+
+Typevar_List_Str = TypeVar("Typevar_List_Str", list, str)
 
 #get the log_level from the config.ini
 #we are grabbing the attribute of the log_level from the logging object here, not just setting a string
 logging_level = getattr(logging, config["log_level"])
+
 #setup the level of logging we care about
 logging.basicConfig(level=logging_level)
+
 #define the main logger object
-logger = logging.getLogger('logs') 
+logger = logging.getLogger('logs')
+
 
 class Logger:
     base_logger_name = "logs"
     logger_name = ""
+    _debug = False
     logger_configured = False
-    critical = True
-    debug = False
-    error = True
-    info = True
-    warning = True
     output_to_console = False
 
+    @debug
     def __init__(self):
         # allow this to be overriden in child classes
-        if not self.debug:
-            if "DEBUG" == config.get("log_level"):
-                self.debug = True
+
+        if not self._debug:
+            if "DEBUG" == config["log_level"]:
+                self._debug = True
+
         if not self.output_to_console:
-            if config["output_to_console"]:
+            if config.getboolean("output_to_console"):
                 self.output_to_console = True
-        if config["critical_messages"]:
-            self.info = config["critical_messages"]
-        if config["error_messages"]:
-            self.info = config["error_messages"]
-        if config["info_messages"]:
-            self.info = config["info_messages"]
-        if config["warning_messages"]:
-            self.info = config["warning_messages"]
 
-    def info(self, msg, data=None, new_lines=1, prefix=""):
+    # @debug
+    # @validate()
+    def info(self, msg:str, data=None, new_lines:int=1, prefix:str=""):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="blue")
-        if self.info:
-            logger.info(msg)
+        logger.info(msg)
 
+    # @debug
+    # @validate()
+    def warning(self, msg:str, data=None, new_lines:int=1, prefix:str=""):
+        msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="magenta")    
+        logger.warning(msg)
 
-    def warning(self, msg, data=None, new_lines=2, prefix=""):
-        msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="magenta")
-        if self.warning:
-            logger.warning(msg)
-
-
-    def error(self, msg, data=None, new_lines=3, prefix="\n\n\n"):
+    # @debug
+    # @validate()
+    def error(self, msg:str, data=None, new_lines:int=1, prefix=""):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="yellow")
-        if self.error:
-            logger.error(msg)
+        logger.error(msg)
 
-
-    def critical(self, msg, data=None, new_lines=3, prefix="\n\n\n"):
+    # @debug
+    # @validate()
+    def critical(self, msg:str, data=None, new_lines:int=1, prefix:str=""):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="red")
-        if self.critical:
-            logger.critical(msg)
-        raise Exception("Logged a critical issue: " + msg)
+        logger.critical(msg)
+        raise Logger_Exception("Logged a critical issue: " + msg)
 
-
-    def debug(self, msg, data=None, new_lines=0, prefix=""):
+    # @debug
+    # @validate()
+    def debug(self, msg:str, data=None, new_lines:int=0, prefix:str=""):
         msg = self._prepareString(msg=msg, data=data, new_lines=new_lines, prefix=prefix, textColor="cyan")
-        if self.debug:
-            logger.debug(msg)
+        logger.debug(msg)
 
     # Output something to the console, if the config allows it
     # if we're in debug mode for the logs, set the console outputs aside by adding extra lines
     # default colors of Console: blue on grey
-    def console(self, msg = None, data = None, new_lines=1, prefix="", postfix=""):
+    # @debug
+    def console(self, msg:str=None, data=None, new_lines:int=1, prefix:str="", postfix:str=""):
 
-        if self.debug:
-            if "" == prefix:
-                prefix = "\n\n" + colored("CONSOLE: ", "white")
-            if 1 == new_lines:
-                new_lines = 2
+        if "" == prefix:
+            prefix = "\n\n" + colored("CONSOLE: ", "white")
+        if 1 == new_lines:
+            new_lines = 2
 
         # only print to console if we are allowing it via config.ini `output_to_console`
 
@@ -92,10 +92,12 @@ class Logger:
 
 
     # handle prefix and new_lines being added to the string, one call to do everything, reduce repetition above
-    def _prepareString(self, msg, data=None, prefix=None, new_lines=0, postfix="", textColor="white", bgcolor=None, dataColor="white", dataBgColor=None, bypassReplace=False) -> str:
-        # logger.debug("_prepareString(self={}, msg={},data={},prefix={},new_lines={},postfix={},textcolor={},bgcolor={},dataColor={},dataBgColor={},bypassReplace={})".format(locals()))
-        if None != bgcolor:
-            bgcolor = "on_" + bgcolor
+    # @debug
+    # @validate()
+    def _prepareString(self, msg:str, data=None, prefix:str=None, new_lines:int=0, postfix:str="", textColor:str="white", bgColor:str=None, dataColor:str="white", dataBgColor:str=None, bypassReplace:bool=False) -> str:
+        # logger.debug("_prepareString(self={}, msg={},data={},prefix={},new_lines={},postfix={},textcolor={},bgColor={},dataColor={},dataBgColor={},bypassReplace={})".format(locals()))
+        if None != bgColor:
+            bgColor = "on_" + bgColor
 
         if None != dataBgColor:
             dataBgColor = "on_" + dataBgColor
@@ -104,7 +106,7 @@ class Logger:
         msg = self.__className() + ":: " + msg
 
         # change the color to make it pretty
-        msg = colored(msg, textColor, bgcolor)
+        msg = colored(msg, textColor, bgColor)
 
         if bypassReplace == False:
             if None != data:
@@ -128,12 +130,16 @@ class Logger:
 
         return self.insert_newlines(msg)
 
-    def insert_newlines(self, string, every=100):
+    # @debug
+    # @validate()
+    def insert_newlines(self, string:str, every:int=100):
         # return '\n\t\t\t\t\t\t'.join(string[i:i+every] for i in range(0, len(string), every))
 
         import textwrap
         return textwrap.fill(string, every).replace("\n", "\n\t\t\t\t\t\t")
 
+    # @debug
+    # @validate()
     def prefixStr(self, msg:str, prefix: str=""):
         if None != prefix:
             msg = prefix + msg
@@ -141,12 +147,16 @@ class Logger:
 
     # returns the methodName with the prefix
     @staticmethod
-    def prefixMethodName(methodName):
+    # @debug
+    # @validate()
+    def prefixMethodName(methodName:str):
         return Logger.methodNamePrefix(methodName) + methodName
 
     # returns only the prefix
     @staticmethod
-    def methodNamePrefix(methodName):
+    # @debug
+    # @validate()
+    def methodNamePrefix(methodName:str):
         prefix = ""
         if not methodName in ["__init__"]:
             spltz = methodName.count("_")
@@ -155,12 +165,15 @@ class Logger:
 
         return prefix
 
+    # @debug
+    # @validate()
     def postfixStr(self, msg:str, postfix:str="", new_lines:int =0):
-        msg = self.appendNewLines(msg, new_lines=new_lines)
         msg += postfix
+        msg = self.appendNewLines(msg, new_lines=new_lines)
         return msg
 
-
+    # @debug
+    # @validate()
     def appendNewLines(self, msg: str, new_lines: int=0):
         nl_str = ""
         if new_lines > 0:
@@ -168,49 +181,67 @@ class Logger:
                 nl_str += "\n"
 
         #print the number of new lines requested
-        return "{} {}".format(msg, nl_str)
+        return "{}{}".format(msg, nl_str)
+
 
     # cheater method to make setting debug statements a little faster
+    # @debug
+    # @validate()
     def __className(self):
         return self.__class__.__name__
 
 
-   # created the debug string, by calling like so:
+    # created the debug string, by calling like so:
     # e.g. self.__method("nameofMethod", locals())
-    def _method(self, method, data=None):
+    # @debug
+    # @validate()
+    def _method(self, method:str, data=None):
         #indent the method
         method = Logger.prefixMethodName(method)
-
-        if not None == data:
-            if not Helper.is_dict(data):
-                raise Exception("_method expects params as a dict, suggest using locals(). {} was passed".format(data))
 
         self.debug(msg=method, data=data)
 
 
+    # only allow the validation debug to be written if the flag is on in config.ini
+    # @debug
+    # @validate()
+    def validation_method_debug(self, method, data=None):
+        if config["debug_validations"]:
+            self._method(method, data)
+
+    # @debug
+    # @validate()
     def __prepareMethodString(self, method, data):
-        methodAdditions = self.__createMethodAdditions(data)
-        return self.__createMethodString(method, methodAdditions)
+        methodParams = self.__createMethodSignature(data)
+        return self.__createMethodString(method, methodParams)
 
-
-    def __createMethodAdditions(self, data):
+    # @debug
+    # @validate()
+    def __createMethodSignature(self, data):
         # if this is empty, return empty list
-        if {} == data: return []
+        if {} == data: return ""
 
-        methodAdditions = []            
+        signature = ""
+
+        # make it easy, in case a string was sent, pass that straight through
         if not data == None:
             if Helper.is_str(data):
-                methodAdditions.append(data)
+                signature = data
             else:
-                for paramName in data:
-                    dataToPass = data[paramName]
-                    methodAdditions.append(self.__createParamDataValueString(paramName=paramName, paramData=dataToPass))
-        return methodAdditions
+                # modified from the debug decorators intro documentation
+                data_repr = [f"{k}={v!r}" for k, v in data.items()]
+                signature = ", ".join(data_repr)
+
+        return signature
 
 
+    # @debug
+    # @validate()
     def __createMethodString(self, methodName: str, methodAdditions: list):
         return "{}({})".format(methodName, (",").join(map(str, methodAdditions)))
 
 
+    # @debug
+    # @validate()
     def __createParamDataValueString(self, paramName, paramData):
         return "{}={}".format(paramName, paramData)

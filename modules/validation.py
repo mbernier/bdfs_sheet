@@ -1,19 +1,33 @@
 import sys
-from modules.logger import Logger
+from modules.config import config
 from modules.helper import Helper
-from modules.validations.exception import ValidationException
+from modules.validations.exception import Validation_Exception
 
 
-class Validation(Logger):
+class Validation():
 
     def __init__(self, classBeingValidated, **kwargs):
-
         self._classBeingValidated = classBeingValidated
         self.__doValidations()
 
 
     def __doValidations(self):
-        raise ValidationException("You must create a __doValidations method")
+        raise Validation_Exception("You must create a __doValidations method")
+
+
+
+    # Calls the logging method of the class that owns the method we are validating, instead of
+    #   Needing to call Validation._method - thus removing the looping dependency on logger from Validation
+    #   while also allowing the same signature for calling all the way through, no human needs to remember
+    #   anything different than what we're doing in all the other classes in this code base
+    def _method(self, method, data=None):
+
+        if None == self._classBeingValidated:
+            raise Validation_Exception("_classBeingValidated must be set before calling self._method() in any Validation class")
+
+        # call the validation_method_debug function on the class that owns the method we're validating
+        #   allows for overriding whether we even output this data, based on the config.ini
+        self._classBeingValidated.validation_method_debug(method, data)
 
     ####
     #
@@ -25,7 +39,7 @@ class Validation(Logger):
         self._method("validation_notNone", locals())
 
         if None == paramValue:
-            raise ValidationException("{} was passed as None, but needs to be set for method {}".format(param, self._field))
+            raise Validation_Exception("{} was passed as None, but needs to be set for method {}".format(param, self._field))
         return True
 
 
@@ -33,7 +47,7 @@ class Validation(Logger):
         self._method("validation_isType", locals())
 
         if not Helper.isType(item, paramValue):
-            raise ValidationException("{} was expected to be type {}, but {} was found for method {}".format(param, item, str(type(paramValue)), param), self._field)
+            raise Validation_Exception("{} was expected to be type {}, but {} was found for method {}".format(param, item, str(type(paramValue)), param), self._field)
         return True
 
     def validation_ifSetType(self, item, param, paramValue=None):
@@ -46,14 +60,14 @@ class Validation(Logger):
         self._method("validate_contains", locals())
 
         if not Helper.existsInStr(",", item):
-            raise ValidationException("'contains' validation expects a comma seperated list of items to check against, '{}' was found for method {}".format(item, self._field))
+            raise Validation_Exception("'contains' validation expects a comma seperated list of items to check against, '{}' was found for method {}".format(item, self._field))
 
         items = item.split(",")
         
         if Helper.existsIn(item=paramValue, lookIn=items):
             return True
         else:
-            raise ValidationException("One of [{}] was expected, but '{}' was found for parameter {} for method {}".format(item, paramValue,param, self._field))
+            raise Validation_Exception("One of [{}] was expected, but '{}' was found for parameter {} for method {}".format(item, paramValue,param, self._field))
 
     ####
     #
@@ -65,7 +79,7 @@ class Validation(Logger):
         self._method("validation_gt", locals())
 
         if self.validation_isType('int', param, paramValue) and paramValue <= int(item):
-            raise ValidationException("{} was expected to be greater than {}, {} was found for method {}".format(param, item, paramValue, self._field))
+            raise Validation_Exception("{} was expected to be greater than {}, {} was found for method {}".format(param, item, paramValue, self._field))
         return True
 
     def validation_gte(self, item, param, paramValue=None):
@@ -74,5 +88,5 @@ class Validation(Logger):
         self.validation_isType('int', param, paramValue)
 
         if self.validation_isType('int', param, paramValue) and paramValue < int(item):
-            raise ValidationException("{} was expected to be greater than or equal to {}, {} was found for method {}".format(param, item, paramValue, self.field))
+            raise Validation_Exception("{} was expected to be greater than or equal to {}, {} was found for method {}".format(param, item, paramValue, self.field))
         return True

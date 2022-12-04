@@ -1,21 +1,20 @@
 import sys
-from modules.logger import Logger
 from modules.helper import Helper
 from modules.validation import Validation
-from modules.validations.field import FieldValidation
-from modules.validations.exception import MethodValidationException
+from modules.validations.field import Validation_Field
+from modules.validations.exception import Validation_Method_Exception
 
-class MethodValidation(Validation):
+class Validation_Method(Validation):
 
     # example payload, the only defined parameter is classBeingValidated, otherwise it is all params that are being passed
     # {
-    #     'classBeingValidated': <modules.caches.nested.NestedCache object at 0x79eae58aea00>, 
+    #     'classBeingValidated': <modules.caches.nested.Nested_Cache object at 0x79eae58aea00>, 
     #     'locations': {
     #         'validations': ['notNone', 'isType:list'], 
     #         'data': ['col1', 'col2', 'col3']}, 
     #     'data': {
     #         'validations': ['notNone', 'isType:list'], 
-    #         'data': []}
+    #         'data': []} 
     # }
     def __init__(self, classBeingValidated, method, **kwargs):
 
@@ -28,14 +27,14 @@ class MethodValidation(Validation):
         
         passTheseArgs = {}
 
-        # set up the args dict for passing to FieldValidation
+        # set up the args dict for passing to Validation_Field
         for key in paramData:
             passTheseArgs[key] = paramData[key]['data']
 
         for key in paramData:
             # print((self._classBeingValidated, key,  paramData[key]['validations'], passTheseArgs))
-            #            FieldValidations(classBeingValidated, field, validations, args)
-            validation = FieldValidation(classBeingValidated=self._classBeingValidated, 
+            #            Validation_Field(classBeingValidated, field, validations, args)
+            validation = Validation_Field(classBeingValidated=self._classBeingValidated, 
                                             method=self._field,
                                             field=key,
                                             validations=paramData[key]['validations'], 

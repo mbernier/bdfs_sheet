@@ -8,8 +8,8 @@
 
 import sys
 from modules.base import BaseClass
-from modules.caches.flat import FlatCache
-from modules.caches.nested import NestedCache
+from modules.caches.flat import Flat_Cache
+from modules.caches.nested import Nested_Cache
 
 
 class DataStore(BaseClass):
@@ -22,12 +22,12 @@ class DataStore(BaseClass):
         #   ['header1', 'header2']
         self._headersList: list = []
 
-        # _headersFlatCache
+        # _headersFlat_Cache
         #   [{header1:location, header2:location}]
-        self._headersFlatCache = FlatCache()
+        self._headersFlat_Cache = Flat_Cache()
         
-        # is a NestedCache Object [RowCache,RowCache]
-        self._dataCache: NestedCache = NestedCache()
+        # is a Nested_Cache Object [RowCache,RowCache]
+        self._dataCache: Nested_Cache = Nested_Cache()
 
         # This is the entire data of the spreadsheet
         # [[],[],[]]
@@ -105,27 +105,27 @@ class DataStore(BaseClass):
 
         print("\n\n\n")
         self.debug("headersList: {}".format(self._headersList))
-        self.debug("headersFlatCache: {}".format(self._headersFlatCache))
+        self.debug("headersFlat_Cache: {}".format(self._headersFlat_Cache))
         self.debug("data: {}".format(self._dataCache))
         self.debug("Empty Headers: {}".format(self.getEmptyHeaders()))
 
 
-    # NestedCache of the data 
+    # Nested_Cache of the data 
     def __appendDataCacheRow(self, data):
         self.debug("__appendDataCacheRow(data={})", data)
         headers = self.getHeaders()
 
-        rowFlatCache = FlatCache()
+        rowFlat_Cache = Flat_Cache()
 
         # [1,"some text", "$4.50"]
         # go through the headers and setup the data object for the data cache
         for index, headerValue in enumerate(headers):
             cellData = {"value": headerValue, "position": index}
 
-            rowFlatCache.set(location=headerValue, data=cellData)
+            rowFlat_Cache.set(location=headerValue, data=cellData)
         
         # add the row to the data store
-        self.__appendCacheRow(rowFlatCache)
+        self.__appendCacheRow(rowFlat_Cache)
 
         self.debug("Data Cache Rows: {}".format(self._dataCache.totalSize()))
 
@@ -139,7 +139,7 @@ class DataStore(BaseClass):
     #
     def __setupHeadersCaches(self, headers):
         self.debug("__setupHeaderCaches(headers={})".format(headers))
-        cache = FlatCache()
+        cache = Flat_Cache()
 
         emptyCol = 1
 
@@ -159,7 +159,7 @@ class DataStore(BaseClass):
 
             cache.set(location=headerName, data=index)
 
-        self.__setHeadersFlatCache(cache)
+        self.__setHeadersFlat_Cache(cache)
 
         # Build the HeadersList
         # ['headerOne', 'headerTwo']
@@ -170,9 +170,9 @@ class DataStore(BaseClass):
         self._headersList = headers
         return self._headersList
 
-    def __setHeadersFlatCache(self, data):
-        self.debug("__setHeadersFlatCache({})".format(data))
-        self._headersFlatCache = cache
+    def __setHeadersFlat_Cache(self, data):
+        self.debug("__setHeadersFlat_Cache({})".format(data))
+        self._headersFlat_Cache = cache
 
     def __appendEmptyHeaderIndex(self, index):
         self.debug("__appendEmptyHeaderIndex({})".format(index))
@@ -188,7 +188,7 @@ class DataStore(BaseClass):
 
     def getIndexByHeader(self, header):
         self.debug("getIndexByHeader(header={})", header)
-        return self._headersFlatCache.get(header)
+        return self._headersFlat_Cache.get(header)
 
     def getEmptyHeaders(self):
         self.debug("getEmptyHeaders()")
@@ -199,6 +199,6 @@ class DataStore(BaseClass):
     # Cache Writing Methods
     #
     ####
-    def __appendCacheRow(self, flatCacheObject):
-        self.debug("__appendCacheRow({})".format(flatCacheObject))
-        self._dataCache.append(rowFlatCache)
+    def __appendCacheRow(self, Flat_CacheObject):
+        self.debug("__appendCacheRow({})".format(Flat_CacheObject))
+        self._dataCache.append(rowFlat_Cache)

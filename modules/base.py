@@ -5,7 +5,7 @@ from modules.helper import Helper
 from modules.logger import Logger
 
 
-class BaseClass(Logger):
+class BaseClass():
 
     ####
     #
@@ -15,7 +15,7 @@ class BaseClass(Logger):
 
     @debug
     def importClass(self, name): 
-        self.debug("importClass(name={})".format(name))
+        logger.debug("importClass(name={})".format(name))
 
         spltz = name.split(".")
         classname = spltz.pop()

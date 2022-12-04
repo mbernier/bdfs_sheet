@@ -1,7 +1,6 @@
-
 import sys
 from modules.base import BaseClass
-from modules.caches.exception import CacheException
+from modules.caches.exception import Cache_Exception
 
 
 class BdfsCache(BaseClass):

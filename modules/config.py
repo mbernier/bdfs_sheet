@@ -7,7 +7,11 @@ config_obj.read("config.ini")
 current_config = config_obj["current"]
 
 # set up the defaults first
-config = config_obj["default"]
+config = config_obj["DEFAULT"]
 
 # merge in the environment we care about
-config.update(config_obj[current_config["environment"]])
+config = config_obj[current_config["environment"]]
+
+# config["debug_decorator_returns"] = config.getboolean("debug_decorator_returns")
+# config["debug_validations"] = config.getboolean("debug_validations")
+# config["output_to_console"] = config.getboolean("output_to_console")
