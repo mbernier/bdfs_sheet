@@ -27,6 +27,12 @@ We can then look into options for order processing as well.
 4. You may need Matt to setup credentials for you and provide the access file, just ask him
 5. If you're running sublime text (vscode is better), then you may want to have sublime [auto-replace tabs with spaces](https://coderwall.com/p/zvyg7a/convert-tabs-to-spaces-on-file-save) Suggest: set this on User prefs notin the `.sublime-project` file, for some reason it seems to work better that way
 
+# Running tests
+In order to run the tests and have them pass, you will need to capture logs and stdout, to do that run tests thusly:
+```pytest --capture=tee-sys```
+or 
+```pytest --capture=tee-sys path/to/testing/filename```
+
 # Running the script
 To run the script (replacing `python3` with the appropriate python command for your environment):
 ```python3 run.py```
