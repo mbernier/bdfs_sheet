@@ -6,7 +6,7 @@ from modules.sheetProcessors.bdfs_inventory import BdfsInventory_SheetProcessor
 
 
 if __name__ == "__main__":
-    print()
+    print('hello')
     # logger.debug("run.py running __main__")
 
     # Bdfs Sheet Processor functionality
@@ -22,7 +22,10 @@ if __name__ == "__main__":
 
     # cache.set(row=2, location='c', data=3)
 
+    # cache = Nested_Cache([], [])
 
     logger = Logger()
     logger.info("test")
-
+    logger.warning("test")
+    logger.error("test")
+    logger.debug("test")

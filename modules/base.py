@@ -1,11 +1,11 @@
 import sys
 from modules.config import config
-from modules.decorator import debug, validate
+from modules.decorator import debug_log, validate
 from modules.helper import Helper
 from modules.logger import Logger
 
 
-class BaseClass():
+class BaseClass(Logger):
 
     ####
     #
@@ -13,8 +13,9 @@ class BaseClass():
     #
     ####
 
-    @debug
+    @debug_log
     def importClass(self, name): 
+        print("BaseClass: importClass")
         logger.debug("importClass(name={})".format(name))
 
         spltz = name.split(".")
@@ -25,10 +26,10 @@ class BaseClass():
         return klass
 
     # cheater method to make setting debug statements a little faster
-    @debug
+    @debug_log
     def __className(self):
         return Helper.className(self)
 
-    @debug
+    @debug_log
     def __callMethod(self, methodName:str, **kwargs):
         return Helper.callMethod(self, methodName, *kwargs)

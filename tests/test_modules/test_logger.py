@@ -15,22 +15,24 @@ def test_clean_logs_for_matching():
 def test_logging_default(caplog):
     with caplog.at_level(logging.INFO):
         logging.getLogger().info("boo %s", "arg")
-
-        assert caplog.record_tuples == [("root", logging.INFO, "boo arg")]
+        popped = caplog.record_tuples.pop()
+        assert popped == ("root", logging.INFO, "boo arg")
 
 
 def test_info(caplog):
     with caplog.at_level(logging.INFO):
         logger = Logger()
         logger.info("test")
-        assert caplog.record_tuples == [("logs", logging.INFO, "Logger:: test")]
+        popped = caplog.record_tuples.pop()
+        assert popped == ("logs", logging.INFO, "Logger:: test")
 
 
 def test_warning(caplog):
     with caplog.at_level(logging.WARNING):
         logger = Logger()
         logger.warning("test")
-        assert caplog.record_tuples == [("logs", logging.WARNING, "Logger:: test")]
+        popped = caplog.record_tuples.pop()
+        assert popped == ("logs", logging.WARNING, "Logger:: test")
 
 
 def test_critical(caplog):
@@ -39,15 +41,16 @@ def test_critical(caplog):
         with pytest.raises(Logger_Exception) as excinfo:
             logger.critical("test")
         assert excinfo.value.message == "Logged a critical issue: Logger:: test"
-        
-        assert caplog.record_tuples == [("logs", logging.CRITICAL, "Logger:: test")]
+        popped = caplog.record_tuples.pop()
+        assert popped == ("logs", logging.CRITICAL, "Logger:: test")
 
 
 def test_error(caplog):
     with caplog.at_level(logging.ERROR):
         logger = Logger()
         logger.error("test")
-        assert caplog.record_tuples == [("logs", logging.ERROR, "Logger:: test")]
+        popped = caplog.record_tuples.pop()
+        assert popped == ("logs", logging.ERROR, "Logger:: test")
 
 
 def test_debug(caplog):
@@ -55,18 +58,18 @@ def test_debug(caplog):
         logger = Logger()
         logger.debug("test")
 
-        # without @debug decorator
+        # without @debug_log decorator
         # assert caplog.record_tuples == [("logs", logging.DEBUG, "Logger:: test")] 
-
+        popped = caplog.record_tuples.pop()
         # with debug decorator
-        assert clean_logs_for_matching(caplog.record_tuples) == "[('logs', 10, 'Logger:: __init__<modules.logger.Logger object at classPointer>'), ('logs', 10, 'Logger:: test')]"
+        assert popped == ('logs', 10, 'Logger:: test')
 
 
 def test_console(capsys):
     logger = Logger()
     logger.console("test")
     captured = capsys.readouterr()
-    assert captured.out == "  CONSOLE: Logger:: test\n"
+    assert "  CONSOLE: Logger:: test\n" in captured.out
 
 def test_prepareString():
     logger = Logger()
@@ -134,11 +137,13 @@ def test_method(caplog):
     with caplog.at_level(logging.DEBUG):
         logger = Logger()
         logger._method("__notinitmethod__", {"one": 1, "two": 2})
-        #without @debug decorator
+        #without @debug_log decorator
         # assert caplog.record_tuples == [('logs', 10, 'Logger::                                __notinitmethod__one,two')]
         
+        popped = caplog.record_tuples.pop()
+        # print(f"popped={popped}")
         #with debug decorator
-        assert clean_logs_for_matching(caplog.record_tuples) == "[('logs', 10, 'Logger:: __init__<modules.logger.Logger object at classPointer>'), ('logs', 10, 'Logger::                                __notinitmethod__one,two')]"
+        assert popped == ('logs', 10, 'Logger::                                __notinitmethod__one,two')
 
 
 def test_validation_method_debug(caplog):
@@ -155,7 +160,8 @@ def test_validation_method_debug(caplog):
     with caplog.at_level(logging.DEBUG):
         logger.validation_method_debug("methodName")
         logger.validation_method_debug("methodName", {"one": 1, "two": 2})
-        assert caplog.record_tuples == [('logs', 10, 'Logger:: methodName'), ('logs', 10, 'Logger:: methodNameone,two')]
+        popped = caplog.record_tuples.pop()
+        assert popped == ('logs', 10, 'Logger:: methodNameone,two')
 
 def test_validation_method_debug2(caplog):
     logger = Logger()

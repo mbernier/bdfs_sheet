@@ -99,7 +99,7 @@ def test_update_exception():
 
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.update("c", 5)
-    assert excinfo.value.message == "There is nothing to update at c"
+    assert excinfo.value.message == "There is nothing to update at position 'c'"
 
     assert 3 == cache.get("b")
 
@@ -109,7 +109,7 @@ def test_update_exception2():
 
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.update(location="c", data=5)
-    assert excinfo.value.message == "There is nothing to update at c"
+    assert excinfo.value.message == "There is nothing to update at position 'c'"
 
     assert 3 == cache.get(location="b")
 

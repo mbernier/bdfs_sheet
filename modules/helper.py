@@ -96,10 +96,10 @@ class Helper:
         if typeName == 'str':
             return Helper.is_str(item)
 
-        if typeName == 'Flat_Cache':
+        if typeName == 'flat_cache':
             return Helper.is_Flat_Cache(item)
 
-        if typeName == 'Nested_Cache':
+        if typeName == 'nested_cache':
             return Helper.is_Nested_Cache(item)
 
         # raise Exception for everything else

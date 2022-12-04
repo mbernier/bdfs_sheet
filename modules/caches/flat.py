@@ -76,11 +76,11 @@ class Flat_Cache(BdfsCache):
     # creates a new Flat_Cache item from some data
     @staticmethod
     def create(data=None):
-        Flat_Cache = Flat_Cache()
+        flatCache = Flat_Cache()
         if not None == data:
             for index in data:
-                Flat_Cache.set(index, data[index])
-        return Flat_Cache
+                flatCache.set(index, data[index])
+        return flatCache
 
     def __str__(self) -> str:
         output = "Flat_Cache: \n\t"

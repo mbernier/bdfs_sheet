@@ -1,5 +1,5 @@
 import pytest
-from modules.decorator import debug, validate
+from modules.decorator import debug_log, validate
 from modules.base import BaseClass
 from modules.decorators.exception import Decorator_Exception
 from modules.validations.exception import Validation_Exception, Validation_Field_Exception, Validation_Method_Exception
@@ -12,80 +12,80 @@ from modules.validations.exception import Validation_Exception, Validation_Field
 # create a dummy class to test Validations against
 class A(BaseClass):
 
-    @debug
+    @debug_log
     @validate(var1=['isType:int'], var2 = ['notNone'])
     def bat(self, var1=None, var2=None):
         return True
 
-    @debug 
+    @debug_log 
     @validate(var2=['oneIsNotNone:var3'])
     def foo(self, var1=None, var2=None, var3=None):
         return True
 
-    @debug
+    @debug_log
     @validate(var2=['oneIsNotNone:var3'])
     def foo2(self, var1, var2, var3=None):
         pass
 
-    @debug
+    @debug_log
     @validate(var1=['notNone'], var2=['notNone'])
     def positional(self, var1, var2):
         pass
 
-    @debug
+    @debug_log
     @validate(var1=['notNone'], var2=['notNone'],var3=['notNone'], var4=['notNone'])
     def annotations_with_validate_set(self, var1:int, var2:list, var3:dict, var4:str):
         return True
 
-    @debug
+    @debug_log
     @validate(var1=['notNone'], var2=['notNone'])
     def annotations_without_validate_set(self, var1:int, var2:list, var3:dict, var4:str):
         return True
 
 class B(BaseClass):
-    @debug
+    @debug_log
     @validate(arbitvalue=['notNone'])
     def __init__(self, arbitvalue:str=None):
         pass
 
 
 class C(BaseClass):
-    @debug
+    @debug_log
     @validate()
     def foo(self, var1:int = 100):
         return True
 
-    @debug
+    @debug_log
     @validate()
     def bar(self, var1:int):
         return True
 
-    @debug
+    @debug_log
     @validate()
     def bat(self, var1 = 50):
         return True
 
-    @debug
+    @debug_log
     @validate(var1=['gte:2'])
     def gte(self, var1:int):
         return True
 
-    @debug
+    @debug_log
     @validate(var1=['gt:1'])
     def gt(self, var1:int):
         return True
 
-    @debug
+    @debug_log
     @validate(var1=['ifSetType:dict'])
     def ifSetType(self, var1:dict=None):
         return True
 
-    @debug
+    @debug_log
     @validate(var1=['contains:yes,no'])
     def contains(self, var1:str=None):
         return True
 
-    @debug
+    @debug_log
     @validate(var1=['contains:yes'])
     def contains2(self, var1:str=None):
         return True
@@ -102,7 +102,7 @@ def test_default_and_annotation_sets_isSetType_wrongType():
     c = C()
     with pytest.raises(Validation_Exception) as excinfo:
         c.foo("string")
-    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found"
+    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found for method foo"
 
 
 # if an annotation, and no default
@@ -115,7 +115,7 @@ def test_annotation_no_default():
     c = C()
     with pytest.raises(Validation_Exception) as excinfo:
         c.bar("string")
-    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found"
+    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found for method bar"
 
 
 # if no annotaion, with a default
@@ -141,7 +141,7 @@ def test_init_validation():
 def test_init_validation_wrong_type_passed():
     with pytest.raises(Validation_Exception) as excinfo:
         var = B(['string'])
-    assert excinfo.value.message == "arbitvalue was expected to be type str, but <class 'list'> was found"
+    assert excinfo.value.message == "arbitvalue was expected to be type str, but <class 'list'> was found for method "
 
 
 def test_passes_validate_positional_args():
@@ -159,7 +159,7 @@ def test_fails_validate_using_isTypeInt():
     var = A()
     with pytest.raises(Validation_Exception) as excinfo:
         var.bat("this is a string", var2="3")
-    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found"
+    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found for method bat"
 
 
 def fails_validate_notNone():
@@ -209,7 +209,7 @@ def test_annotations_with_validation_set_mismatch_types():
     var = A()
     with pytest.raises(Validation_Exception) as excinfo:
         var.annotations_with_validate_set(var1=1, var2={}, var3={}, var4="some string")
-    assert excinfo.value.message == "var2 was expected to be type list, but <class 'dict'> was found"
+    assert excinfo.value.message == "var2 was expected to be type list, but <class 'dict'> was found for method annotations_with_validate_set"
 
 def test_annotations_with_validation_set_mismatch_types_missing_param():
     var = A()
@@ -223,7 +223,7 @@ def test_annotations_without_validation_set_mismatch_types():
     var = A()
     with pytest.raises(Validation_Exception) as excinfo:
         var.annotations_without_validate_set(var1=1, var2={}, var3={}, var4="some string")
-    assert excinfo.value.message == "var2 was expected to be type list, but <class 'dict'> was found"
+    assert excinfo.value.message == "var2 was expected to be type list, but <class 'dict'> was found for method annotations_without_validate_set"
 
 def test_annotations_without_validation_set_mismatch_types_with_missing_param():
     var = A()
@@ -238,14 +238,14 @@ def test_validation_gte():
 
     with pytest.raises(Validation_Exception) as excinfo:
         var.gte(1)
-    assert excinfo.value.message == "var1 was expected to be greater than or equal to 2, 1 was found"
+    assert excinfo.value.message == "var1 was expected to be greater than or equal to 2, 1 was found for method gte"
 
 def test_validation_gte2():
     var = C()
 
     with pytest.raises(Validation_Exception) as excinfo:
         var.gte({})
-    assert excinfo.value.message == "var1 was expected to be type int, but <class 'dict'> was found"
+    assert excinfo.value.message == "var1 was expected to be type int, but <class 'dict'> was found for method gte"
 
 
 def test_validation_gt():
@@ -255,11 +255,11 @@ def test_validation_gt():
     assert True == var.gt(100)
     with pytest.raises(Validation_Exception) as excinfo:
         var.gt(1)
-    excinfo.value.message == "var1 was expected to be greater than 1, 1 was found"
+    excinfo.value.message == "var1 was expected to be greater than 1, 1 was found for method gt"
 
     with pytest.raises(Validation_Exception) as excinfo:
         var.gte("blah")
-    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found"    
+    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found for method gte"    
 
 
 def test_validation_ifSetType():
@@ -271,7 +271,7 @@ def test_validation_ifSetType():
 
     with pytest.raises(Validation_Exception) as excinfo:
         var.ifSetType([1,2,3])
-    assert excinfo.value.message == "var1 was expected to be type dict, but <class 'list'> was found"
+    assert excinfo.value.message == "var1 was expected to be type dict, but <class 'list'> was found for method contains ifSetType"
 
 
 def test_validation_contains():
@@ -281,9 +281,9 @@ def test_validation_contains():
 
     with pytest.raises(Validation_Exception) as excinfo:
         var.contains2("")
-    assert excinfo.value.message == "'contains' validation expects a comma seperated list of items to check against, 'yes' was found"
+    assert excinfo.value.message == "'contains' validation expects a comma seperated list of items to check against, 'yes' was found for method contains2"
 
 
     with pytest.raises(Validation_Exception) as excinfo:
         var.contains("something else")
-    assert excinfo.value.message == "One of [yes,no] was expected, but 'something else' was found for parameter var1"
+    assert excinfo.value.message == "One of [yes,no] was expected, but 'something else' was found for parameter var1 for method contains"
