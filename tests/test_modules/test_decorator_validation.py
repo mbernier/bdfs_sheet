@@ -128,20 +128,20 @@ def test_no_annotation_default_set_fail():
     c = C()
     with pytest.raises(Validation_Exception) as excinfo:
         c.bat(None)
-    assert excinfo.value.message == "var1 was passed as None, but needs to be set"
+    assert excinfo.value.message == "var1 was passed as None, but needs to be set for method bat"
 
 
 
 def test_init_validation():
     with pytest.raises(Validation_Exception) as excinfo:
         var = B(None)
-    assert excinfo.value.message == "arbitvalue was passed as None, but needs to be set"
+    assert excinfo.value.message == "arbitvalue was passed as None, but needs to be set for method __init__"
 
 
 def test_init_validation_wrong_type_passed():
     with pytest.raises(Validation_Exception) as excinfo:
         var = B(['string'])
-    assert excinfo.value.message == "arbitvalue was expected to be type str, but <class 'list'> was found for method "
+    assert excinfo.value.message == "arbitvalue was expected to be type str, but <class 'list'> was found for method __init__"
 
 
 def test_passes_validate_positional_args():
@@ -178,13 +178,13 @@ def test_fails_validate_oneIsNotNone():
     var = A()
     with pytest.raises(Validation_Exception) as excinfo:
         var.foo2(1, var2=None, var3=None)
-    assert excinfo.value.message == "Either var2 or var3 was expected to not be 'None'"
+    assert excinfo.value.message == "Either var2 or var3 was expected to not be 'None' for method foo2"
 
 def test_fails_validate_oneIsNotNone_using_defaults():
     var = A()
     with pytest.raises(Validation_Exception) as excinfo:
         var.foo(1)
-    assert excinfo.value.message == "Either var2 or var3 was expected to not be 'None'"
+    assert excinfo.value.message == "Either var2 or var3 was expected to not be 'None' for method foo"
 
 
 def test_positional_arg_not_set_no_default():
@@ -192,7 +192,7 @@ def test_positional_arg_not_set_no_default():
     var = A()
     with pytest.raises(Decorator_Exception) as excinfo:
         var.positional(1)
-    assert excinfo.value.message == "Positional arg 'var2' was not set and has no default"
+    assert excinfo.value.message == "Positional arg 'var2' was not set and has no default for method positional"
 
 
 def test_annotations_with_validation_set():
@@ -215,7 +215,7 @@ def test_annotations_with_validation_set_mismatch_types_missing_param():
     var = A()
     with pytest.raises(Decorator_Exception) as excinfo:
         var.annotations_with_validate_set(var1=1, var2={}, var3={})
-    assert excinfo.value.message == "Positional arg 'var4' was not set and has no default"
+    assert excinfo.value.message == "Positional arg 'var4' was not set and has no default for method annotations_with_validate_set"
 
 
 
@@ -229,7 +229,7 @@ def test_annotations_without_validation_set_mismatch_types_with_missing_param():
     var = A()
     with pytest.raises(Decorator_Exception) as excinfo:
         var.annotations_without_validate_set(var1=1, var2={}, var3={})
-    assert excinfo.value.message == "Positional arg 'var4' was not set and has no default"
+    assert excinfo.value.message == "Positional arg 'var4' was not set and has no default for method annotations_without_validate_set"
 
 def test_validation_gte():
     var = C()
@@ -271,7 +271,7 @@ def test_validation_ifSetType():
 
     with pytest.raises(Validation_Exception) as excinfo:
         var.ifSetType([1,2,3])
-    assert excinfo.value.message == "var1 was expected to be type dict, but <class 'list'> was found for method contains ifSetType"
+    assert excinfo.value.message == "var1 was expected to be type dict, but <class 'list'> was found for method ifSetType"
 
 
 def test_validation_contains():

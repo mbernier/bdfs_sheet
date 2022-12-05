@@ -7,11 +7,11 @@ from modules.validations.exception import Validation_Field_Exception
 class Validation_Field(Validation):
     _classBeingValidated = None
     _field: str = None
+    _methodName: str = None
     _paramToValidate = None
     _paramValues = {}
     _validatedData = {}
     _methodAdditions = []
-
     _validationsToRun = {}
 
     _otherObj = None
@@ -21,7 +21,7 @@ class Validation_Field(Validation):
 
         self._method("__init__", locals()) # must be called AFTER the classBeingValidated is set, for logging
 
-        self._field = method
+        self._methodName = method
         self._paramToValidate = field
         self._validationsToRun = validations
         self._paramValues = paramValues
@@ -97,7 +97,7 @@ class Validation_Field(Validation):
             elif Helper.classHasMethod(self, methodName):
                 Helper.callMethod(self, **methodParams)
             else: 
-                raise Validation_Field_Exception("Could not find a {} method on Validation_Fields or {} for method {}".format(methodName, Helper.className(self._classBeingValidated), self._field))
+                raise Validation_Field_Exception("Could not find a {} method on Validation_Fields or {} for method {}".format(methodName, Helper.className(self._classBeingValidated), self._methodName))
 
 
     ####
@@ -108,13 +108,13 @@ class Validation_Field(Validation):
     def validation_oneIsNotNone(self, item, param, paramValue=None):
         self._method("validation_oneIsNotNone", locals())
         
-        print("\n\n{}={}".format(param, paramValue))
-        print("{}={}\n\n".format(item, self.__getParamValue(item)))
+        # print("\n\n{}={}".format(param, paramValue))
+        # print("{}={}\n\n".format(item, self.__getParamValue(item)))
 
         # if either of these are false, then we are good to go
         paramNotNone = (None != paramValue)
         otherParamNotNone = (None != self.__getParamValue(item))
 
         if False == paramNotNone and False == otherParamNotNone:
-            raise Validation_Field_Exception("Either {} or {} was expected to not be 'None' for method {}".format(param, item, self._field))
+            raise Validation_Field_Exception("Either {} or {} was expected to not be 'None' for method {}".format(param, item, self._methodName))
         return True

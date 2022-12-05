@@ -3,6 +3,7 @@ from inspect import signature, Parameter
 from modules.helper import Helper
 from modules.validation import Validation
 from modules.validations.annotation import Validation_Annotation
+from modules.decorators.exception import Decorator_Exception
 from modules.validations.field import Validation_Field
 from modules.validations.exception import Validation_Method_Exception
 
@@ -13,20 +14,20 @@ class Validation_Method(Validation):
 
     _newFunctionParams = {}
     _classBeingValidated = None
-    _method = None
+    _methodName = None
 
     def __init__(self, func, validateargs, validateParams, decoratorargs, decoratorkwargs, funcParams, wrapperkwargs):
         self._newFunctionParams = {}
         self._classBeingValidated = None
-        self._method = None
+        self._methodName = None
 
-        print(f"func: {func}")
-        print(f"validateargs: {validateargs}")
-        print(f"validateParams: {validateParams}")
-        print(f"decoratorargs: {decoratorargs}")
-        print(f"decoratorkwargs: {decoratorkwargs}")
-        print(f"funcParams: {funcParams}")
-        print(f"wrapperkwargs: {wrapperkwargs}")
+        # print(f"func: {func}")
+        # print(f"validateargs: {validateargs}")
+        # print(f"validateParams: {validateParams}")
+        # print(f"decoratorargs: {decoratorargs}")
+        # print(f"decoratorkwargs: {decoratorkwargs}")
+        # print(f"funcParams: {funcParams}")
+        # print(f"wrapperkwargs: {wrapperkwargs}")
 
 
         funcSig = signature(func).parameters
@@ -34,15 +35,15 @@ class Validation_Method(Validation):
         funcValues = funcSig.values()
         funcParamsList = list(funcParams)
 
-        print("func: {}".format(func))
-        print("funcParams: {}".format(funcParams))
-        print("funcKeys: {}".format(funcKeys))
-        print("funcVals: {}".format(funcValues))
-        print("funcSig: {}".format(funcSig))
-        print("validateParams: {}".format(validateParams))
-        print("funcParamsList: {}".format(funcParamsList))
-        print("wrapperkwargs: {}".format(wrapperkwargs))
-        print("\n\n")
+        # print("func: {}".format(func))
+        # print("funcParams: {}".format(funcParams))
+        # print("funcKeys: {}".format(funcKeys))
+        # print("funcVals: {}".format(funcValues))
+        # print("funcSig: {}".format(funcSig))
+        # print("validateParams: {}".format(validateParams))
+        # print("funcParamsList: {}".format(funcParamsList))
+        # print("wrapperkwargs: {}".format(wrapperkwargs))
+        # print("\n\n")
 
         # didn't code for these, so throw a hissy if they show up
         if not () == validateargs:
@@ -58,7 +59,7 @@ class Validation_Method(Validation):
             tempSelf = funcParamsList[0]
 
         self._classBeingValidated = tempSelf
-        self._method = func.__name__
+        self._methodName = func.__name__
 
         validationArgs = {}
 
@@ -83,11 +84,11 @@ class Validation_Method(Validation):
             # do we get a free validator from the method definition
             annotation = Validation_Annotation.getValidations(funcSig, key)
 
-            print("")
-            print(defaultValue)
-            print(key)
-            print(index)
-            print(len(funcParamsList))
+            # print("")
+            # print(defaultValue)
+            # print(key)
+            # print(index)
+            # print(len(funcParamsList))
 
             # set the value, based on values available from args, kwargs, and defaults
             if index < len(funcParamsList):
@@ -98,7 +99,6 @@ class Validation_Method(Validation):
                 raise Decorator_Exception("Positional arg '{}' was not set and has no default for method {}".format(key, func.__name__))
             else: 
                 currentValue = defaultValue
-
 
             # check if validitors were passed
             if key in validateParams:
@@ -126,9 +126,8 @@ class Validation_Method(Validation):
 
         self._newFunctionParams = newFuncParams
 
-
-        print(f"newFuncParams: {newFuncParams}")
-        print(f"validationArgs: {validationArgs}")
+        # print(f"newFuncParams: {newFuncParams}")
+        # print(f"validationArgs: {validationArgs}")
 
         self.__doValidations(validationArgs)
 
@@ -152,7 +151,7 @@ class Validation_Method(Validation):
             # print((self._classBeingValidated, key,  paramData[key]['validations'], passTheseArgs))
             #            Validation_Field(classBeingValidated, field, validations, args)
             validation = Validation_Field(classBeingValidated=self._classBeingValidated, 
-                                            method=self._method,
+                                            method=self._methodName,
                                             field=key,
                                             validations=paramData[key]['validations'], 
                                             paramValues=passTheseArgs)

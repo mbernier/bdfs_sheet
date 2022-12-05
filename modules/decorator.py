@@ -10,7 +10,7 @@ from modules.validations.method import Validation_Method
 SHITTY_NONE_DEFAULT_VALUE = 'NoneZeroDefaultFail'
 
 def debug_log(func):
-    print(f"\ndecorator_debug: {func}")
+    # print(f"\ndecorator_debug: {func}")
     """Print the function signature and return value"""
     @functools.wraps(func)
     def wrapper_debug(*args, **kwargs):
@@ -56,25 +56,25 @@ def debug_log(func):
 #   To validate method params, add something like this:
 #   @validate(paramName, validationsToRun) where validationsToRun is a list of validations from methods.validation.Validation_Field
 def validate(*validateargs, **validateParams):
-    print("\nvalidate")
-    print(f"validateargs: {validateargs}")
-    print(f"validateParams: {validateParams}")
+    # print("\nvalidate")
+    # print(f"validateargs: {validateargs}")
+    # print(f"validateParams: {validateParams}")
     def decorator_validate(func, *decoratorargs, **decoratorkwargs):
-        print(f"decorator_validate: {func}")
-        print(f"func: {func}")
-        print(f"decoratorargs: {decoratorargs}")
-        print(f"decoratorkwargs: {decoratorkwargs}")
+        # print(f"decorator_validate: {func}")
+        # print(f"func: {func}")
+        # print(f"decoratorargs: {decoratorargs}")
+        # print(f"decoratorkwargs: {decoratorkwargs}")
         @functools.wraps(func)
         def wrapper_validate(*funcParams, **wrapperkwargs):
-            print("wrapper_validate")
+            # print("wrapper_validate")
 
-            print(f"func: {func}")
-            print(f"validateargs: {validateargs}")
-            print(f"validateParams: {validateParams}")
-            print(f"decoratorargs: {decoratorargs}")
-            print(f"decoratorkwargs: {decoratorkwargs}")
-            print(f"funcParams: {funcParams}")
-            print(f"wrapperkwargs: {wrapperkwargs}")
+            # print(f"func: {func}")
+            # print(f"validateargs: {validateargs}")
+            # print(f"validateParams: {validateParams}")
+            # print(f"decoratorargs: {decoratorargs}")
+            # print(f"decoratorkwargs: {decoratorkwargs}")
+            # print(f"funcParams: {funcParams}")
+            # print(f"wrapperkwargs: {wrapperkwargs}")
 
 
             funcSig = signature(func).parameters
@@ -82,15 +82,15 @@ def validate(*validateargs, **validateParams):
             funcValues = funcSig.values()
             funcParamsList = list(funcParams)
 
-            print("func: {}".format(func))
-            print("funcParams: {}".format(funcParams))
-            print("funcKeys: {}".format(funcKeys))
-            print("funcVals: {}".format(funcValues))
-            print("funcSig: {}".format(funcSig))
-            print("validateParams: {}".format(validateParams))
-            print("funcParamsList: {}".format(funcParamsList))
-            print("wrapperkwargs: {}".format(wrapperkwargs))
-            print("\n\n")
+            # print("func: {}".format(func))
+            # print("funcParams: {}".format(funcParams))
+            # print("funcKeys: {}".format(funcKeys))
+            # print("funcVals: {}".format(funcValues))
+            # print("funcSig: {}".format(funcSig))
+            # print("validateParams: {}".format(validateParams))
+            # print("funcParamsList: {}".format(funcParamsList))
+            # print("wrapperkwargs: {}".format(wrapperkwargs))
+            # print("\n\n")
 
 
             # Validation_Field.__init__(self, classBeingValidated, field, validations, **kwargs):
