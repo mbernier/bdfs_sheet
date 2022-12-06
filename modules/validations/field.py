@@ -67,6 +67,8 @@ class Validation_Field(Validation):
     def __doValidations(self):
         self._method("__doValidations", locals())
 
+        print(self._validationsToRun)
+
         for validationToRun in self._validationsToRun:
 
             # setup the dict of params we want to pass to our method

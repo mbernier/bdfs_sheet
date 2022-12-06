@@ -69,7 +69,7 @@ class Validation():
                 return True
 
         # we didn't get any of the types that we expected
-        raise Validation_Exception("validation_isType_multiple expected {} to be one of {} but {} was found for method {}".format(param, item, type(paramValue) self._methodName))
+        raise Validation_Exception("validation_isType_multiple expected {} to be one of {} but {} was found with value {} for method {}".format(param, item, type(paramValue), paramValue, self._methodName))
 
 
     def validation_ifSetType(self, item, param, paramValue=None):

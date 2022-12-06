@@ -1,8 +1,8 @@
 import sys
 from collections import OrderedDict
 from pprint import pprint
-
-from modules.caches.nested_cache.rows.row import Nested_Cache_Row
+from modules.caches.flat import Flat_Cache
+from modules.caches.nested_cache.row import Nested_Cache_Row
 from modules.caches.exception import Nested_Cache_Row_Exception, Flat_Cache_Exception
 from modules.config import config
 from modules.decorator import debug_log, validate
@@ -14,6 +14,8 @@ from modules.decorator import debug_log, validate
 #   A nested Cache Row can be created with values or not and can be written 
 #   to the Flat Cache either way.
 class Nested_Cache_Row_Location(Nested_Cache_Row):
+
+    _width = 0
 
     @debug_log
     @validate()
@@ -37,15 +39,14 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
     @debug_log
     @validate() # no reason to check if one exists, they must both exist
     def add(self, location:str):
-        width = self.width()
 
         try:
             # try to create the location in the cache
-            self.set(location, width)
-            self.set(width, location)
-        except(Nested_Cache_Row_Exception as err):
-            raise Nested_Cache_Row_Location_Exception(err)
-
+            self.set(location, self._width)
+            self.set(self._width, location)
+            self._width += 1
+        except Nested_Cache_Row_Exception as err:
+            raise Nested_Cache_Row_Location_Exception(str(err))
 
 
     # This will return the index if location is given, or the location if index is given
@@ -53,14 +54,13 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
     @debug_log
     @validate(position=['isType:int,str'])
     def get(self, position):
-        return super().get(position)
-
+        return self._storage.get(position)
 
 
     # gets both index and location, then returns them in the correct order based on type
     @debug_log
     @validate(position=['isType:int,str'])
-    def getLocationIndex(self, position)
+    def getLocationIndex(self, position):
 
         if type(position) is int: # we have the index
             return self.get(position), position
@@ -74,37 +74,39 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
     #   for both index and location, so that we have the ability to reference in either
     #   direction
     @debug_log
-    @validate(position=['ifType:int,str'])
-    def set(position):
+    @validate(position=['isType:int,str'])
+    def set(self, position):
         otherPosition = self.get(position)
 
         # then set the data, because Nested_Cache_Row sets the data for both Index/Location at the same time
         # we want the location row to have index point to location and location point to index
         try:
-            super().set(position, data=otherPosition)
-            super().set(otherPosition, data=position)
-        except(Nested_Cache_Row_Exception as err):
-            raise Nested_Cache_Row_Location_Exception(err)
+            self._storage.set(position, data=otherPosition)
+            self._storage.set(otherPosition, data=position)
+        except Nested_Cache_Row_Exception as err:
+            raise Nested_Cache_Row_Location_Exception(str(err))
 
 
 
     # Change the index of a location
     @debug_log
     @validate(index=['locationEmpty'])
-    def update(location:str, index:int):
+    def update(self, location:str, index:int):
 
         currentIndex = self.get(location)
-        super().update(currentIndex, None) # reset the current index to None
+        self._storage.update(currentIndex, None) # reset the current index to None
 
         try:
-            super().set(index, data=location) # add the new index
-            super().update(location, data=index) # update location to have the new index
-        except(Nested_Cache_Row_Exception as err):
-            raise Nested_Cache_Row_Location_Exception(err)
+            self._storage.set(index, data=location) # add the new index
+            self._storage.update(location, data=index) # update location to have the new index
+        except Nested_Cache_Row_Exception as err:
+            raise Nested_Cache_Row_Location_Exception(str(err))
 
 
 
     # return only the string keys from the storage
+    @debug_log
+    @validate()
     def getLocationKeys(self) -> OrderedDict:
         keys = OrderedDict()
         
@@ -114,12 +116,15 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
         
         return keys
 
-
+    @debug_log
+    @validate()
     def width(self) -> int:
-        return self._storage.size() / 2
+        return self._width
 
 
-    def move(location:str, newIndex:int):
+    @debug_log
+    @validate()
+    def move(self, location:str, newIndex:int):
         raise Nested_Cache_Row_Location_Exception("move is not implemented yet")
         # consider using self.update() where possible?
         # add testing!!

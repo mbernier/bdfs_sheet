@@ -3,7 +3,11 @@ from inspect import signature
 from modules.base import BaseClass
 from modules.helper import Helper
 from modules.decorator import debug_log, validate
-from modules.caches.nested import Nested_Cache
+# from modules.caches.nested import Nested_Cache
+from modules.caches.nested_cache.rows.location import Nested_Cache_Row_Location
+from modules.caches.exception import Nested_Cache_Row_Exception
+from modules.validations.exception import Validation_Exception
+
 from modules.logger import Logger
 from modules.sheetProcessors.bdfs_inventory import BdfsInventory_SheetProcessor
 
@@ -16,7 +20,7 @@ if __name__ == "__main__":
     # run.main(sys.argv[1:]) 
     
 
-    list1 = [1,2,3,4]
-    list2 = [1,2,3,4,5]
-    print(Helper.compareLists(list1,list2))
-    print(Helper.compareLists(list2,list1))
+    testData = ["one", "two", "three"]
+    
+    row = Nested_Cache_Row_Location(testData)
+    print(row.width())
