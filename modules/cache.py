@@ -44,6 +44,5 @@ class BdfsCache(BaseClass):
         pass
 
     def getStorage(self):
-        print("getStorage")
         self.debug("getStorage()")
         return self._storage

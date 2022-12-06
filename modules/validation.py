@@ -25,9 +25,10 @@ class Validation():
         if None == self._classBeingValidated:
             raise Validation_Exception("_classBeingValidated must be set before calling self._method() in any Validation class")
 
-        # call the validation_method_debug function on the class that owns the method we're validating
-        #   allows for overriding whether we even output this data, based on the config.ini
-        self._classBeingValidated.validation_method_debug(method, data)
+        if True == config("debug_validations"):
+            # call the validation_method_debug function on the class that owns the method we're validating
+            #   allows for overriding whether we even output this data, based on the config.ini
+            self._classBeingValidated.validation_method_debug(method, data)
 
     ####
     #
@@ -55,6 +56,16 @@ class Validation():
 
         if not None == paramValue:
             self.validation_isType(item, param, paramValue)
+
+    def validation_ifSet(self, item, param, paramValue=None):
+        self._method("validation_ifSet", locals())
+
+        # prep for being a validation method
+        item = f"validation_{item}"
+
+        if not None == paramValue:
+            Helper.callMethod(klass=self, alternateKlass=self._classBeingValidated, methodName=item, param=param, paramValue=paramValue)
+
 
     def validation_contains(self, item, param, paramValue):
         self._method("validate_contains", locals())

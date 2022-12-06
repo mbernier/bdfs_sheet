@@ -31,7 +31,7 @@ def debug_log(func):
             # print(kwargs)
             raise Decorator_Exception("We don't have args[0] in decorator, so we can't call logging on the wrapped class. What options do we have to provide default classObj?")
         
-        args_repr, kwargs_repr = prepArgs(args, kwargs)
+        args_repr, kwargs_repr = Helper.prepArgs(args, kwargs)
 
         # print(classObj)
         if hasattr(classObj, "_method"):
@@ -44,7 +44,7 @@ def debug_log(func):
         value = func(*args, **kwargs)
 
         # output to log whatever the function returned
-        if config.getboolean("debug_decorator_returns"):
+        if True == config("debug_decorator_returns"):
             # print(f"FUNCNAME: {func.__name__}")
             classObj.debug(f"{func.__name__!r} returned {value!r}")      # 4
 
@@ -128,11 +128,3 @@ def validate(*validateargs, **validateParams):
 
         return wrapper_validate
     return decorator_validate
-
-
-
-def prepArgs(args, kwargs):
-    args_repr = [repr(a) for a in args]                      # 1
-    kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]  # 2
-    
-    return args_repr, kwargs_repr

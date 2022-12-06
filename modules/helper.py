@@ -1,3 +1,4 @@
+import sys
 from modules.helpers.exception import Helper_Exception
 
 class Helper:
@@ -7,18 +8,57 @@ class Helper:
     # Dynamic calling functionality
     #
     ####
+
     @staticmethod
-    def callMethod(klass=None, *args, **kwargs):
+    def callMethod(*args, **kwargs):
+
+        if "klass" not in kwargs.keys():
+            raise Helper_Exception('klass param must be defined for callMethod()')
+
+        klass = kwargs['klass']
+        del kwargs['klass']
+
+        if type(klass) is str:
+            raise Helper_Exception('klass param must be an instance of a class and not a str')
+
+        if "methodName" not in kwargs.keys():
+            raise Helper_Exception("'methodName' must be passed to Helper.callMethod()")
 
         # get the method name off the function call    
         methodName = kwargs['methodName']
         del kwargs['methodName']
 
+        alternateKlass = None
+        if "alternateKlass" in kwargs.keys():
+            alternateKlass = kwargs['alternateKlass']
+            
+            if type(alternateKlass) is str:
+                raise Helper_Exception('alternateKlass param must be an instance of a class and not a str')
+
+            # remove from params
+            del kwargs['alternateKlass']
+
+
         # make sure that this method exists and that we can call it
-        if Helper.classHasMethod(klass, methodName) and callable(validFunc := getattr(klass, methodName)):
-            return validFunc(**kwargs)
+        if Helper.classHasMethod(klass=klass, methodName=methodName) and callable(validFunc := getattr(klass, methodName)):
+        
+            return validFunc(*args, **kwargs)
+        
+        elif None != alternateKlass:            
+
+            if Helper.classHasMethod(klass=alternateKlass, methodName=methodName) and callable(validFunc := getattr(alternateKlass, methodName)):
+                return validFunc(*args, **kwargs)
+            else:
+
+                raise Helper_Exception("Tried to call {}.{}({}) and {}.{}({}) but no method with that name exists in either class"
+                                        .format(Helper.className(klass), methodName, Helper.prepArgs(args,**kwargs), 
+                                                Helper.className(alternateKlass), methodName, Helper.prepArgs(args, **kwargs)))        
+
         else:
-            raise Helper_Exception("Tried to call {}.{} but no method with that name exists".format(Helper.className(klass), methodName))
+            # if we get here, we didn't find the method
+            raise Helper_Exception("Tried to call {}.{}({}) but no method with that name exists".format(Helper.className(klass), methodName, Helper.prepArgs(args,**kwargs)))
+
+
 
     @staticmethod
     def classHasMethod(klass, methodName):
@@ -40,13 +80,6 @@ class Helper:
     def compareLists(list1, list2) -> list:
         result =  all(elem in list1 for elem in list2)
         return result
-
-
-    @staticmethod
-    def checkArgs(required=[], **kwargs):
-        for arg in kwargs:
-            if arg in required and None == kwargs[arg]:
-                raise Helper_Exception("You must pass {} to Cache, NoneType was found".format(arg))
 
 
     @staticmethod
@@ -96,6 +129,9 @@ class Helper:
         if typeName == 'str':
             return Helper.is_str(item)
 
+        if typeName == 'tuple':
+            return Helper.is_tuple(item)
+
         if typeName == 'flat_cache':
             return Helper.is_Flat_Cache(item)
 
@@ -123,6 +159,7 @@ class Helper:
 
     @staticmethod
     def is_Nested_Cache(item):
+        from modules.caches.nested import Nested_Cache
         return isinstance(item, Nested_Cache)
 
     @staticmethod
@@ -141,3 +178,10 @@ class Helper:
         # print(dirs)
         for dirItem in dirs:
             print(f"{dirItem}:{getattr(item, dirItem)}")
+
+    @staticmethod
+    def prepArgs(*args, **kwargs):
+        args_repr = [repr(a) for a in args]                      # 1
+        kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]  # 2
+        
+        return args_repr, kwargs_repr

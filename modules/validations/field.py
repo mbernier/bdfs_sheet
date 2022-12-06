@@ -65,7 +65,7 @@ class Validation_Field(Validation):
 
 
     def __doValidations(self):
-        self._method("__runValidations", locals())
+        self._method("__doValidations", locals())
 
         for validationToRun in self._validationsToRun:
 
@@ -92,13 +92,12 @@ class Validation_Field(Validation):
             methodParams['methodName'] = methodName
 
             # Call the classmethod that we find first, allowing the method's class's validation method to win, even if the Validation class has that method
-            if Helper.classHasMethod(self._classBeingValidated, methodName):
-                Helper.callMethod(self._classBeingValidated, **methodParams)
-            elif Helper.classHasMethod(self, methodName):
-                Helper.callMethod(self, **methodParams)
+            if Helper.classHasMethod(klass=self._classBeingValidated, methodName=methodName):
+                Helper.callMethod(klass=self._classBeingValidated, **methodParams)
+            elif Helper.classHasMethod(klass=self, methodName=methodName):
+                Helper.callMethod(klass=self, **methodParams)
             else: 
                 raise Validation_Field_Exception("Could not find a {} method on Validation_Fields or {} for method {}".format(methodName, Helper.className(self._classBeingValidated), self._methodName))
-
 
     ####
     #
@@ -108,8 +107,8 @@ class Validation_Field(Validation):
     def validation_oneIsNotNone(self, item, param, paramValue=None):
         self._method("validation_oneIsNotNone", locals())
         
-        # print("\n\n{}={}".format(param, paramValue))
-        # print("{}={}\n\n".format(item, self.__getParamValue(item)))
+        # print("\n\nParam: {}={}".format(param, paramValue))
+        # print("\nItem: {}={}\n\n".format(item, self.__getParamValue(item)))
 
         # if either of these are false, then we are good to go
         paramNotNone = (None != paramValue)

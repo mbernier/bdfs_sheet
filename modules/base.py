@@ -15,7 +15,7 @@ class BaseClass(Logger):
 
     @debug_log
     def importClass(self, name): 
-        print("BaseClass: importClass")
+        # print("BaseClass: importClass")
         logger.debug("importClass(name={})".format(name))
 
         spltz = name.split(".")
@@ -32,4 +32,4 @@ class BaseClass(Logger):
 
     @debug_log
     def __callMethod(self, methodName:str, **kwargs):
-        return Helper.callMethod(self, methodName, *kwargs)
+        return Helper.callMethod(klass=self, methodName=methodName, **kwargs)

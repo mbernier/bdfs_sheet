@@ -24,17 +24,19 @@ def test_empty_cache_getData():
 
 def test_cache_trySetOnNewRow():
     cache = Nested_Cache(['a'],[[1]])
-    cache.set(2, location="a", data=1)
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        cache.set(2, location="a", data=1)
+    assert excinfo.value.message == "Row 2 doesn't exist, to add it use appendRow()"
     value = cache.getData(2, "a")
-    assert value == 1
+    assert value == None
 
 def test_cache_trysetOnNewRow2():
     cache = Nested_Cache(['a'],[[1]])
     with pytest.raises(Nested_Cache_Exception) as excinfo:
         cache.set(row=2, location="a", data=1)
-    assert excinfo.value.message == "Row [2] doesn't exist, to add it use append(row,location,data)"
+    assert excinfo.value.message == "Row 2 doesn't exist, to add it use appendRow()"
     
-    cache.append(location='a', data=1)
+    cache.appendRow(location='a', data=1)
 
     value = cache.getData(2, "a")
     assert value == 1
@@ -72,13 +74,22 @@ def test_unset2():
 
 def test_unset_fail():
     cache = Nested_Cache(['b'],[[3]])
-    cache.unsetData(1, location="c")
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        cache.unsetData(1, location="c")
+    assert excinfo.value.message == "Location 'c' doesn't exist, to add it use addLocation(location)"
+
+
     assert 3 == cache.getData(1, "b")
 
 def test_unset_fail2():
     cache = Nested_Cache(['b'],[[3]])
-    cache.unsetData(row=1, location="c")
+
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        cache.unsetData(row=1, location="c")
+    assert excinfo.value.message == "Location 'c' doesn't exist, to add it use addLocation(location)"
+    
     assert 3 == cache.getData(row=1, location="b")
+
 
 def test_unset_fail3():
     cache = Nested_Cache(['b'],[[3]])
@@ -103,7 +114,7 @@ def test_update_exception():
     cache = Nested_Cache(['b'],[[3]])
     with pytest.raises(Nested_Cache_Exception) as excinfo:
         cache.update(1, index=2, data=5)
-    assert excinfo.value.message == "Index '2' doesn't exist, to add it use addColumn(location=)"
+    assert excinfo.value.message == "Index '2' doesn't exist, to add it use addLocation(location)"
     assert 3 == cache.getData(1, "b")
 
 
@@ -111,7 +122,7 @@ def test_update_exception2():
     cache = Nested_Cache(['b'],[[3]])
     with pytest.raises(Nested_Cache_Exception) as excinfo:
         cache.update(row=1,location="c",data=5)
-    assert excinfo.value.message == "Location 'c' doesn't exist, to add it use addColumn(location=c)"
+    assert excinfo.value.message == "Location 'c' doesn't exist, to add it use addLocation(location)"
     assert 3 == cache.getData(row=1, location="b")
 
 
@@ -254,7 +265,7 @@ def test_fail_fromAddingColsThatDontExist():
     cache = Nested_Cache(['b','c','d'],[[3]])
     with pytest.raises(Nested_Cache_Exception) as excinfo:
         cache.set(row=1,location="e",data=4)
-    assert excinfo.value.message == "Location 'e' doesn't exist, to add it - addLocation()"
+    assert excinfo.value.message == "Location 'e' doesn't exist, to add it use addLocation(location)"
 
 
 def test_height_fromDeletes():
@@ -275,8 +286,9 @@ def test_addUnrecognizedLocation():
 
     with pytest.raises(Nested_Cache_Exception) as excinfo:
         cache.set(row=2, location='c', data=3)
-    assert excinfo.value.message == "Row [2] doesn't exist, to add it - append"
+    assert excinfo.value.message == "Row 2 doesn't exist, to add it use appendRow()"
 
+raise Exception("need to finish nested tests")
 
 # def test_deleteColumn_noIndex():
 

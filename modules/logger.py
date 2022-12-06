@@ -11,7 +11,7 @@ Typevar_List_Str = TypeVar("Typevar_List_Str", list, str)
 
 #get the log_level from the config.ini
 #we are grabbing the attribute of the log_level from the logging object here, not just setting a string
-logging_level = getattr(logging, config["log_level"])
+logging_level = getattr(logging, config("log_level"))
 
 #setup the level of logging we care about
 logging.basicConfig(level=logging_level)
@@ -33,11 +33,11 @@ class Logger:
         # allow this to be overriden in child classes
 
         if not self._debug:
-            if "DEBUG" == config["log_level"]:
+            if "DEBUG" == config("log_level"):
                 self._debug = True
 
         if not self.output_to_console:
-            if config.getboolean("output_to_console"):
+            if config("output_to_console"):
                 self.output_to_console = True
 
     @debug_log
@@ -140,7 +140,7 @@ class Logger:
 
     # @debug_log
     # @validate()
-    def insert_newlines(self, string:str, every:int=100):
+    def insert_newlines(self, string:str, every:int=115):
         # return '\n\t\t\t\t\t\t'.join(string[i:i+every] for i in range(0, len(string), every))
 
         import textwrap
@@ -156,7 +156,7 @@ class Logger:
     # returns the methodName with the prefix
     @staticmethod
     # @debug_log
-    # @validate()
+    # @validaterunValidations    
     def prefixMethodName(methodName:str):
         return Logger.methodNamePrefix(methodName) + methodName
 
@@ -216,7 +216,8 @@ class Logger:
     # @debug_log # causes recursion
     # @validate()
     def validation_method_debug(self, method, data=None):
-        if config["debug_validations"]:
+
+        if True == config("debug_validations"):
             self._method(method, data)
 
     @debug_log
