@@ -287,3 +287,14 @@ def test_validation_contains():
     with pytest.raises(Validation_Exception) as excinfo:
         var.contains("something else")
     assert excinfo.value.message == "One of [yes,no] was expected, but 'something else' was found for parameter var1 for method contains"
+
+
+def test_validation_isType_multiple(self, item, param, paramValue=None):
+    raise Exception("not implemented")
+    # needs to pass isType:int,str and we need to make sure that isType_multiple gets called
+    # in test_validation:
+        # trigger Validation.isType(item="str,int", param="whatever", paramValue=12345) directly to get Validation_Exception
+        # trigger Validation.isType_multiple(item="str,int", param="whatever", paramValue=12345) directly
+            # correctly and incorrectly
+    # here: 
+        # trigger the decorator validation to cause isType_multiple

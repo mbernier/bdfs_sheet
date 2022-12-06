@@ -88,6 +88,9 @@ class Validation_Field(Validation):
                 # Try on the Validation class, if it's not there, try on the class where the decorator is being run
                 methodParams['item'] = dataToPass
 
+                if Helper.existsInStr(",", dataToPass):
+                    methodName += "_multiple"
+
             #set the parameter so we can pass it
             methodParams['methodName'] = methodName
 

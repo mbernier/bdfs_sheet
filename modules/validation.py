@@ -47,9 +47,30 @@ class Validation():
     def validation_isType(self, item, param, paramValue=None):
         self._method("validation_isType", locals())
 
+        if Helper.existsInStr(",", item):
+            raise Validation_Exception("isType validation should never have a ',' in the item parameter, received item='{}' for method {}".format(item, self._methodName))
+
         if not Helper.isType(item, paramValue):
             raise Validation_Exception("{} was expected to be type {}, but {} was found for method {}".format(param, item, str(type(paramValue)), self._methodName))
         return True
+
+
+    def validation_isType_multiple(self, item, param, paramValue=None):
+        self._method("validatation_isType_multiple", locals())
+
+        if not Helper.existsInStr(",", item):
+            raise Validation_Exception("validation_isType_multiple expects a comma separated list of types {} was found for method {}".format(item, self._methodName))
+        spltz = item.split(",")
+
+        response = False
+        for isType in spltz:
+            # if we get an expected type, return True and stop processing
+            if Helper.isType(isType, paramValue):
+                return True
+
+        # we didn't get any of the types that we expected
+        raise Validation_Exception("validation_isType_multiple expected {} to be one of {} but {} was found for method {}".format(param, item, type(paramValue) self._methodName))
+
 
     def validation_ifSetType(self, item, param, paramValue=None):
         self._method("validation_ifSetType", locals())        

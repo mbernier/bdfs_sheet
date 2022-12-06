@@ -44,6 +44,10 @@ class Flat_Cache(BdfsCache):
         self.debug("get(location={})", location)
         return self._storage.get(location)
 
+    # returns a list of keys from the storage dict
+    def getKeys(self):
+        self._storage.keys()
+
 
     # write data to the cache location
     def __write(self, location, data):
@@ -105,3 +109,9 @@ class Flat_Cache(BdfsCache):
             if int != type(index):
                 output[index] = data[index]
         return output
+
+
+    def validate_locationExists(self, location):
+        if location in self._storage.keys():
+            return True
+        return False
