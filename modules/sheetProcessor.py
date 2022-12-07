@@ -1,5 +1,6 @@
 import sys, getopt, os, gspread
 from modules.base import BaseClass
+from modules.decorator import debug_log, validate
 
 # @todo refactor to pull out the getops functionality from this script
 #   create a class that takes in getopt options and data
@@ -13,38 +14,51 @@ class SheetProcessor(BaseClass):
 
     default_output = os.path.basename(__file__) + ' -h to see available commands and information'
     help_output = """
-    To Use the SheetProcessor, pass in some commands:
-        -s or --spreadsheet-id is the ID of the spreadsheet that you want to parse
-        -lw or --list-worksheets will get you a list of the worksheets that are available
-        -w or worksheets is the comma seperated list of worksheets to process, use "-w all" to process all available worksheets
-    """
 
+
+To Use the SheetProcessor, pass in some commands:
+
+    -c or --check-worksheet-cols 
+            to make sure the columns are setup properly in the sheet
+
+    --check-and-add-missing-cols 
+            to find any columns that are missing and add them
+
+    -s or --spreadsheet-id 
+            to pass in the ID of the spreadsheet that you want to parse
+
+    -lw or --list-worksheets 
+            will get you a list of the worksheets that are available
+
+    -w or --worksheets 
+            to pass in a comma seperated list of worksheets to process, use "-w all" to process all available worksheets
+
+
+"""
+    @debug_log
     def __init__(self):
         # set the default spreadsheet id from the constants or configuration
         self.spreadsheet = None
 
-
+    @debug_log
     def main(self, argv):
         self.debug("main(%s)" % str(argv)) 
         outputfile = ''
 
         try:
             opts, args = getopt.getopt(argv, "chs:w:l",["spreadsheet-id=","worksheets=","check-worksheet-cols","check-and-add-missing-cols"])
- 
         except getopt.GetoptError as msg:
             self.critical(msg)
-            self.error(self.default_output)
             sys.exit(2)
 
         if [] == opts:
-            self.critical("No Options were passed!")
-            self.error(self.help_output)
+            self.critical("No Options were passed!"+ "\n" + self.help_output)
             sys.exit()
 
         for opt, arg in opts:     
             if opt == '-h' or opt == None:
                 self.debug("user selected -h option")
-                self.console(self.help_output)
+                print(self.help_output)
                 sys.exit()
 
 
@@ -53,10 +67,7 @@ class SheetProcessor(BaseClass):
             # Setup the spreadsheet Object now, so we don't need it if someone is just requesting help info
             #
             ####
-            self.__setUpSpreadsheet() 
-
-
-
+            self.__setUpSpreadsheet()
 
             if opt in ("-c", "--check-worksheet-cols"):
                 # check the column titles and see if they fit our preferences
@@ -99,6 +110,7 @@ class SheetProcessor(BaseClass):
 
 
     # setup the sheet object if not setup, return it either way
+    @debug_log
     def __setUpSpreadsheet(self):
         self.debug("getSheet()")
         if None == self.spreadsheet:
@@ -111,6 +123,7 @@ class SheetProcessor(BaseClass):
 
     # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
     # if use_cached is false, go retrieve it again
+    @debug_log
     def listWorksheets(self, use_cache = True):
         self.debug("listWorksheets(%s)" % str(use_cache))
         return self.spreadsheet.getWorksheets(use_cache)
@@ -118,6 +131,7 @@ class SheetProcessor(BaseClass):
 
     # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
     #   to make sure that the spreadsheet is valid for what we want to do
+    @debug_log
     def checkWorksheetColumns(self, checkExtras = True, addMissingColumns = False):
         self.debug("checkWorksheetColumns(checkExtras = {}, addMissingColumns = {})".format(checkExtras, addMissingColumns))
         self.spreadsheet.checkWorksheetColumns(checkExtras = checkExtras, addMissingColumns = addMissingColumns)

@@ -14,22 +14,10 @@ class BaseClass(Logger):
     ####
 
     @debug_log
-    def importClass(self, name): 
-        # print("BaseClass: importClass")
-        logger.debug("importClass(name={})".format(name))
-
-        spltz = name.split(".")
+    def importClass(self, modulePath): 
+        spltz = modulePath.split(".")
         classname = spltz.pop()
         path = ".".join(spltz)
         mod = __import__(path, fromlist=[classname])
         klass = getattr(mod, classname)
         return klass
-
-    # cheater method to make setting debug statements a little faster
-    @debug_log
-    def __className(self):
-        return Helper.className(self)
-
-    @debug_log
-    def __callMethod(self, methodName:str, **kwargs):
-        return Helper.callMethod(klass=self, methodName=methodName, **kwargs)

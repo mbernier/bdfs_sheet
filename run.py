@@ -16,14 +16,5 @@ if __name__ == "__main__":
     # logger.debug("run.py running __main__")
 
     # Bdfs Sheet Processor functionality
-    # run = BdfsInventory_SheetProcessor()
-    # run.main(sys.argv[1:]) 
-    
-
-    # cache = Nested_Cache(locations=["one", "two", "three"])
-    
-    print(isinstance(False, bool))
-    print(isinstance(False, int))
-
-    print(isinstance(0, bool))
-    print(isinstance(0, int))    
+    run = BdfsInventory_SheetProcessor()
+    run.main(sys.argv[1:]) 
