@@ -3,6 +3,9 @@ from modules.helpers.exception import Helper_Exception
 
 class Helper:
     
+    def __init__(self):
+        pass
+
     ####
     #
     # Dynamic calling functionality
@@ -115,28 +118,13 @@ class Helper:
     
     @staticmethod
     def isType(typeName, item):
-        typeName = typeName.lower()
 
-        if typeName == 'dict':
-            return Helper.is_dict(item)
+        # typeName = typeName.lower()
+        helper = Helper()
+        methodName = f"is_{typeName}"
 
-        if typeName == 'list':
-            return Helper.is_list(item)
-
-        if typeName == 'int':
-            return Helper.is_int(item)
-
-        if typeName == 'str':
-            return Helper.is_str(item)
-
-        if typeName == 'tuple':
-            return Helper.is_tuple(item)
-
-        if typeName == 'flat_cache':
-            return Helper.is_Flat_Cache(item)
-
-        if typeName == 'nested_cache':
-            return Helper.is_Nested_Cache(item)
+        if Helper.classHasMethod(helper, methodName):
+            return Helper.callMethod(klass=helper, methodName=methodName, item=item)
 
         # raise Exception for everything else
         raise Helper_Exception("isType doesn't know about type '{}'".format(typeName))
@@ -147,7 +135,14 @@ class Helper:
 
     @staticmethod
     def is_int(item):
+        # true returns as type int... of course
+        if Helper.is_bool(item):
+            return False
         return isinstance(item, int)
+
+    @staticmethod
+    def is_bool(item):
+        return isinstance(item, bool)
 
     @staticmethod
     def is_list(item):
@@ -161,6 +156,11 @@ class Helper:
     def is_Nested_Cache(item):
         from modules.caches.nested import Nested_Cache
         return isinstance(item, Nested_Cache)
+
+    @staticmethod
+    def is_Nested_Cache_Row_Location(item):
+        from modules.caches.nested_cache.rows.location import Nested_Cache_Row_Location
+        return isinstance(item, Nested_Cache_Row_Location)
 
     @staticmethod
     def is_Flat_Cache(item):

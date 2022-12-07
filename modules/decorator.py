@@ -16,29 +16,32 @@ def debug_log(func):
     def wrapper_debug(*args, **kwargs):
         # allows us to call the Logger methods, even if we are processing an __init__ method, where we don't know the class
         # print("wrapper_debug")
-        # print(func)
-        # print(args)
-        # print(kwargs)
+        # print(f"func: {func}")
+        # print(f"args: {args}")
+        # print(f"kwargs: {kwargs}")
 
         classObj = Helper.className(func)
-        # print(classObj)
+        # print(f"classObj: {classObj}")
         if len(args) > 0:
             classObj = args[0]
         else:
-            # print(func)
-            # print(func.__name__)
-            # print(args)
-            # print(kwargs)
+            print(f"func: {func}")
+            print(f"funcName: {func.__name__}")
+            print(f"args: {args}")
+            print(f"kwargs: {kwargs}")
             raise Decorator_Exception("We don't have args[0] in decorator, so we can't call logging on the wrapped class. What options do we have to provide default classObj?")
         
         args_repr, kwargs_repr = Helper.prepArgs(args, kwargs)
 
-        # print(classObj)
         if hasattr(classObj, "_method"):
-            # print(f"FUNCNAME: {func.__name__}")
             classObj._method(f"{func.__name__}", args_repr + kwargs_repr)
         else:
-            print(f"\t {classObj.__class__.__name__} has no method _method()")
+            print(f"func: {func}")
+            print(f"funcName: {func.__name__}")
+            print(f"args: {args}")
+            print(f"kwargs: {kwargs}")
+            print(f"classObj: {classObj}")
+            raise Decorator_Exception(f"\t {classObj.__class__.__name__} has no method _method()")
         
         # call the function
         value = func(*args, **kwargs)

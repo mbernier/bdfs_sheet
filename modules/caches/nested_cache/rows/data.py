@@ -2,7 +2,8 @@ import sys
 from collections import OrderedDict
 from pprint import pprint
 
-from modules.caches.nested_cache.rows.row import Nested_Cache_Row
+from modules.caches.flat import Flat_Cache
+from modules.caches.nested_cache.row import Nested_Cache_Row
 from modules.caches.exception import Nested_Cache_Row_Exception, Flat_Cache_Exception
 from modules.config import config
 from modules.decorator import debug_log, validate
@@ -13,5 +14,6 @@ from modules.decorator import debug_log, validate
 #   and to wrap Flat_Cache with the logic needed for Nested_Cache in a clean way.
 #   A nested Cache Row can be created with values or not and can be written 
 #   to the Flat Cache either way.
-class Nested_Cache_Row_Data(Flat_Cache):
-
+class Nested_Cache_Rows_Data(Flat_Cache):
+    def something():
+        raise Exception("wtf is this?")

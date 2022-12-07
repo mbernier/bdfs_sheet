@@ -90,6 +90,10 @@ class C(BaseClass):
     def contains2(self, var1:str=None):
         return True
 
+    @debug_log
+    @validate(var1=['isType:str,list,dict,int'])
+    def isTypeMulti(self, var1):
+        return True
 
 def test_default_and_annotation_sets_isSetType():
     c = C()
@@ -289,12 +293,12 @@ def test_validation_contains():
     assert excinfo.value.message == "One of [yes,no] was expected, but 'something else' was found for parameter var1 for method contains"
 
 
-def test_validation_isType_multiple(self, item, param, paramValue=None):
-    raise Exception("not implemented")
-    # needs to pass isType:int,str and we need to make sure that isType_multiple gets called
-    # in test_validation:
-        # trigger Validation.isType(item="str,int", param="whatever", paramValue=12345) directly to get Validation_Exception
-        # trigger Validation.isType_multiple(item="str,int", param="whatever", paramValue=12345) directly
-            # correctly and incorrectly
-    # here: 
-        # trigger the decorator validation to cause isType_multiple
+def test_validation_isType_multiple():
+    var = C()
+    assert True == var.isTypeMulti(1)
+    assert True == var.isTypeMulti("string of some sort")
+    assert True == var.isTypeMulti([1,2,3])
+    assert True == var.isTypeMulti({"one":100, "two": 3})
+    with pytest.raises(Validation_Exception) as excinfo:
+        var.isTypeMulti(True)
+    assert excinfo.value.message == "validation_isType_multiple expected var1 to be one of str,list,dict,int but <class 'bool'> was found with value True for method isTypeMulti"

@@ -67,8 +67,6 @@ class Validation_Field(Validation):
     def __doValidations(self):
         self._method("__doValidations", locals())
 
-        print(self._validationsToRun)
-
         for validationToRun in self._validationsToRun:
 
             # setup the dict of params we want to pass to our method
@@ -90,8 +88,6 @@ class Validation_Field(Validation):
                 # Try on the Validation class, if it's not there, try on the class where the decorator is being run
                 methodParams['item'] = dataToPass
 
-                if Helper.existsInStr(",", dataToPass):
-                    methodName += "_multiple"
 
             #set the parameter so we can pass it
             methodParams['methodName'] = methodName
@@ -112,9 +108,6 @@ class Validation_Field(Validation):
     def validation_oneIsNotNone(self, item, param, paramValue=None):
         self._method("validation_oneIsNotNone", locals())
         
-        # print("\n\nParam: {}={}".format(param, paramValue))
-        # print("\nItem: {}={}\n\n".format(item, self.__getParamValue(item)))
-
         # if either of these are false, then we are good to go
         paramNotNone = (None != paramValue)
         otherParamNotNone = (None != self.__getParamValue(item))

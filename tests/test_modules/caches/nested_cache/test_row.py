@@ -53,7 +53,7 @@ def test_add_index_that_does_exist():
     row = Nested_Cache_Row(testData)
     with pytest.raises(Nested_Cache_Row_Exception) as excinfo:
         row.add(1, 500)
-    assert "Flat_Cache has 2 at 1. To update data in the cache, use update()" in excinfo.value.message
+    assert "Flat_Cache has '2' at location: 1. To update data in the cache, use update()" in excinfo.value.message
 
 
 # add something that isn't a string
@@ -91,7 +91,7 @@ def test_set_by_index_exists():
     row = Nested_Cache_Row(testData)
     with pytest.raises(Nested_Cache_Row_Exception) as excinfo:
         row.set(1, "banana")
-    assert "Flat_Cache has 2 at 1. To update data in the cache, use update()" in excinfo.value.message
+    assert "Flat_Cache has '2' at location: 1. To update data in the cache, use update()" in excinfo.value.message
 
 
 # set a location that doesn't exists

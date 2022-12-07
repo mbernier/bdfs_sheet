@@ -47,8 +47,8 @@ class Validation():
     def validation_isType(self, item, param, paramValue=None):
         self._method("validation_isType", locals())
 
-        if Helper.existsInStr(",", item):
-            raise Validation_Exception("isType validation should never have a ',' in the item parameter, received item='{}' for method {}".format(item, self._methodName))
+        if Helper.existsInStr(",", item): # we have more than one type that this thing can be, so call multiple
+            return self.validation_isType_multiple(item, param, paramValue)
 
         if not Helper.isType(item, paramValue):
             raise Validation_Exception("{} was expected to be type {}, but {} was found for method {}".format(param, item, str(type(paramValue)), self._methodName))

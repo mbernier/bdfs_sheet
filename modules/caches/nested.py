@@ -3,7 +3,8 @@ from collections import OrderedDict
 from pprint import pprint
 
 from modules.cache import BdfsCache
-from modules.caches.nested_cache.rows.data import Nested_Cache_Row_Data
+from modules.caches.flat import Flat_Cache
+from modules.caches.nested_cache.rows.data import Nested_Cache_Rows_Data
 from modules.caches.nested_cache.rows.location import Nested_Cache_Row_Location
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
 from modules.config import config
@@ -27,7 +28,7 @@ class Nested_Cache(BdfsCache):
 
     _storage: list = []
 
-    _locations:OrderedDict = None
+    _locations:list = None
 
     # locations are the indexes for the Flat_Cache
     #   We will make sure that they are setup properly as the caches are built
@@ -63,13 +64,12 @@ class Nested_Cache(BdfsCache):
     def __addLocations(self, locations:list):
         locationRow = Nested_Cache_Row_Location(locations)
 
-        # self.debug("\t\tnewRow: {}".format(newRow))
         self.__setLocationRow(locationRow)
 
 
     @debug_log
     @validate()
-    def __getLocations(self):
+    def __getLocations(self) -> list:
         #_storage[0] is our locations Cache
         return self._storage[0].getLocationKeys()
 
@@ -79,7 +79,10 @@ class Nested_Cache(BdfsCache):
     @validate()
     def __setLocationRow(self, locationRow:Nested_Cache_Row_Location):
         # set the storage Row
-        self._storage[0] = locationRow
+        if len(self._storage) == 0:
+            self._storage.append(locationRow)
+        else:
+            self._storage[0] = locationRow
 
         # update the locations list with the locations
         self._locations = self.__getLocations()
@@ -96,8 +99,10 @@ class Nested_Cache(BdfsCache):
 
 
     @debug_log
-    @validate(position=['isType:int,str', 'locationExists'])
-    def __getLocationIndex(self, position):
+    @validate(location=['oneIsNotNone:index'],
+                index=['oneIsNotNone:location'])
+    def __getLocationIndex(self, index:int=None, location:str=None):
+        position = index if None == location else location
         return self._storage[0].getLocationIndex(position)
 
 
@@ -111,12 +116,6 @@ class Nested_Cache(BdfsCache):
     @validate(location=['oneIsNotNone:index'], #we are just creating a data row, no need to validate location exists
                 index=['oneIsNotNone:location']) #data can be anything, don't validate type
     def __createRowItemData(self, location:str=None, index:int=None, data=None):
-        # self.debug("\t__createRowItemData(location={}, index={}, data={})", (location, index, data))
-        
-        # self.__validateLocationIndex(methodName="__createRowItemData()", location=location, index=index)
-
-        # It is completely valid for data to be == None here, if there is no data in a specific location        
-        # # self.__validateData(data=data, methodName="__createRowItemData()")
 
         newRowData = {}
 
@@ -165,21 +164,14 @@ class Nested_Cache(BdfsCache):
     @debug_log
     @validate()
     def __createRowItem_FromData_WhereHeadersAreConfirmed(self, data:list):
-
         newRowData = {}
-        # print("CRT")
         for index, item in enumerate(data):
-
-            # print(f"index={index}")
 
             location, index = self.__getLocationIndex(index = index)
 
-            # print(f"location={location}")
-            # print(f"index={index}")
             # keeping the data in sync, whether we access by the location or the index
             rowDataItem = self.__createRowItemData(location=location, index=index, data=item)
             newRowData.update(rowDataItem)
-        
         return self.__createRowObject(newRowData)
 
 
@@ -189,8 +181,6 @@ class Nested_Cache(BdfsCache):
     @validate( # row is not including rowExists, bc we want to return None if we don't have a row
                 asObj=['contains:list,dict'])
     def getRow(self, row:int, asObj:str="list"):
-        # # self.debug("getRow(row={})", row)
-        # self.__validateRow(row=row, methodName="getRow()")
 
         if self.__rowExists(row):
             if asObj == "list":
@@ -205,8 +195,7 @@ class Nested_Cache(BdfsCache):
     @debug_log
     @validate(row=['rowExists']) # overkill if only called by getRow, but not if called elsewhere
     def __getRowAsList(self, row:int):
-        # self.debug("__getRowAsList(row={})", row)
-        # self.__validateRow(row=row, methodName="__getRowAsList()")
+
         obj = []
         row = self.__getRawRow(row)
         for location in self.__getLocations():
@@ -256,12 +245,12 @@ class Nested_Cache(BdfsCache):
         location, index = self.__getLocationIndex(index = index, location=location)
 
         try:
-            self._storage[row].set(location=index, data=data)
+            self._storage[row].set(index, data)
         except Flat_Cache_Exception:
             raise Nested_Cache_Exception("There is already data at row:{} location:{}/index:{}, to change this data use update(row, location/index, data)".format(row, location, index))
         
         try:
-            self._storage[row].set(location=location, data=data)
+            self._storage[row].set(location, data)
         except Flat_Cache_Exception:
             raise Nested_Cache_Exception("There is already data at row:{} location:{}/index:{}, to change this data use update(row, location/index, data)".format(row, location, index))
 
@@ -270,18 +259,13 @@ class Nested_Cache(BdfsCache):
                 index=['oneIsNotNone:location', 'ifSet:indexExists'])
                 #data can be anything here, so don't validate the type
     def appendRow(self, location:str=None, index:int=None, data=None):
-
         newRowData = self.__createRowItemData(location=location, index=index, data=data)
-        Flat_Cache = self.__createRowObject(newRowData)
-
-        self.__appendRow(Flat_Cache)
+        flatcache = self.__createRowObject(newRowData)
+        self.__appendRow(flatcache)
 
     @debug_log
     @validate()
     def __appendRow(self, Flat_CacheItem:Flat_Cache):
-
-        if type(Flat_CacheItem) != Flat_Cache:
-            raise Nested_Cache_Exception("Flat_Cache item expected in __appendRow(), received ''".format(type(Flat_CacheItem)))
 
         self._storage.append(Flat_CacheItem)
 
@@ -291,32 +275,20 @@ class Nested_Cache(BdfsCache):
 
 
     @debug_log
-    @validate() # can be null
+    @validate() # can be None
     def __createRowObject(self, rowDataObj:dict=None):
-        # self.debug("__createRowObject(rowDataObj={})".format(rowDataObj))
-
-        flatCache = Flat_Cache.create(rowDataObj)
-
+        flatCache = Flat_Cache(rowDataObj)
         return flatCache
 
     @debug_log
     @validate(location=['oneIsNotNone:index'], #we are just creating a data row, no need to validate location exists
                 index=['oneIsNotNone:location']) #data can be anything, don't validate type
     def __createRowItemData(self, location:str=None, index:int=None, data=None):
-        # self.debug("\t__createRowItemData(location={}, index={}, data={})", (location, index, data))
-        
-        # self.__validateLocationIndex(methodName="__createRowItemData()", location=location, index=index)
-
-        # It is completely valid for data to be == None here, if there is no data in a specific location        
-        # # self.__validateData(data=data, methodName="__createRowItemData()")
 
         newRowData = {}
 
-        # if we are doing anything after the first row, then we need to check.
-        # the first row has no lookup because the first row is the lookup
-        if 1 < self.height():
-            # if we didn't get the location with the call then we need to look it up
-            location, index = self.__getLocationIndex(index = index, location=location)
+        # if we didn't get the location with the call then we need to look it up
+        location, index = self.__getLocationIndex(index = index, location=location)
 
         newRowData[location] = {
             "position": index,
@@ -333,6 +305,7 @@ class Nested_Cache(BdfsCache):
     @debug_log
     @validate(row=['rowExists'])
     def deleteRow(self, row:int):
+        raise Exception("needs to be tested")
         row = self._storage.pop(row)
         self.info("deleting: {}".format(row))
         self.__decreaseHeight()
@@ -341,7 +314,7 @@ class Nested_Cache(BdfsCache):
     @debug_log
     @validate(row=['rowExists'])
     def unsetRow(self, row:int):
-
+        raise Exception("needs to be tested")
         self.info("unsetting row: {}".format((row)))
         # call the Flat_Cache unset method for this row
         self._storage[row] = self.__createRowObject(None)
@@ -358,13 +331,10 @@ class Nested_Cache(BdfsCache):
     @validate(location=['oneIsNotNone:index', 'ifSet:locationExists'],
                 index=['oneIsNotNone:location', 'ifSet:indexExists'])
     def deleteColumn(self, index:int=None, location:str=None):
-        # self.debug("deleteColumn(index={},location={})",(index, location))
-
-        # self.__validateRowLocationIndex(methodName="()", row=row, location=location, index=index)
-
+        raise Exception("needs to be tested")
         location, index = self.__getLocationIndex(location=location, index = index)
 
-        if not self.__locationExists(location=location):
+        if not self.__locationExists(location):
             raise Nested_Cache_Exception("Location '{}' doesn't exist, to add it use addColumn(location={})".format(location, location))
 
         #finally, delete the header from storage
@@ -375,9 +345,6 @@ class Nested_Cache(BdfsCache):
                 index=['oneIsNotNone:location', 'ifSet:indexExists'])
     # remove both the index and location from all rows in the sheetData
     def __removeHeaderIndexes(index:int, location:str):
-        # self.debug("\t__removeHeaderIndexes(index={},location={})", (index, location))
-        # self.__validateRowLocationIndex(methodName="__removeHeaderIndexes()", row=row, location=location, ignore="index")
-
         # delete the header from every single row in the storage
         for row in range(0, self.height()):
             self._storage[row].delete(index)
@@ -405,8 +372,7 @@ class Nested_Cache(BdfsCache):
     @debug_log
     @validate() #don't validate row or location, we want to return None if they don't exist
     def __getItem(self, row:int, location:str):
-        # self.debug("\t__getItem(row={},location={})", (row, location))
-        # self.__validateRowLocationIndex(methodName="__getItem()", row=row, location=location, ignore="index")
+
         if self.__rowExists(row):
             return self.__getRawRow(row).get(location)
         else:
@@ -418,16 +384,14 @@ class Nested_Cache(BdfsCache):
     @validate(location=['oneIsNotNone:index','ifSet:locationExists'],
                 index=['oneIsNotNone:location','ifSet:indexExists'])
     def delete(self, row:int, location:str=None, index:int=None):
-        # self.debug("delete(row={}, location={}, index={})", (row, location, index))
-        # self.__validateRowLocationIndex(methodName="delete()", row=row, location=location, index=index)
+        raise Exception("needs to be tested")
         self.deleteItem(row=row, location=location, index=index)
 
     @debug_log
     @validate(location=['oneIsNotNone:index','ifSet:locationExists'],
                 index=['oneIsNotNone:location','ifSet:indexExists'])
     def deleteItem(self, row:int, location:str=None, index:int=None):
-        # self.debug("deleteItem(row={}, location={}, index={})", (row, location, index))
-        # self.__validateRowLocationIndex(methodName="deleteItem()", row=row, location=location, index=index)
+        raise Exception("needs to be tested")
         if 0 == row:
             raise Nested_Cache_Exception("You cannot delete from row[0], if you want to modify locations, use deleteColumn()")
         
@@ -435,18 +399,14 @@ class Nested_Cache(BdfsCache):
         if None == location:
             location, index == self.__getLocationIndex(index)
 
-        self._storage[row].delete(location=location)
+        self._storage[row].delete(location)
+        self._storage[row].delete(index)
 
 
     @debug_log
     @validate(location=['oneIsNotNone:index','ifSet:locationExists'],
                 index=['oneIsNotNone:location','ifSet:indexExists']) #data can be anything
     def update(self, row:int, index:int=None, location:str=None, data=None):
-        # self.debug("update(row={}, index={}, location={}, data={})", (row, index, location, data))
-        # self.__validateRowLocationIndex(methodName="__setRow()", row=row, location=location, index=index)
-        
-        # it is completely valid for data == None
-        # # self.__validateData(data=data, methodName="__setRow()")
 
         location, index = self.__getLocationIndex(location=location, index = index)
 
@@ -465,12 +425,9 @@ class Nested_Cache(BdfsCache):
     @validate(location=['oneIsNotNone:index','ifSet:locationExists'],
                 index=['oneIsNotNone:location','ifSet:indexExists'])
     def unsetData(self, row, location:str=None, index:int=None):
-        # self.debug("unsetData(row={}, location={}, index={})", (row, location, index))
-
-        # self.__validateRowLocationIndex(methodName="unsetData()", row=row, location=location, index=index)
-
-        self._storage[row].unset(location=location)
-        self._storage[row].unset(location=index)
+        raise Exception("needs to be tested")
+        self._storage[row].unset(location)
+        self._storage[row].unset(index)
 
     ####
     #
@@ -481,19 +438,17 @@ class Nested_Cache(BdfsCache):
     # nuclear option
     @debug_log
     def clear(self):
-        # self.debug("clear()")
+        raise Exception("needs to be tested")
         self._storage = []
 
     @debug_log
     def height(self):
-        # self.debug("height()")
         # decrement bc the user doesn't need to know we are overloading the 0th row
-        return (self._height - 1)
+        return self._height
     
     @debug_log
     @validate(increaseBy=['gt:0'])
     def __increaseHeight(self, increaseBy:int = 1):
-        # self.debug("\t__increaseHeight(increaseBy={})".format(increaseBy))
         if 0 > increaseBy:
             raise Nested_Cache_Exception("You can only increase height by positive integers")
         self._height += increaseBy
@@ -502,14 +457,12 @@ class Nested_Cache(BdfsCache):
     @debug_log
     @validate(decreaseBy=['gt:0'])
     def __decreaseHeight(self, decreaseBy:int = 1):
-        # self.debug("\t__increaseHeight(decreaseBy={})".format(decreaseBy))
         if 0 > decreaseBy:
             raise Nested_Cache_Exception("You can only decrease height by positive integers")
         self._height -= decreaseBy
 
     @debug_log
     def width(self):
-        # self.debug("width()")
         # in order to avoid getting yelled at by row(0) check validations, use the _locations arr for width
         return len(self.__getLocations())
 
@@ -523,12 +476,15 @@ class Nested_Cache(BdfsCache):
     def getAsListOfLists(self):
         data = self.getStorage()
         output = []
-        for index, row in enumerate(data):
+        for rowindex, row in enumerate(data):
             rowAsList = row.getAsList()
-
             rowData = []
-            for index, rowItem in enumerate(rowAsList):
-                rowData.insert(index,rowItem['data'])
+
+            if 0 == rowindex: # this is the locations Row
+                rowData = rowAsList
+            else:
+                for itemindex, rowItem in enumerate(rowAsList):
+                    rowData.insert(itemindex, rowItem['data'])
 
             output.append(rowData)
         return output
@@ -547,17 +503,17 @@ class Nested_Cache(BdfsCache):
             output.append(rowData)
         return output
 
-    # ####
-    # #
-    # # Validation Methods
-    # #
-    # ####
+    ####
+    #
+    # Validation Methods
+    #
+    ####
 
     @debug_log
     @validate()
     def validation_locationExists(self, param:str, paramValue:str=None):
         self.validation_method_debug("validation_locationExists", locals())
-        if not self.__locationExists(location=paramValue):
+        if not self.__locationExists(paramValue):
             raise Nested_Cache_Exception("Location '{}' doesn't exist, to add it use addLocation(location)".format(paramValue))
         return True
 
@@ -566,7 +522,7 @@ class Nested_Cache(BdfsCache):
     @validate()
     def validation_indexExists(self, param:str, paramValue:int=None):
         self.validation_method_debug("validation_indexExists", locals())
-        if not self.__locationExists(index=paramValue):
+        if not self.__locationExists(paramValue):
             raise Nested_Cache_Exception("Index '{}' doesn't exist, to add it use addLocation(location)".format(paramValue))
         return True
 

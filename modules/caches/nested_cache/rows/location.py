@@ -3,7 +3,7 @@ from collections import OrderedDict
 from pprint import pprint
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested_cache.row import Nested_Cache_Row
-from modules.caches.exception import Nested_Cache_Row_Exception, Flat_Cache_Exception
+from modules.caches.exception import Nested_Cache_Row_Exception, Nested_Cache_Row_Location_Exception, Flat_Cache_Exception
 from modules.config import config
 from modules.decorator import debug_log, validate
 
@@ -41,13 +41,17 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
     def add(self, location:str):
 
         try:
-            # try to create the location in the cache
-            self.set(location, self._width)
-            self.set(self._width, location)
+            # set the location with width as index
+            self.set(location, self.width()) # handles both location and index setting
             self._width += 1
         except Nested_Cache_Row_Exception as err:
             raise Nested_Cache_Row_Location_Exception(str(err))
 
+    def remove(self, location):
+        raise Exception("remove() is not implemented")
+        # @todo:
+            # decrement width
+            # modify the indexes after the one that was removed
 
     # This will return the index if location is given, or the location if index is given
     #   if it is set, the item must exist in the Row
@@ -75,24 +79,25 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
     #   direction
     @debug_log
     @validate(position=['isType:int,str'])
-    def set(self, position):
-        otherPosition = self.get(position)
+    def set(self, position, otherPosition=None):
+        if None == otherPosition:
+            otherPosition = self.get(position)
 
         # then set the data, because Nested_Cache_Row sets the data for both Index/Location at the same time
         # we want the location row to have index point to location and location point to index
         try:
             self._storage.set(position, data=otherPosition)
             self._storage.set(otherPosition, data=position)
-        except Nested_Cache_Row_Exception as err:
+        except Flat_Cache_Exception as err:
             raise Nested_Cache_Row_Location_Exception(str(err))
 
 
 
     # Change the index of a location
     @debug_log
-    @validate(index=['locationEmpty'])
-    def update(self, location:str, index:int):
-
+    @validate()
+    def update(self, position):
+        raise Exception("double check that the indexes get updated correctly if an index changes, also add tests")
         currentIndex = self.get(location)
         self._storage.update(currentIndex, None) # reset the current index to None
 
@@ -106,10 +111,9 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
 
     # return only the string keys from the storage
     @debug_log
-    @validate()
-    def getLocationKeys(self) -> OrderedDict:
-        keys = OrderedDict()
-        
+    def getLocationKeys(self) -> list:
+        keys = [] 
+
         for index in range(0,self.width()):
             # will get the location name for each index, in the correct order
             keys.append(self._storage.get(index))
@@ -117,7 +121,6 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
         return keys
 
     @debug_log
-    @validate()
     def width(self) -> int:
         return self._width
 
@@ -148,3 +151,13 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
                     # Memory: 
                     # StorageCopy: 1:one, 2:two, 3:three, 4:four, 5:five, one:1, two:2, three:3, four:4, five:5
         #   if everything went OK, delete StorageCopy, if not - throw exception
+
+
+    @debug_log
+    def getAsList(self):
+        return self._storage.getAsList()
+
+
+    @debug_log
+    def getAsDict(self):
+        return self._storage.getAsDict()

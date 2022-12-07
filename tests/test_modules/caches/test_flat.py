@@ -41,7 +41,7 @@ def test_cache_set_again():
 
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.set("a", 1)
-    assert excinfo.value.message == "Flat_Cache has 2 at a. To update data in the cache, use update()"
+    assert excinfo.value.message == "Flat_Cache has '2' at location: a. To update data in the cache, use update()"
 
 def test_cache_set_again2():
     cache = Flat_Cache()
@@ -51,7 +51,7 @@ def test_cache_set_again2():
 
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.set(location="a", data=1)
-    assert excinfo.value.message == "Flat_Cache has 2 at a. To update data in the cache, use update()"
+    assert excinfo.value.message == "Flat_Cache has '2' at location: a. To update data in the cache, use update()"
 
 
 def test_unset():
@@ -99,7 +99,7 @@ def test_update_exception():
 
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.update("c", 5)
-    assert excinfo.value.message == "There is nothing to update at position 'c'"
+    assert excinfo.value.message == "There is nothing to update at position 'c' consider using set"
 
     assert 3 == cache.get("b")
 
@@ -109,7 +109,7 @@ def test_update_exception2():
 
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.update(location="c", data=5)
-    assert excinfo.value.message == "There is nothing to update at position 'c'"
+    assert excinfo.value.message == "There is nothing to update at position 'c' consider using set"
 
     assert 3 == cache.get(location="b")
 

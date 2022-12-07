@@ -157,6 +157,7 @@ class Validation_Method(Validation):
                                             paramValues=passTheseArgs)
 
     def getFunctionParams(self):
+        # print(self._newFunctionParams)
         return self._newFunctionParams
 
 
