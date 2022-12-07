@@ -42,7 +42,6 @@ To Use the SheetProcessor, pass in some commands:
 
     @debug_log
     def main(self, argv):
-        self.debug("main(%s)" % str(argv)) 
         outputfile = ''
 
         try:
@@ -92,7 +91,7 @@ To Use the SheetProcessor, pass in some commands:
             elif opt in ("-l", "--list-worksheets"):
                 self.debug("user selected -l option")
                 self.console("Current Worksheet List:")
-                self.listWorksheets()
+                print(self.listWorksheets())
                 sys.exit()
             
             elif opt in ("-w", "--worksheets"):
@@ -112,27 +111,23 @@ To Use the SheetProcessor, pass in some commands:
     # setup the sheet object if not setup, return it either way
     @debug_log
     def __setUpSpreadsheet(self):
-        self.debug("getSheet()")
         if None == self.spreadsheet:
             # self.spreadsheet = getattr(sys.modules[self.spreadsheet_class["module"]], self.spreadsheet_class["class"])
             spreadsheetClass = self.importClass(self.spreadsheet_class) 
             self.spreadsheet = spreadsheetClass()
-
         return self.spreadsheet
 
 
     # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
     # if use_cached is false, go retrieve it again
     @debug_log
-    def listWorksheets(self, use_cache = True):
-        self.debug("listWorksheets(%s)" % str(use_cache))
-        return self.spreadsheet.getWorksheets(use_cache)
+    def listWorksheets(self):
+        return self.spreadsheet.getWorksheets()
 
 
     # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
     #   to make sure that the spreadsheet is valid for what we want to do
     @debug_log
     def checkWorksheetColumns(self, checkExtras = True, addMissingColumns = False):
-        self.debug("checkWorksheetColumns(checkExtras = {}, addMissingColumns = {})".format(checkExtras, addMissingColumns))
         self.spreadsheet.checkWorksheetColumns(checkExtras = checkExtras, addMissingColumns = addMissingColumns)
         return
