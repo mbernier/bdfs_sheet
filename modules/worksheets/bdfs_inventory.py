@@ -1,7 +1,7 @@
 
-from modules.worksheet import Worksheet
+from modules.worksheet import Bdfs_Worksheet
 
-class BdfsInventory_Worksheet(Worksheet):
+class BdfsInventory_Worksheet(Bdfs_Worksheet):
 
     logger_name = "BdfsInventory_Worksheet"
     

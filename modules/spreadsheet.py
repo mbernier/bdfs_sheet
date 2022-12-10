@@ -131,9 +131,6 @@ class Spreadsheet(BaseClass):
 
 
 
-    
-
-
     # # only checks the columns, doesn't do anything to adjust or fix them
     # # colsToCheck allows you to pass in something new to check against, rather than whatever is in cols_expected
     # # checkExtras will allow you to bypass checking against the cols_expected_extra columns

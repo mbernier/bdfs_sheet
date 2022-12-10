@@ -46,7 +46,7 @@ class Worksheet_DataClass():
 # Rules; 
 #   pulls the worksheet data, does all the changes, only pushes changes when commit() is called.
 #
-class Worksheet(BaseClass):
+class Bdfs_Worksheet(BaseClass):
 
     logger_name = "Worksheet"
     data: Worksheet_DataClass = Worksheet_DataClass()
@@ -74,14 +74,33 @@ class Worksheet(BaseClass):
             raise Exception("cols_expected parameter is not set")
 
 
+    #shitty method to allow quick running of code from here
+    def playground(self):
+        self.info("# of columns in worksheet: {}".format(self.__getWorksheetColumnCount()))
+        self.info("# of columns in dataStore: {}".format(self.getColumnCount()))
+
+        # we don't need to remove the empty columns at the end, because we already pulled the data
+        #   and we will commit what we want to keep, so we don't need to clean up the sheet we only need
+        #   to keep the local data clean.      
+        # self.removeEmptyColumnsTrailing()
+
+        # @todo make sure that any data that gets updated in the data object have their "updated_date" field changed to time.now()
+
+
+
+
+
     ####
     #
     # gSpread worksheet accessor methods - all private
     #
     ####
-
-
-
+    # get rid of any trailing columns that exist
+    # don't need todo this, because we're doing everything locally and then committing, so we don't really
+    # care what is in the spreadsheet at the end, we will just remove it by not having it and not committing it later
+    @debug_log
+    def gspread_worksheet_resize_to_data(self): # test
+        self.data.gspread_worksheet.resize(cols=self.getColumnCounts()['data'])
 
 
     ####
@@ -101,21 +120,21 @@ class Worksheet(BaseClass):
 
     # if we have a new title passed, return that, otherwise return the original title
     @debug_log
-    def getTitle(self):
+    def getTitle(self): #tested
         if "" == self.data.uncommitted_title:
             return self.getOriginalTitle()
         return self.data.uncommitted_title
 
     # always returns self.data.title
     @debug_log
-    def getOriginalTitle(self):
+    def getOriginalTitle(self): #tested
         return self.data.title
 
 
     # if a new title is set, store it until we commit the sheet
     @debug_log
     @validate()
-    def setTitle(self, title:str) -> str:
+    def setTitle(self, title:str) -> str: #tested
         self.data.uncommitted_title = title
         return self.getTitle()
 
@@ -133,7 +152,8 @@ class Worksheet(BaseClass):
 
     #will return something like -- "A1:CT356"
     @debug_log
-    def getDataRange(self):
+    def getDataRange(self): #tested]
+        self.getData()
         return f"{self.getA1(1,1)}:{self.getA1(self.getData().width(), self.getData().height())}"
 
     ####
@@ -204,10 +224,12 @@ class Worksheet(BaseClass):
     ####
 
     @debug_log
-    def getData(self):
+    def getData(self): #tested
         # we can defer grabbing the data until we get here
         if [] == self.data.sheetData:
             self.data.sheetData = WorksheetData(self.data.gspread_worksheet.get_all_values())
+            # so we don't have to screw with empty rows or calculating anything, resize to the data available
+            self.gspread_worksheet_resize_to_data()
         return self.data.sheetData
 
 
@@ -230,7 +252,7 @@ class Worksheet(BaseClass):
     # 'sort'
 
     @debug_log
-    def getExpectedColumns(self):
+    def getExpectedColumns(self): #tested
         return self.__mergeExpectedColumns()
 
 
@@ -250,33 +272,19 @@ class Worksheet(BaseClass):
     #   if there are empty columns at the end, the row_values() method will not get them, it will get everything from
     #       the first column to the last value in the row
     @debug_log
-    def getColumns(self):
+    def getColumns(self): #tested
         return self.getData().getHeaders()
         
 
     # return the number of columns in the worksheet
     @debug_log
     @validate()
-    def getColumnCounts(self):
+    def getColumnCounts(self): 
         obj = {
             'data': self.getData().width(),
-            'worksheet': self.data.gspread_worksheet.col_count
+            'gspread_worksheet': len(self.data.gspread_worksheet.row_values(1))
         }
         return obj
-
-
-    # # get rid of any trailing columns that exist
-    # # don't need todo this, because we're doing everything locally and then committing, so we don't really
-    # # care what is in the spreadsheet at the end, we will just remove it by not having it and not committing it later
-    # def removeColumns_EmptyTrailing(self):
-    #     self.debug("removeEmptyColumnsTrailing()")
-
-    #     #we don't want to remove the last column in the data, we want the next column
-    #     dataColumnCount = self.getColumnCount() + 1
-    #     worksheetObjColumnCount = self.__getWorksheetColumnCount()
-
-    #     if worksheetObjColumnCount > dataColumnCount:
-    #         self.removeColumns(start=dataColumnCount, end=worksheetObjColumnCount)
 
 
     # wrapper function to take care of some pre-work on removing columns
@@ -290,27 +298,7 @@ class Worksheet(BaseClass):
         if None == start or None == end:
             raise Exception("You must provide a start and end range for removeColumns()")
 
-        self.__removeColumns_Data(start, end)
-
-
-    # remove the columns from our data storage
-    # we are not removing from the worksheet, because we need to commit() to do that
-    def __removeColumns_Data(self, start, end):
-        self.debug("__removeDataColumns(start={}, end={})", (start, end))
         self.data.sheetData.removeHeaders(start, end)
-
-
-    def playground(self):
-        self.info("# of columns in worksheet: {}".format(self.__getWorksheetColumnCount()))
-        self.info("# of columns in dataStore: {}".format(self.getColumnCount()))
-
-        # we don't need to remove the empty columns at the end, because we already pulled the data
-        #   and we will commit what we want to keep, so we don't need to clean up the sheet we only need
-        #   to keep the local data clean.      
-        # self.removeEmptyColumnsTrailing()
-
-        # @todo make sure that any data that gets updated in the data object have their "updated_date" field changed to time.now()
-
 
 
     

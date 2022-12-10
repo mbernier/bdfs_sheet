@@ -1,5 +1,5 @@
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dc_field
 from inspect import signature, Parameter
 from modules.helper import Helper
 from modules.validation import Validation
@@ -10,10 +10,11 @@ from modules.validations.exception import Validation_Method_Exception
 
 SHITTY_NONE_DEFAULT_VALUE = 'NoneZeroDefaultFail'
 
+@dataclass
 class Validation_Method_Data():
-    newFunctionParams:dict = {}
-    classBeingValidated = None
-    methodName:str
+    newFunctionParams:dict = dc_field(default_factory=dict)
+    classBeingValidated:str = dc_field(default_factory=str)
+    methodName:str = dc_field(default_factory=str)
 
 
 class Validation_Method(Validation):

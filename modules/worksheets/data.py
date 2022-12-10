@@ -11,12 +11,15 @@ class WorksheetData(BaseClass):
     logger_name = "WorksheetData"
     _emptyHeaderIndexes = []
     _uniqueHeaders = []
-    _duplicateHeaders = []
+    _duplicateHeaders = [] 
     _headers = []
     _removedHeaders = []
 
     def __init__(self, sheetData = None):
+        if None != sheetData:
+            self.load(sheetData)
 
+    def load(self, sheetData=None):
         # store all the data in the data store
         headers = sheetData.pop(0)
 
@@ -28,6 +31,7 @@ class WorksheetData(BaseClass):
         self.__setEmptyHeaderIndexes(emptyHeaderIndexes)
 
         self.dataStore = Nested_Cache(headers, sheetData)
+
 
     # replaces empty headers with "NoHeaderFound_{index}"
     def __prepHeaders(self, headers):
@@ -199,11 +203,8 @@ class WorksheetData(BaseClass):
     ####
 
 
-
-
     def width(self):
         self.debug("width()")
-        print(self.getHeaders())
         return len(self.getHeaders())
 
     def height(self):

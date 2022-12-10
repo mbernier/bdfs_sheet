@@ -9,6 +9,7 @@ from modules.caches.exception import Nested_Cache_Row_Exception
 from modules.validations.exception import Validation_Exception
 
 from modules.logger import Logger
+from modules.spreadsheets.bdfs_test import BdfsInventory_Test_Spreadsheet
 from modules.sheetProcessors.bdfs_inventory import BdfsInventory_SheetProcessor
 from pydoc import locate
 
@@ -20,21 +21,6 @@ if __name__ == "__main__":
     # run.main(sys.argv[1:]) 
 
 
-    thing = "list"
-    thing2 = [1,2,3]
-    typeThing = locate(thing)
-    print(type(typeThing))
-    # print(dir(type(typeThing)))
-    print(typeThing)
-    print(type(thing))
-
-    print(typeThing is type(typeThing))
-    print(typeThing is eval(thing))
-    print(isinstance(typeThing, eval(thing)))
-    print(isinstance(typeThing, type(thing)))
-    print(typeThing is list)
-    print(isinstance(typeThing, list))
-
-    print(thing2 is eval(thing))
-    # print(isinstance(thing2, thing))
-    print(isinstance(thing2, typeThing))
+    sheet = BdfsInventory_Test_Spreadsheet() 
+    test_worksheet = sheet.getWorksheet('test_easy_data')
+    test_worksheet.gspread_worksheet_resize_to_data()
