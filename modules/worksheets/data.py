@@ -2,6 +2,7 @@
 import sys
 from modules.base import BaseClass
 from modules.caches.nested import Nested_Cache
+from modules.worksheets.exception import WorksheetData_Exception
 from pprint import pprint
 
 class WorksheetData(BaseClass):
@@ -130,7 +131,7 @@ class WorksheetData(BaseClass):
             self.removeHeader(start)
             return 1
 
-        for index in range(start, end)
+        for index in range(start, end):
             self.removeHeader(index)
             return end-start
 
@@ -145,7 +146,7 @@ class WorksheetData(BaseClass):
         elif None != header:
             self.__removeHeader_byName(header)
         else:
-            raise new Exception("You must pass either an index or a header to removeHeader()")
+            raise WorksheetData_Exception("You must pass either an index or a header to removeHeader()")
 
 
     # removed the header from the headers list
@@ -202,6 +203,7 @@ class WorksheetData(BaseClass):
 
     def width(self):
         self.debug("width()")
+        print(self.getHeaders())
         return len(self.getHeaders())
 
     def height(self):

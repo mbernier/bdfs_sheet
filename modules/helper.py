@@ -1,5 +1,8 @@
 import sys
 from modules.helpers.exception import Helper_Exception
+from gspread.worksheet import Worksheet
+# from multipledispatch import dispatch
+from pydoc import locate
 
 class Helper:
     
@@ -80,7 +83,7 @@ class Helper:
 
     #does list1 contain everything in list2?
     @staticmethod
-    def compareLists(list1, list2) -> list:
+    def compareLists(list1, list2) -> bool:
         result =  all(elem in list1 for elem in list2)
         return result
 

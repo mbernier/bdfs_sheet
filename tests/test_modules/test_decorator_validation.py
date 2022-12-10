@@ -76,6 +76,16 @@ class C(BaseClass):
         return True
 
     @debug_log
+    @validate(var1=['lte:5'])
+    def lte(self, var1:int):
+        return True
+
+    @debug_log
+    @validate(var1=['lt:5'])
+    def lt(self, var1:int):
+        return True
+
+    @debug_log
     @validate(var1=['ifSetType:dict'])
     def ifSetType(self, var1:dict=None):
         return True
@@ -94,6 +104,29 @@ class C(BaseClass):
     @validate(var1=['isType:str,list,dict,int'])
     def isTypeMulti(self, var1):
         return True
+
+class MathItems(BaseClass):
+    
+    @debug_log
+    @validate(var1=['gt_param:var2'], var2=[])
+    def gt(self, var1:int, var2:int):
+        return True    
+
+    @debug_log
+    @validate(var1=['gte_param:var2'])
+    def gte(self, var1:int, var2:int):
+        return True    
+
+    @debug_log
+    @validate(var1=['lt_param:var2'])
+    def lt(self, var1:int, var2:int):
+        return True    
+
+    @debug_log
+    @validate(var1=['lte_param:var2'])
+    def lte(self, var1:int, var2:int):
+        return True
+
 
 def test_default_and_annotation_sets_isSetType():
     c = C()
@@ -262,8 +295,30 @@ def test_validation_gt():
     excinfo.value.message == "var1 was expected to be greater than 1, 1 was found for method gt"
 
     with pytest.raises(Validation_Exception) as excinfo:
-        var.gte("blah")
-    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found for method gte"    
+        var.gt("blah")
+    assert excinfo.value.message == "var1 was expected to be type int, but <class 'str'> was found for method gt"    
+
+
+def test_validation_lte():
+    var = C()
+    assert True == var.lte(2)
+    assert True == var.lte(5)
+
+    with pytest.raises(Validation_Exception) as excinfo:
+        var.lte(6)
+    assert excinfo.value.message == "var1 was expected to be less than or equal to 5, 6 was found for method lte"
+
+
+def test_validation_lt():
+    var = C()
+
+    assert True == var.lt(2)
+    assert True == var.lt(4)
+    with pytest.raises(Validation_Exception) as excinfo:
+        var.lt(100)
+    excinfo.value.message == "var1 was expected to be less than 5, 100 was found for method lt"
+
+
 
 
 def test_validation_ifSetType():
@@ -294,11 +349,43 @@ def test_validation_contains():
 
 
 def test_validation_isType_multiple():
-    var = C()
-    assert True == var.isTypeMulti(1)
-    assert True == var.isTypeMulti("string of some sort")
-    assert True == var.isTypeMulti([1,2,3])
-    assert True == var.isTypeMulti({"one":100, "two": 3})
+    vari = C()
+    assert True == vari.isTypeMulti(1)
+    assert True == vari.isTypeMulti("string of some sort")
+    assert True == vari.isTypeMulti([1,2,3])
+    assert True == vari.isTypeMulti({"one":100, "two": 3})
     with pytest.raises(Validation_Exception) as excinfo:
-        var.isTypeMulti(True)
+        vari.isTypeMulti(True)
     assert excinfo.value.message == "validation_isType_multiple expected var1 to be one of str,list,dict,int but <class 'bool'> was found with value True for method isTypeMulti"
+
+
+def test_validation_field_lt():
+    klass = MathItems()
+    klass.lt(3,5)
+    with pytest.raises(Validation_Exception) as excinfo:
+        klass.lt(5,3)
+    assert excinfo.value.message == "var1 was expected to be less than 3, 5 was found for method lt"
+
+def test_validation_field_lte():
+    klass = MathItems()
+    klass.lte(3,5)
+    klass.lte(5,5)
+    with pytest.raises(Validation_Exception) as excinfo:
+        klass.lte(5,3)
+    assert excinfo.value.message == "var1 was expected to be less than or equal to 3, 5 was found for method lte"
+
+
+def test_validation_field_gt():
+    klass = MathItems()
+    klass.gt(5,3)
+    with pytest.raises(Validation_Exception) as excinfo:
+        klass.gt(3,5)
+    assert excinfo.value.message == "var1 was expected to be greater than 5, 3 was found for method gt"
+
+def test_validation_field_gte():
+    klass = MathItems()
+    klass.gte(5,3)
+    klass.gte(5,5)
+    with pytest.raises(Validation_Exception) as excinfo:
+        klass.gte(3,5)
+    assert excinfo.value.message == "var1 was expected to be greater than or equal to 5, 3 was found for method gte"

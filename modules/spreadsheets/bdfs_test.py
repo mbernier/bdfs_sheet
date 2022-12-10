@@ -3,15 +3,15 @@
 
 from modules.spreadsheet import Spreadsheet
 
-class BdfsInventory_Spreadsheet(Spreadsheet):
+class BdfsInventory_Test_Spreadsheet(Spreadsheet):
 
     spreadsheetId = '1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8'
 
-    worksheetKeeperPattern = "inventory"
+    worksheetKeeperPattern = "test"
 
     # from BaseClass - allows us to set sub loggers
-    logger_name = "BdfsInventory_Spreadsheet"
+    logger_name = "BdfsInventory_Test_Spreadsheet"
 
 
     # worksheet_class = {"module": "modules.spreadsheets.bdfs_inventory", "class": "Bdfs_Spreadsheet"}
-    worksheet_class = "modules.worksheets.bdfs_inventory.BdfsInventory_Worksheet"
+    worksheet_class = "modules.worksheets.bdfs_test.BdfsInventory_Test_Worksheet"

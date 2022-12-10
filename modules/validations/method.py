@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from inspect import signature, Parameter
 from modules.helper import Helper
 from modules.validation import Validation
@@ -9,18 +10,22 @@ from modules.validations.exception import Validation_Method_Exception
 
 SHITTY_NONE_DEFAULT_VALUE = 'NoneZeroDefaultFail'
 
+class Validation_Method_Data():
+    newFunctionParams:dict = {}
+    classBeingValidated = None
+    methodName:str
+
 
 class Validation_Method(Validation):
-
-    _newFunctionParams = {}
-    _classBeingValidated = None
-    _methodName = None
+    data: Validation_Method_Data = Validation_Method_Data()
 
     def __init__(self, func, validateargs, validateParams, decoratorargs, decoratorkwargs, funcParams, wrapperkwargs):
-        self._newFunctionParams = {}
-        self._classBeingValidated = None
-        self._methodName = None
 
+        self.data.newFunctionParams = {}
+        self.data.classBeingValidated = None
+        self.data.methodName = None
+
+        # print("Validation Method Params: ")
         # print(f"func: {func}")
         # print(f"validateargs: {validateargs}")
         # print(f"validateParams: {validateParams}")
@@ -58,8 +63,8 @@ class Validation_Method(Validation):
         if len(funcParamsList) > 0:
             tempSelf = funcParamsList[0]
 
-        self._classBeingValidated = tempSelf
-        self._methodName = func.__name__
+        self.data.classBeingValidated = tempSelf
+        self.data.methodName = func.__name__
 
         validationArgs = {}
 
@@ -124,7 +129,7 @@ class Validation_Method(Validation):
             newFuncParams[key] = currentValue
 
 
-        self._newFunctionParams = newFuncParams
+        self.data.newFunctionParams = newFuncParams
 
         # print(f"newFuncParams: {newFuncParams}")
         # print(f"validationArgs: {validationArgs}")
@@ -150,15 +155,15 @@ class Validation_Method(Validation):
             
             # print((self._classBeingValidated, key,  paramData[key]['validations'], passTheseArgs))
             #            Validation_Field(classBeingValidated, field, validations, args)
-            validation = Validation_Field(classBeingValidated=self._classBeingValidated, 
-                                            method=self._methodName,
+            validation = Validation_Field(classBeingValidated=self.data.classBeingValidated, 
+                                            method=self.data.methodName,
                                             field=key,
                                             validations=paramData[key]['validations'], 
                                             paramValues=passTheseArgs)
 
     def getFunctionParams(self):
         # print(self._newFunctionParams)
-        return self._newFunctionParams
+        return self.data.newFunctionParams
 
 
     def getFieldDefault(self, sig, field):

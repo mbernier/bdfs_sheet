@@ -1,9 +1,11 @@
 import gspread, sys
+from dataclasses import dataclass, field as dc_field
 
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import utils as gspread_utils
-
+from gspread.worksheet import Worksheet
 from modules.base import BaseClass
+from modules.decorator import debug_log, validate
 from collections import OrderedDict
 from pprint import pprint 
 
@@ -31,6 +33,15 @@ from modules.worksheets.data import WorksheetData
 # 'spreadsheet', 'tab_color', 'title', 'unhide_columns', 'unhide_rows', 'unmerge_cells', 'update', 'update_acell', 
 # 'update_cell', 'update_cells', 'update_index', 'update_note', 'update_tab_color', 'update_title', 'updated', 'url']
 
+
+@dataclass
+class Worksheet_DataClass():
+    title:str  = dc_field(default_factory=str)              # The Sheet title
+    gspread_worksheet = None                                 # The worksheet object itself, allows us to run gspread functions
+    expectedColumns:list = dc_field(default_factory=list)   # A list of columns we expect to have in the sheet
+    uncommitted_title: str = dc_field(default_factory=str) # temp storage if we change the title of the worksheet, until commit
+    sheetData:list = dc_field(default_factory=list)        # source of truth for the data of the worksheet
+
 #
 # Rules; 
 #   pulls the worksheet data, does all the changes, only pushes changes when commit() is called.
@@ -38,28 +49,23 @@ from modules.worksheets.data import WorksheetData
 class Worksheet(BaseClass):
 
     logger_name = "Worksheet"
+    data: Worksheet_DataClass = Worksheet_DataClass()
 
-    _worksheetObj = None            # The worksheet object itself, allows us to run gspread functions
-    _expectedColumns: list = []           # A list of columns we expect to have in the sheet
-    _title = None                   # The Sheet title
+    @debug_log
+    @validate()
+    def __init__(self, worksheet):
 
-    def __init__(self, worksheetObj):
-
-        self.debug("__init()__ for worksheet: " + str(worksheetObj.title))
-
-        # store the worksheetObj for use later
-        self.__setWorksheetObj(worksheetObj)
+        # store the gspread worksheet for use later
+        self.data.gspread_worksheet = worksheet
+        self.data.title = worksheet.title
 
         # double check we have the required params from the extension class
         self.__checkSetup()
 
-        # source of truth for the data of the worksheet
-        self._sheetData = []
-
-        self._setSheetData()
+        self.getTitle()
 
 
-
+    @debug_log
     def __checkSetup(self):
         # if we don't know what cols are expected, we cannot check the sheet is setup properly
         if [] == self.getExpectedColumns():
@@ -68,26 +74,19 @@ class Worksheet(BaseClass):
             raise Exception("cols_expected parameter is not set")
 
 
+    ####
+    #
+    # gSpread worksheet accessor methods - all private
+    #
+    ####
+
+
+
+
 
     ####
     #
-    # Worksheet connection Methods
-    #
-    ####
-
-    # getter for the param worksheetObj
-    def __getWorksheetObj(self):
-        self.debug("__getWorksheetObj")
-        return self._worksheetObj
-
-    def __setWorksheetObj(self, worksheetObj):
-        self.debug("__setWorksheetObj(worksheetObj={})".format(worksheetObj))
-        self._worksheetObj = worksheetObj
-        return self.__getWorksheetObj()
-
-    ####
-    #
-    # Sheet functionality
+    # Sheet functionality on our WorksheetData object that mirrors gspread functionality
     #
     ####
     # 'id', 
@@ -98,15 +97,26 @@ class Worksheet(BaseClass):
     # 'title', 
     # 'url'
     # 'update_index', 
-    # 'update_title', 
+    # 'update_title'
+
+    # if we have a new title passed, return that, otherwise return the original title
+    @debug_log
     def getTitle(self):
-        self.debug("getTitle()")
-        self._title = self.__getWorksheetObj().title
+        if "" == self.data.uncommitted_title:
+            return self.getOriginalTitle()
+        return self.data.uncommitted_title
+
+    # always returns self.data.title
+    @debug_log
+    def getOriginalTitle(self):
+        return self.data.title
 
 
-    def setTitle(self, title):
-        self.debug("setTitle(title={})".format(title))
-        self._title = title
+    # if a new title is set, store it until we commit the sheet
+    @debug_log
+    @validate()
+    def setTitle(self, title:str) -> str:
+        self.data.uncommitted_title = title
         return self.getTitle()
 
 
@@ -121,26 +131,10 @@ class Worksheet(BaseClass):
     # 'get', 
     # 'get_values', 
 
-    # Gets everything from the sheet, without being a List of dicts
-    # @todo are we using this? it should be moved to use workSheetData
-    def getAllValues(self):
-        self.debug("getAllValues()")
-        records = self.__getWorksheetObj().get_all_values()
-        return records
-
-
-    # gets evertyhing as a list of dicts
-    # @todo are we using this? it should be moved to use workSheetData
-    def getAllRecords(self):
-        self.debug("getAllRecords()")
-        records = self.__getWorksheetObj().get_all_records()
-        return records
-
     #will return something like -- "A1:CT356"
+    @debug_log
     def getDataRange(self):
-        self.debug("getDataRange()")
-        sheetData = self.__getSheetData()
-        return sheetData.getRange()
+        return f"{self.getA1(1,1)}:{self.getA1(self.getData().width(), self.getData().height())}"
 
     ####
     #
@@ -156,9 +150,8 @@ class Worksheet(BaseClass):
     # 'updated',  
 
     # write the data out to the google worksheet
+    @debug_log
     def commit(self):
-        self.debug("commit()")
-
         dataRange = self.getDataRange()
         sheetData = self.__getSheetData()
 
@@ -193,14 +186,15 @@ class Worksheet(BaseClass):
     #   Most of the time the workflow here is to clear your sheet, so you can write the worksheet data to it
     #   consider carefully what could go wrong if you don't have data in the worksheet and you do not commit
     #   the worksheetData object's data to the sheet. That's dangerous!
-    def clearAllRecords(self, deleteWorksheetData = False):
-        self.debug("clearAllRecords()")
+    @debug_log
+    @validate()
+    def clearAllRecords(self, deleteWorksheetData:bool=False):
+        
         self.__getWorksheetObj().clear()
+
         # This is DANGEROUS, bc you can lose ALL of your data
         if deleteWorkSheetData:
-            self._sheetData = WorksheetData()
-
-
+            self.data.sheetData = WorksheetData()
 
 
     ####
@@ -209,16 +203,12 @@ class Worksheet(BaseClass):
     #
     ####
 
-    # if we mess with _sheetData, then we need to update headersList, HeadersFlat_Cache
-    def _setSheetData(self):
-        self.debug("_setSheetData()")
-        self._sheetData = WorksheetData(self.getAllValues())
-
+    @debug_log
     def getData(self):
-        self.debug("getData()")
-        return self._sheetData
-
-
+        # we can defer grabbing the data until we get here
+        if [] == self.data.sheetData:
+            self.data.sheetData = WorksheetData(self.data.gspread_worksheet.get_all_values())
+        return self.data.sheetData
 
 
     #####
@@ -239,16 +229,15 @@ class Worksheet(BaseClass):
     # 'columns_auto_resize', 
     # 'sort'
 
-
+    @debug_log
     def getExpectedColumns(self):
-        self.debug("getExpectedColumns()")
         return self.__mergeExpectedColumns()
 
 
     # since we have multiple options for how the columns should be setup
     #   Get the columns that we care about and return them
+    @debug_log
     def __mergeExpectedColumns(self):
-        self.debug("__mergeExpectedColumns()")
         expectedCols = self.cols_expected
         for index in self.cols_expected_extra:
             if index in self.getTitle():
@@ -260,19 +249,21 @@ class Worksheet(BaseClass):
     # use_cache = True will return the cache, if False it gets data from the live worksheet
     #   if there are empty columns at the end, the row_values() method will not get them, it will get everything from
     #       the first column to the last value in the row
+    @debug_log
     def getColumns(self):
-        self.debug("getColumns(use_cache={})".format(use_cache))
         return self.getData().getHeaders()
         
 
     # return the number of columns in the worksheet
-    def getColumnCount(self):
-        self.debug("getColumnCount()")
-        return self.getData().width()
+    @debug_log
+    @validate()
+    def getColumnCounts(self):
+        obj = {
+            'data': self.getData().width(),
+            'worksheet': self.data.gspread_worksheet.col_count
+        }
+        return obj
 
-    def __getWorksheetColumnCount(self):
-        self.debug("__getWorksheetColumnCount()")
-        return self._worksheetObj.col_count
 
     # # get rid of any trailing columns that exist
     # # don't need todo this, because we're doing everything locally and then committing, so we don't really
@@ -287,9 +278,11 @@ class Worksheet(BaseClass):
     #     if worksheetObjColumnCount > dataColumnCount:
     #         self.removeColumns(start=dataColumnCount, end=worksheetObjColumnCount)
 
+
     # wrapper function to take care of some pre-work on removing columns
-    def removeColumns(self, column=None, start=None, stop=None):
-        self.debug("removeColumns(column={},range={})", (column, range))
+    @debug_log
+    @validate(start=['lt_param:stop'])
+    def removeColumns(self, column:int=None, start:int=None, stop:int=None):
         if None != column:
             start = column
             end = column
@@ -304,7 +297,7 @@ class Worksheet(BaseClass):
     # we are not removing from the worksheet, because we need to commit() to do that
     def __removeColumns_Data(self, start, end):
         self.debug("__removeDataColumns(start={}, end={})", (start, end))
-        self._sheetData.removeHeaders(start, end)
+        self.data.sheetData.removeHeaders(start, end)
 
 
     def playground(self):
@@ -685,8 +678,8 @@ class Worksheet(BaseClass):
 
     # creates A1 notation for the row and column given
     def getA1(self, row, column):
-        self.debug("getA1(row={}, col={})", (row, col))
-        return gspread_utils.rowcol_to_a1(row, col)
+        self.debug("getA1(row={}, column={})", (row, column))
+        return gspread_utils.rowcol_to_a1(row, column)
 
 
 

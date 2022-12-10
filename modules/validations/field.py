@@ -1,30 +1,35 @@
 import sys
+from dataclasses import dataclass, field as dc_field
 from modules.helper import Helper
 from modules.validation import Validation
 from modules.validations.exception import Validation_Field_Exception
 
 
-class Validation_Field(Validation):
-    _classBeingValidated = None
-    _field: str = None
-    _methodName: str = None
-    _paramToValidate = None
-    _paramValues = {}
-    _validatedData = {}
-    _methodAdditions = []
-    _validationsToRun = {}
+@dataclass
+class Validation_Field_Data():
+    classBeingValidated = None
+    field: str = dc_field(default_factory=str)
+    methodName: str = dc_field(default_factory=str)
+    paramToValidate: str = dc_field(default_factory=str)
+    paramValues:dict = dc_field(default_factory=dict)
+    validatedData:dict = dc_field(default_factory=dict)
+    methodAdditions:list = dc_field(default_factory=list)
+    validationsToRun:dict = dc_field(default_factory=dict)
+    otherObj = None
 
-    _otherObj = None
+class Validation_Field(Validation):
+    data: Validation_Field_Data = Validation_Field_Data()
 
     def __init__(self, classBeingValidated, method, field, validations, paramValues):
-        self._classBeingValidated = classBeingValidated
 
-        self._method("__init__", locals()) # must be called AFTER the classBeingValidated is set, for logging
+        self.data.classBeingValidated = classBeingValidated
 
-        self._methodName = method
-        self._paramToValidate = field
-        self._validationsToRun = validations
-        self._paramValues = paramValues
+        self._method("__init__", locals())
+
+        self.data.methodName = method
+        self.data.paramToValidate = field
+        self.data.validationsToRun = validations
+        self.data.paramValues = paramValues
 
         self.__setupParam()
 
@@ -33,17 +38,17 @@ class Validation_Field(Validation):
 
     def getParams(self):
         self._method("__getParams")
-        return self.__validatedData
+        return Nested_Cache_Row_LocationvalidatedData
 
 
     def __getParamToValidate(self):
         self._method("__getParamToValidate")
-        return self._paramToValidate
+        return self.data.paramToValidate
 
 
     def __getParamValues(self):
         self._method("__getParamValues")
-        return self._paramValues
+        return self.data.paramValues
 
 
     def __getParamValue(self, param):
@@ -52,27 +57,27 @@ class Validation_Field(Validation):
 
 
     def __setupParam(self):
-        self._validated = {"inValidate": False, "inParams": False, "data" : None}
+        self.data.validated = {"inValidate": False, "inParams": False, "data" : None}
 
-        if self._paramToValidate in self._paramValues:
+        if self.data.paramToValidate in self.data.paramValues:
             self.__updateValidated(field='inParams', data=True)
-        self.__updateValidated(field='data', data=self._paramValues[self._paramToValidate])
+        self.__updateValidated(field='data', data=self.data.paramValues[self.data.paramToValidate])
 
 
     def __updateValidated(self, field, data):
         self._method("__updateValidated()", locals())
-        self._validatedData[field] = data
+        self.data.validatedData[field] = data
 
 
     def __doValidations(self):
         self._method("__doValidations", locals())
 
-        for validationToRun in self._validationsToRun:
+        for validationToRun in self.data.validationsToRun:
 
             # setup the dict of params we want to pass to our method
             methodParams = {
-                'param': self._paramToValidate,
-                'paramValue': self.__getParamValue(self._paramToValidate)
+                'param': self.data.paramToValidate,
+                'paramValue': self.__getParamValue(self.data.paramToValidate)
             }
 
             # default methodName, set as own variable for using in 2 places later
@@ -93,12 +98,15 @@ class Validation_Field(Validation):
             methodParams['methodName'] = methodName
 
             # Call the classmethod that we find first, allowing the method's class's validation method to win, even if the Validation class has that method
-            if Helper.classHasMethod(klass=self._classBeingValidated, methodName=methodName):
-                Helper.callMethod(klass=self._classBeingValidated, **methodParams)
+            if Helper.classHasMethod(klass=self.data.classBeingValidated, methodName=methodName):
+                Helper.callMethod(klass=self.data.classBeingValidated, **methodParams)
             elif Helper.classHasMethod(klass=self, methodName=methodName):
                 Helper.callMethod(klass=self, **methodParams)
             else: 
-                raise Validation_Field_Exception("Could not find a {} method on Validation_Fields or {} for method {}".format(methodName, Helper.className(self._classBeingValidated), self._methodName))
+                raise Validation_Field_Exception("Could not find a {} method on Validation_Fields or {} for method {}".format(
+                    methodName, 
+                    Helper.className(self.data.classBeingValidated), 
+                    self.data.methodName))
 
     ####
     #
@@ -113,5 +121,5 @@ class Validation_Field(Validation):
         otherParamNotNone = (None != self.__getParamValue(item))
 
         if False == paramNotNone and False == otherParamNotNone:
-            raise Validation_Field_Exception("Either {} or {} was expected to not be 'None' for method {}".format(param, item, self._methodName))
+            raise Validation_Field_Exception("Either {} or {} was expected to not be 'None' for method {}".format(param, item, self.data.methodName))
         return True

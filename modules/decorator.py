@@ -17,6 +17,7 @@ def debug_log(func):
         # allows us to call the Logger methods, even if we are processing an __init__ method, where we don't know the class
         # print("wrapper_debug")
         # print(f"func: {func}")
+        # print(f"funcSig: {signature(func).parameters}")
         # print(f"args: {args}")
         # print(f"kwargs: {kwargs}")
 
@@ -69,8 +70,8 @@ def validate(*validateargs, **validateParams):
         # print(f"decoratorkwargs: {decoratorkwargs}")
         @functools.wraps(func)
         def wrapper_validate(*funcParams, **wrapperkwargs):
+            
             # print("wrapper_validate")
-
             # print(f"func: {func}")
             # print(f"validateargs: {validateargs}")
             # print(f"validateParams: {validateParams}")

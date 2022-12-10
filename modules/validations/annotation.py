@@ -30,13 +30,11 @@ class Validation_Annotation():
 
     # turn whatever validations we get into a list
     @staticmethod
-    def setup(field_annotations: Typevar_List_Str) -> list:
-
-        annotation_list = field_annotations
-
-        annotation_list = [field_annotations]
-
-        return annotation_list
+    def setup(field_annotations) -> list[str]:
+        if type(field_annotations) == list:
+            return field_annotations
+        else:
+            return [field_annotations]
 
 
     @staticmethod
