@@ -48,3 +48,9 @@ if __name__ == "__main__":
     testData = ["one", "two", "three", "four"]
     row = Nested_Cache_Rows_Location(testData)
     print(row.getLocationIndex(1))
+
+    finish:
+        test location
+        test data
+        test nested
+        run all tests
