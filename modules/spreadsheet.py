@@ -1,6 +1,8 @@
 import gspread,datetime,sys
+from dataclasses import dataclass, field as dc_field
 from modules.base import BaseClass
-from modules.decorator import debug_log,validate
+from modules.logger import Logger
+from modules.decorator import Debugger
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import worksheet, utils as gspread_utils
 from pprint import pprint
@@ -9,39 +11,41 @@ from pprint import pprint
 #   If this class is called directly, then it should error out because it should never have a
 #   spreadsheet ID.
 
+@dataclass
+class Spreadsheet_Data():
+    spreadsheetId:str = dc_field(default_factory=str)
+    worksheetClassName:str = dc_field(default_factory=str)
+    worksheetKeeperPattern:str = dc_field(default_factory=str)
+    worksheets:dict = dc_field(default_factory=dict)
+    spreadsheet = None
+    # from BaseClass - allows us to set sub loggers
+    logger_name:str = "Spreadsheet"
+    service_account = None
+
+
 class Spreadsheet(BaseClass): 
 
-    spreadsheetId = None
-    service_account = None
-    worksheetKeeperPattern = None
-
-    spreadsheet = None
-    worksheets = {}
-
-    # from BaseClass - allows us to set sub loggers
-    logger_name = "Spreadsheet"
-
-    worksheetClassName = None
+    data:Spreadsheet_Data = Spreadsheet_Data()
 
     # pass in the sheet ID if it was passed
-    @debug_log
+    @Debugger
     def __init__(self):
-
+        self.data = Spreadsheet_Data()
         self.worksheets = {}
 
         # let's make sure that the wrapper class is playing by the rules
         #if we don't have the spreadsheetId we cannot connect to it
         if None == self.getSpreadsheetId():
-            self.critical("SpreadsheetId was not set before instantiating Spreadsheet class")
+            Logger.critical("SpreadsheetId was not set before instantiating Spreadsheet class")
             #fail if no one set the spreadsheetId on the wrapper class
             raise Exception("class Spreadsheet cannot implement __init__ on it's own. Extend and pass a Spreadsheet Id")
 
         # we don't NEED the keeperPattern, but if we want to reduce the work and prevent errors later it's a good idea
         if None == self.getWorksheetKeeperPattern():
-            self.warning("worksheetKeeperPattern is not set, this is OK")
+            Logger.warning("worksheetKeeperPattern is not set, this is OK")
 
-        if None == self.worksheet_class:
-            self.critical("You must set a worksheet_class in your Spreadsheet Object: ".self.__class__.__name__)
+        if None == self.data.worksheet_class:
+            Logger.critical("You must set a worksheet_class in your Spreadsheet Object: ".self.__class__.__name__)
 
         self.getWorksheetClassName()
 
@@ -55,45 +59,44 @@ class Spreadsheet(BaseClass):
         self.setupWorksheets()
 
 
-    @debug_log
+    @Debugger
     def getWorksheetClass(self):
-        return self.importClass(self.worksheet_class)
+        return self.importClass(self.data.worksheet_class)
 
 
     # if we haven't parsed the worksheet class name, do it, otherwise return it
-    @debug_log
+    @Debugger
     def getWorksheetClassName(self):
-        if None == self.worksheetClassName:
-            self.worksheetClassName = self.worksheet_class.split(".").pop()
-        return self.worksheetClassName
+        if None == self.data.worksheetClassName:
+            self.data.worksheetClassName = self.data.worksheet_class.split(".").pop()
+        return self.data.worksheetClassName
 
 
     # setup the service account if not setup, return it either way
-    @debug_log
+    @Debugger
     def setupServiceAccount(self):
-        if None == self.service_account: 
-            self.service_account = gspread.service_account()
-        return self.service_account
+        if None == self.data.service_account: 
+            self.data.service_account = gspread.service_account()
+        return self.data.service_account
 
 
     # setup the sheet object if not setup, return it either way
-    @debug_log
-    @validate()
+    @Debugger
     def setupSpreadsheet(self, use_cache:bool = True):
-        if None == self.spreadsheet or False == use_cache:
-            self.spreadsheet = self.service_account.open_by_key(self.spreadsheetId)
-        return self.spreadsheet
+        if None == self.data.spreadsheet or False == use_cache:
+            self.data.spreadsheet = self.data.service_account.open_by_key(self.data.spreadsheetId)
+        return self.data.spreadsheet
 
 
     # scrub out the worksheets we don't care about based on the pattern
     # pattern: sheets we care about include the keeperPattern in the title
     #   We store the local copy of theworksheet, bc it has a reference to the gspread worksheet
-    @debug_log
+    @Debugger
     def setupWorksheets(self) -> list:
         if 0 == len(self.getWorksheets()):
 
             # retrieve the worksheets from the gpsread spreadsheet obj
-            worksheetList = self.spreadsheet.worksheets()
+            worksheetList = self.data.spreadsheet.worksheets()
 
             keeperPattern = self.getWorksheetKeeperPattern()
 
@@ -103,27 +106,26 @@ class Spreadsheet(BaseClass):
             for sheet in worksheetList:
                 # only restrict the worksheet list if there is a keeper pattern
                 if None == keeperPattern or keeperPattern in sheet.title:
-                    self.worksheets[sheet.title] = worksheetClass(sheet)
+                    self.data.worksheets[sheet.title] = worksheetClass(sheet)
 
         return self.getWorksheets()
 
-    @debug_log
+    @Debugger
     def getWorksheets(self):
-        return self.worksheets
+        return self.data.worksheets
 
-    @debug_log
+    @Debugger
     def getWorksheetKeeperPattern(self):
-        return self.worksheetKeeperPattern
+        return self.data.worksheetKeeperPattern
 
 
     # get the id that we have set and return it
-    @debug_log
+    @Debugger
     def getSpreadsheetId(self):
-        return self.spreadsheetId
+        return self.data.spreadsheetId
 
 
-    @debug_log
-    @validate()
+    @Debugger
     def getWorksheet(self, worksheetTitle:str):
         if 0 == len(self.getWorksheets()):
             raise Exception("Worksheets were not added to the Spreadsheet properly.")
@@ -134,8 +136,8 @@ class Spreadsheet(BaseClass):
     # # only checks the columns, doesn't do anything to adjust or fix them
     # # colsToCheck allows you to pass in something new to check against, rather than whatever is in cols_expected
     # # checkExtras will allow you to bypass checking against the cols_expected_extra columns
-    # @debug_log
-    # @validate()
+    # @Debugger
+    # @validate_arguments
     # def checkWorksheetColumns(self, colsToCheck:list=None, checkExtras:bool=True, addMissingColumns:bool=False):
     #     # if nothing was passed through, then use the default. Otherwise, use what was passed
 

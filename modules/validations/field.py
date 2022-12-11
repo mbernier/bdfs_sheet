@@ -24,7 +24,7 @@ class Validation_Field(Validation):
 
         self.data.classBeingValidated = classBeingValidated
 
-        self._method("__init__", locals())
+        Logger.method("__init__", locals())
 
         self.data.methodName = method
         self.data.paramToValidate = field
@@ -37,22 +37,22 @@ class Validation_Field(Validation):
 
 
     def getParams(self):
-        self._method("__getParams")
+        Logger.method("__getParams")
         return Nested_Cache_Row_LocationvalidatedData
 
 
     def __getParamToValidate(self):
-        self._method("__getParamToValidate")
+        Logger.method("__getParamToValidate")
         return self.data.paramToValidate
 
 
     def __getParamValues(self):
-        self._method("__getParamValues")
+        Logger.method("__getParamValues")
         return self.data.paramValues
 
 
     def __getParamValue(self, param):
-        self._method("__getParamValue", locals())
+        Logger.method("__getParamValue", locals())
         return self.__getParamValues()[param]
 
 
@@ -65,12 +65,12 @@ class Validation_Field(Validation):
 
 
     def __updateValidated(self, field, data):
-        self._method("__updateValidated()", locals())
+        Logger.method("__updateValidated()", locals())
         self.data.validatedData[field] = data
 
 
     def __doValidations(self):
-        self._method("__doValidations", locals())
+        Logger.method("__doValidations", locals())
 
         for validationToRun in self.data.validationsToRun:
 
@@ -114,7 +114,7 @@ class Validation_Field(Validation):
     #
     ####
     def validation_oneIsNotNone(self, item, param, paramValue=None):
-        self._method("validation_oneIsNotNone", locals())
+        Logger.method("validation_oneIsNotNone", locals())
         
         # if either of these are false, then we are good to go
         paramNotNone = (None != paramValue)

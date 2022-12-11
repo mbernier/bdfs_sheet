@@ -57,7 +57,7 @@ def test_add_location_that_exists():
     row = Nested_Cache_Row_Location(testData)
     with pytest.raises(Nested_Cache_Row_Location_Exception) as excinfo:
         row.add("two")
-    assert "Flat_Cache has '1' at location: two. To update data in the cache, use update()" in excinfo.value.message
+    assert "Flat_Cache has '1' at location: two. To update data in the cache, use updateData()" in excinfo.value.message
 
 
 # add something that isn't a string
@@ -109,18 +109,18 @@ def test_get_locationIndex2():
 def test_set_existing_location():
     row = Nested_Cache_Row_Location(testData)
     with pytest.raises(Nested_Cache_Row_Location_Exception) as excinfo:
-        row.set(0,"zero")
-    assert "Flat_Cache has 'one' at location: 0. To update data in the cache, use update()" in excinfo.value.message
+        row.setData(0,"zero")
+    assert "Flat_Cache has 'one' at location: 0. To update data in the cache, use updateData()" in excinfo.value.message
 
 
 # set a location that doesn't exists
 def test_set_dne_location():
     row = Nested_Cache_Row_Location(testData)
-    row.set(5,"five")
+    row.setData(5,"five")
     assert ['one', 'two', 'three', 'four', 'five'] == row.getAsList()
     assert OrderedDict([('one', 0), ('two', 1), ('three', 2), ('four', 3), ('five', 5)]) == row.getAsDict()
 
-    row.set("six", 6)
+    row.setData("six", 6)
     assert ['one', 'two', 'three', 'four', 'five', 'six'] == row.getAsList()
     assert OrderedDict([('one', 0), ('two', 1), ('three', 2), ('four', 3), ('five', 5), ('six', 6)]) == row.getAsDict()
 
@@ -132,16 +132,16 @@ def test_set_dne_location():
 ####
 
 # update successful
-# def test_update():
+# def test_updateData():
 #     row = Nested_Cache_Row_Location(testData)
-#     row.update("one", 7)
-#     row.update(5, "seventeen")
+#     row.updateData("one", 7)
+#     row.updateData(5, "seventeen")
 #     print(row.getAsList())
 
 # # update fail (location doesn't exist, try add)
 # def test_update_fail():
 #     row = Nested_Cache_Row_Location(testData)
-#     row.update("one", 7)
+#     row.updateData("one", 7)
 #     print(row.getAsList())
 
 

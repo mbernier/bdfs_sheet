@@ -53,7 +53,7 @@ def test_add_index_that_does_exist():
     row = Nested_Cache_Row(testData)
     with pytest.raises(Nested_Cache_Row_Exception) as excinfo:
         row.add(1, 500)
-    assert "Flat_Cache has '2' at location: 1. To update data in the cache, use update()" in excinfo.value.message
+    assert "Flat_Cache has '2' at location: 1. To update data in the cache, use updateData()" in excinfo.value.message
 
 
 # add something that isn't a string
@@ -90,14 +90,14 @@ def test_get_by_index_dne():
 def test_set_by_index_exists():
     row = Nested_Cache_Row(testData)
     with pytest.raises(Nested_Cache_Row_Exception) as excinfo:
-        row.set(1, "banana")
-    assert "Flat_Cache has '2' at location: 1. To update data in the cache, use update()" in excinfo.value.message
+        row.setData(1, "banana")
+    assert "Flat_Cache has '2' at location: 1. To update data in the cache, use updateData()" in excinfo.value.message
 
 
 # set a location that doesn't exists
 def test_get_by_index_dne():
     row = Nested_Cache_Row(testData)
-    row.set(17, "banana")
+    row.setData(17, "banana")
 
     assert "banana" == row.get(17)
 
@@ -110,7 +110,7 @@ def test_get_by_index_dne():
 # update successful
 def test_update_by_index_exists():
     row = Nested_Cache_Row(testData)
-    row.update(1, "banana")
+    row.updateData(1, "banana")
 
 
 # update fail (location doesn't exist, try add)
@@ -118,5 +118,5 @@ def test_update_by_index_dne():
     row = Nested_Cache_Row(testData)
 
     with pytest.raises(Nested_Cache_Row_Exception) as excinfo:
-        row.update(17, "banana")
+        row.updateData(17, "banana")
     assert "There is nothing to update at position '17' consider using set" in excinfo.value.message

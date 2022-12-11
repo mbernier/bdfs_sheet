@@ -1,109 +1,115 @@
-import sys
+import sys, pydantic
+from pydantic import Field, BaseModel as PydanticBaseModel
+from pydantic.dataclasses import dataclass
+# from dataclasses import field as dc_field
+from typing import Union
+from pydantic import validator, validate_arguments
 from modules.cache import BdfsCache
 from modules.caches.exception import Flat_Cache_Exception
-from modules.decorator import debug_log,validate
+from modules.decorator import Debugger
 from collections import OrderedDict
 from pprint import pprint
 
 # @todo add a toString method
 
+class Flat_Cache_Data(PydanticBaseModel):
+    storage:dict = Field(default_factory=dict)
+
 class Flat_Cache(BdfsCache):
 
-    logger_name = "modules.caches.Flat_Cache"
+    ####
+    #
+    # Validations for params
+    #
+    ####
 
-    _storage = {}
+    @Debugger
+    def __init__(self, initdata=None):
+        self.data = Flat_Cache_Data()
+        self.load(initdata)
 
-    @debug_log
-    def __init__(self, data=None):
-        self._storage = {}
-        self.load(data)
-
-    @debug_log
-    @validate()
+    @Debugger
     def load(self, data=None):
         if None != data:
-            for index in data:
-                self.set(index, data[index])
+            for index,value in enumerate(data):
+                print(f"index: {index}, value:{value}")
+                self.set_at_location(index, value)
+
 
     # put data in a location if it doesn't have that data, if it does, error out
-    @debug_log
-    @validate(location=['isType:int,str'])
-    def set(self, location, data=None):
-        if None == self.get(location):
+    @Debugger
+    @validate_arguments(config=dict(smart_union=True))
+    def set_at_location(self, location: Union[int,str], data=None):
+        if None == self.get_at_location(location):
             self.__write(location=location, data=data)
         else:
-            raise Flat_Cache_Exception("Flat_Cache has '{}' at location: {}. To update data in the cache, use update()".format(self.get(location), location))
+            raise Flat_Cache_Exception("Flat_Cache has '{}' at location: {}. To update data in the cache, use update_at_location()".format(self.get_at_location(location), location))
 
 
     # remove the data from the location, but keep the location index
-    @debug_log
-    @validate(location=['isType:int,str'])
-    def unset(self, location):
-        if self.get(location):
-            self._storage[location] = None
+    @Debugger
+    def unset_at_location(self, location):
+        if self.get_at_location(location):
+            self.data.storage[location] = None
 
 
     #change the data at the location
-    @debug_log
-    @validate(location=['isType:int,str'])
-    def update(self, location, data=None):
-        if None == self.get(location):
+    @Debugger
+    def update_at_location(self, location, data=None):
+        if None == self.get_at_location(location):
             raise Flat_Cache_Exception("There is nothing to update at position '{}' consider using set".format(location))
         self.__write(location=location, data=data)
 
 
     # get the data at the location
-    @debug_log
-    @validate(location=['isType:int,str'])
-    def get(self, location):
-        return self._storage.get(location)
+    @Debugger
+    def get_at_location(self, location):
+        return self.data.storage.get(location)
 
 
     # returns a list of keys from the storage dict
-    @debug_log
+    @Debugger
     def getKeys(self):
-        self._storage.keys()
+        self.data.storage.keys()
 
 
     # write data to the cache location
-    @debug_log
-    @validate(location=['isType:int,str'])
+    @Debugger
     def __write(self, location, data=None):
-        self._storage[location] = data
+        self.data.storage[location] = data
 
 
     # clears the entire cache
-    @debug_log
-    def clear(self):
-        self._storage.clear()
+    @Debugger
+    def clear_all(self):
+        self.data.storage.clear()
 
 
     # delete the location from the cache completely
-    @debug_log
-    @validate(location=['isType:int,str'])
-    def delete(self, location):
-        if self.get(location):
-            del self._storage[location]
+    @Debugger
+    def delete_at_location(self, location):
+        if self.get_at_location(location):
+            del self.data.storage[location]
 
 
     # give us everything
-    @debug_log
+    @Debugger
     def value(self):
         return self.getStorage()
 
-    @debug_log
+    @Debugger
     def size(self):
         return len(self.getStorage())
 
 
-    @debug_log
+    @Debugger
     def __str__(self) -> str:
         output = "Flat_Cache: \n"
         for item in self.getStorage():
             output += "\t{}: {}\n".format(item, self.get(item))
         return output
 
-    @debug_log
+    @Debugger
     def getAsList(self):
         data = self.getStorage()
         output = []
@@ -113,7 +119,7 @@ class Flat_Cache(BdfsCache):
         return output
 
 
-    @debug_log
+    @Debugger
     def getAsDict(self):
         data = self.getStorage()
         output = OrderedDict()
@@ -122,9 +128,8 @@ class Flat_Cache(BdfsCache):
                 output[index] = data[index]
         return output
 
-    @debug_log
-    @validate(location=['isType:int,str'])
+    @Debugger
     def validate_locationExists(self, location):
-        if location in self._storage.keys():
+        if location in self.data.storage.keys():
             return True
         return False

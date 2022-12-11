@@ -1,19 +1,22 @@
 import sys
+from pydantic import BaseModel as PydanticBaseModel
 from modules.config import config
-from modules.decorator import debug_log, validate
+from modules.decorator import Debugger
 from modules.helper import Helper
 from modules.logger import Logger
 
 
-class BaseClass(Logger):
 
+class BaseClass():
+    class Config:
+        arbitrary_types_allowed = True
     ####
     #
     # Dynamically call Classes and Methods
     #
     ####
 
-    @debug_log
+    @Debugger
     def importClass(self, modulePath): 
         spltz = modulePath.split(".")
         classname = spltz.pop()
@@ -21,3 +24,8 @@ class BaseClass(Logger):
         mod = __import__(path, fromlist=[classname])
         klass = getattr(mod, classname)
         return klass
+
+    # cheater method to make setting debug statements a little faster
+    @Debugger
+    def className(self):
+        return self.__class__.__name__

@@ -7,7 +7,7 @@ from pprint import pprint
 
 class WorksheetData(BaseClass):
 
-    dataStore = None
+    dataStore:Nested_Cache = None
     logger_name = "WorksheetData"
     _emptyHeaderIndexes = []
     _uniqueHeaders = []

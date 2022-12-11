@@ -1,6 +1,7 @@
 import sys
 from modules.config import config
 from modules.helper import Helper
+from modules.logger import Logger
 from modules.validations.exception import Validation_Exception
 
 
@@ -27,7 +28,7 @@ class Validation():
     def _method(self, method, data=None):
 
         if None == self.data.classBeingValidated:
-            raise Validation_Exception("_classBeingValidated must be set before calling self._method() in any Validation class")
+            raise Validation_Exception("_classBeingValidated must be set before calling Logger.validation_method_debug() in any Validation class")
 
         if True == config("debug_validations"):
             # call the validation_method_debug function on the class that owns the method we're validating
@@ -36,12 +37,12 @@ class Validation():
 
 
     def __getParamValues(self):
-        self._method("__getParamValues")
+        Logger.validation_method_debug("__getParamValues")
         return self.data.paramValues
 
 
     def __getParamValue(self, param):
-        self._method("__getParamValue", locals())
+        Logger.validation_method_debug("__getParamValue", locals())
         return self.__getParamValues()[param]
 
     ####
@@ -50,30 +51,32 @@ class Validation():
     #
     ####
 
-    def validation_notNone(self, param, paramValue=None):
-        self._method("validation_notNone", locals())
+    @staticmethod
+    def validation_notNone(param, paramValue=None):
+        Logger.validation_method_debug("validation_notNone", locals())
 
         if None == paramValue:
-            raise Validation_Exception("{} was passed as None, but needs to be set for method {}".format(param, self.data.methodName))
+            raise Validation_Exception("{} was passed as None, but needs to be set".format(param))
         return True
 
 
-    def validation_isType(self, item, param, paramValue=None):
-        self._method("validation_isType", locals())
+    @staticmethod
+    def validation_isType(item, param, paramValue=None):
+        Logger.validation_method_debug("validation_isType", locals())
 
         if Helper.existsInStr(",", item): # we have more than one type that this thing can be, so call multiple
-            return self.validation_isType_multiple(item, param, paramValue)
+            return Validation.validation_isType_multiple(item, param, paramValue)
 
         if not Helper.isType(item, paramValue):
-            raise Validation_Exception("{} was expected to be type {}, but {} was found for method {}".format(param, item, str(type(paramValue)), self.data.methodName))
+            raise Validation_Exception("{} was expected to be type {}, but {} was found".format(param, item, str(type(paramValue))))
         return True
 
-
-    def validation_isType_multiple(self, item, param, paramValue=None):
-        self._method("validatation_isType_multiple", locals())
+    @staticmethod
+    def validation_isType_multiple(item, param, paramValue=None):
+        Logger.validation_method_debug("validatation_isType_multiple", locals())
 
         if not Helper.existsInStr(",", item):
-            raise Validation_Exception("validation_isType_multiple expects a comma separated list of types {} was found for method {}".format(item, self.data.methodName))
+            raise Validation_Exception("validation_isType_multiple expects a comma separated list of types {} was found".format(item))
         spltz = item.split(",")
 
         response = False
@@ -83,17 +86,19 @@ class Validation():
                 return True
 
         # we didn't get any of the types that we expected
-        raise Validation_Exception("validation_isType_multiple expected {} to be one of {} but {} was found with value {} for method {}".format(param, item, type(paramValue), paramValue, self.data.methodName))
+        raise Validation_Exception("validation_isType_multiple expected {} to be one of {} but {} was found with value {}".format(param, item, type(paramValue), paramValue))
 
 
-    def validation_ifSetType(self, item, param, paramValue=None):
-        self._method("validation_ifSetType", locals())        
+    @staticmethod
+    def validation_ifSetType(item, param, paramValue=None):
+        Logger.validation_method_debug("validation_ifSetType", locals())        
 
         if not None == paramValue:
-            self.validation_isType(item, param, paramValue)
+            Validation.validation_isType(item, param, paramValue)
 
-    def validation_ifSet(self, item, param, paramValue=None):
-        self._method("validation_ifSet", locals())
+    @staticmethod
+    def validation_ifSet(item, param, paramValue=None):
+        Logger.validation_method_debug("validation_ifSet", locals())
 
         # prep for being a validation method
         item = f"validation_{item}"
@@ -101,19 +106,19 @@ class Validation():
         if not None == paramValue:
             Helper.callMethod(klass=self, alternateKlass=self.data.classBeingValidated, methodName=item, param=param, paramValue=paramValue)
 
-
-    def validation_contains(self, item, param, paramValue):
-        self._method("validate_contains", locals())
+    @staticmethod
+    def validation_contains(item, param, paramValue):
+        Logger.validation_method_debug("validate_contains", locals())
 
         if not Helper.existsInStr(",", item):
-            raise Validation_Exception("'contains' validation expects a comma seperated list of items to check against, '{}' was found for method {}".format(item, self.data.methodName))
+            raise Validation_Exception("'contains' validation expects a comma seperated list of items to check against, '{}' was found".format(item))
 
         items = item.split(",")
         
         if Helper.existsIn(item=paramValue, lookIn=items):
             return True
         else:
-            raise Validation_Exception("One of [{}] was expected, but '{}' was found for parameter {} for method {}".format(item, paramValue,param, self.data.methodName))
+            raise Validation_Exception("One of [{}] was expected, but '{}' was found for parameter {}".format(item, paramValue,param))
 
     ####
     #
@@ -122,37 +127,41 @@ class Validation():
     ####
 
     # takes in a [gt:1]
-    def validation_gt(self, item, param, paramValue=None):
-        self._method("validation_gt", locals())
+    @staticmethod
+    def validation_gt(item, param, paramValue=None):
+        Logger.validation_method_debug("validation_gt", locals())
 
-        if self.validation_isType('int', param, paramValue) and paramValue <= int(item):
-            raise Validation_Exception("{} was expected to be greater than {}, {} !> {} for method {}".format(param, item, paramValue, item, self.data.methodName))
+        if Validation.validation_isType('int', param, paramValue) and paramValue <= int(item):
+            raise Validation_Exception("{} was expected to be greater than {}, {} !> {}".format(param, item, paramValue, item))
         return True
 
     # takes in a [gte:1]
-    def validation_gte(self, item, param, paramValue=None):
-        self._method("validation_gte", locals())
+    @staticmethod
+    def validation_gte(item, param, paramValue=None):
+        Logger.validation_method_debug("validation_gte", locals())
 
-        self.validation_isType('int', param, paramValue)
+        Validation.validation_isType('int', param, paramValue)
 
-        if self.validation_isType('int', param, paramValue) and paramValue < int(item):
-            raise Validation_Exception("{} was expected to be greater than or equal to {}, {} was found for method {}".format(param, item, paramValue, self.data.methodName))
+        if Validation.validation_isType('int', param, paramValue) and paramValue < int(item):
+            raise Validation_Exception("{} was expected to be greater than or equal to {}, {} was found".format(param, item, paramValue))
         return True
 
     # takes in a [lt:1]
-    def validation_lt(self, item, param, paramValue=None):
-        self._method("validation_lt", locals())
+    @staticmethod
+    def validation_lt(item, param, paramValue=None):
+        Logger.validation_method_debug("validation_lt", locals())
 
-        if self.validation_isType('int', param, paramValue) and paramValue >= int(item):
-            raise Validation_Exception("{} was expected to be less than {}, {} was found for method {}".format(param, item, paramValue, self.data.methodName))
+        if Validation.validation_isType('int', param, paramValue) and paramValue >= int(item):
+            raise Validation_Exception("{} was expected to be less than {}, {} was found".format(param, item, paramValue))
         return True
 
     # takes in a [lte:1]
-    def validation_lte(self, item, param, paramValue=None):
-        self._method("validation_lte", locals())
+    @staticmethod
+    def validation_lte(item, param, paramValue=None):
+        Logger.validation_method_debug("validation_lte", locals())
 
-        if self.validation_isType('int', param, paramValue) and paramValue > int(item):
-            raise Validation_Exception("{} was expected to be less than or equal to {}, {} was found for method {}".format(param, item, paramValue, self.data.methodName))
+        if Validation.validation_isType('int', param, paramValue) and paramValue > int(item):
+            raise Validation_Exception("{} was expected to be less than or equal to {}, {} was found".format(param, item, paramValue))
         return True
 
     ####
@@ -163,37 +172,52 @@ class Validation():
 
 
     # takes in a [lt_param:{fieldName}]
-    def validation_lt_param(self, item:str, param:str, paramValue:int=None):
-        self._method("validation_field_lt", locals())
-        item = int(self.__getParamValue(item))
+    @staticmethod
+    def validation_lt_param(item:str, param:str, paramValue:int=None):
+        Logger.validation_method_debug("validation_field_lt", locals())
 
-        if self.validation_isType('int', param, paramValue) and paramValue >= item:
-            raise Validation_Exception("{} was expected to be less than {}, {} was found for method {}".format(param, item, paramValue, self.data.methodName))
+        if Validation.validation_isType('int', param, paramValue) and paramValue >= item:
+            raise Validation_Exception("{} was expected to be less than {}, {} was found".format(param, item, paramValue))
         return True
 
     # takes in a [lte_param:{fieldName}]
-    def validation_lte_param(self, item:str, param:str, paramValue:int=None):
-        self._method("validation_field_lte", locals())
-        item = int(self.__getParamValue(item))
+    @staticmethod
+    def validation_lte_param(item:str, param:str, paramValue:int=None):
+        Logger.validation_method_debug("validation_field_lte", locals())
 
-        if self.validation_isType('int', param, paramValue) and paramValue > item:
-            raise Validation_Exception("{} was expected to be less than or equal to {}, {} was found for method {}".format(param, item, paramValue, self.data.methodName))
+        if Validation.validation_isType('int', param, paramValue) and paramValue > item:
+            raise Validation_Exception("{} was expected to be less than or equal to {}, {} was found".format(param, item, paramValue))
         return True
 
     # takes in a [gt_param:{fieldName}]
-    def validation_gt_param(self, item:str, param:str, paramValue:int=None):
-        self._method("validation_field_gt", locals())
-        item = int(self.__getParamValue(item))
+    @staticmethod
+    def validation_gt_param(item:str, param:str, paramValue:int=None):
+        Logger.validation_method_debug("validation_field_gt", locals())
+        
 
-        if self.validation_isType('int', param, paramValue) and paramValue <= item:
-            raise Validation_Exception("{} was expected to be greater than {}, {} was found for method {}".format(param, item, paramValue, self.data.methodName))
+        if Validation.validation_isType('int', param, paramValue) and paramValue <= item:
+            raise Validation_Exception("{} was expected to be greater than {}, {} was found".format(param, item, paramValue))
         return True
 
     # takes in a [lte_param:{fieldName}]
-    def validation_gte_param(self, item:str, param:str, paramValue:int=None):
-        self._method("validation_field_gte", locals())
-        item = int(self.__getParamValue(item))
+    @staticmethod
+    def validation_gte_param(item:str, param:str, paramValue:int=None):
+        Logger.validation_method_debug("validation_field_gte", locals())
+        
 
-        if self.validation_isType('int', param, paramValue) and paramValue < item:
-            raise Validation_Exception("{} was expected to be greater than or equal to {}, {} was found for method {}".format(param, item, paramValue, self.data.methodName))
+        if Validation.validation_isType('int', param, paramValue) and paramValue < item:
+            raise Validation_Exception("{} was expected to be greater than or equal to {}, {} was found".format(param, item, paramValue))
         return True
+
+
+    @staticmethod
+    def validation_oneIsNotNone(item1, item2):
+        Logger.method("validation_oneIsNotNone", locals())
+        
+        # if either of these are false, then we are good to go
+        paramNotNone = (None != item1)
+        otherParamNotNone = (None != item2)
+
+        if False == paramNotNone and False == otherParamNotNone:
+            raise Validation_Exception("Either {} or {} was expected to not be 'None'".format(item1, item2))
+        return True    

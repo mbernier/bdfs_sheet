@@ -1,129 +1,129 @@
 import pytest
-from modules.decorator import debug_log, validate
+from modules.decorator import Debugger
 from modules.base import BaseClass
 from modules.decorators.exception import Decorator_Exception
 from modules.validations.exception import Validation_Exception, Validation_Field_Exception, Validation_Method_Exception
 
 # We are testing both Validation_Method and Validation_Field in these tests
-# The @validate decorator looks at all of the validations -- Validation_Method
+# The @validate_arguments decorator looks at all of the validations -- Validation_Method
 #   It breaks up the validations by field, then passes each one to Validation_Field
 
 
 # create a dummy class to test Validations against
 class A(BaseClass):
 
-    @debug_log
-    @validate(var1=['isType:int'], var2 = ['notNone'])
+    @Debugger
+    @validate_arguments(var1=['isType:int'], var2 = ['notNone'])
     def bat(self, var1=None, var2=None):
         return True
 
-    @debug_log 
-    @validate(var2=['oneIsNotNone:var3'])
+    @Debugger 
+    @validate_arguments(var2=['oneIsNotNone:var3'])
     def foo(self, var1=None, var2=None, var3=None):
         return True
 
-    @debug_log
-    @validate(var2=['oneIsNotNone:var3'])
+    @Debugger
+    @validate_arguments(var2=['oneIsNotNone:var3'])
     def foo2(self, var1, var2, var3=None):
         pass
 
-    @debug_log
-    @validate(var1=['notNone'], var2=['notNone'])
+    @Debugger
+    @validate_arguments(var1=['notNone'], var2=['notNone'])
     def positional(self, var1, var2):
         pass
 
-    @debug_log
-    @validate(var1=['notNone'], var2=['notNone'],var3=['notNone'], var4=['notNone'])
+    @Debugger
+    @validate_arguments(var1=['notNone'], var2=['notNone'],var3=['notNone'], var4=['notNone'])
     def annotations_with_validate_set(self, var1:int, var2:list, var3:dict, var4:str):
         return True
 
-    @debug_log
-    @validate(var1=['notNone'], var2=['notNone'])
+    @Debugger
+    @validate_arguments(var1=['notNone'], var2=['notNone'])
     def annotations_without_validate_set(self, var1:int, var2:list, var3:dict, var4:str):
         return True
 
 class B(BaseClass):
-    @debug_log
-    @validate(arbitvalue=['notNone'])
+    @Debugger
+    @validate_arguments(arbitvalue=['notNone'])
     def __init__(self, arbitvalue:str=None):
         pass
 
 
 class C(BaseClass):
-    @debug_log
-    @validate()
+    @Debugger
+    @validate_arguments
     def foo(self, var1:int = 100):
         return True
 
-    @debug_log
-    @validate()
+    @Debugger
+    @validate_arguments
     def bar(self, var1:int):
         return True
 
-    @debug_log
-    @validate()
+    @Debugger
+    @validate_arguments
     def bat(self, var1 = 50):
         return True
 
-    @debug_log
-    @validate(var1=['gte:2'])
+    @Debugger
+    @validate_arguments(var1=['gte:2'])
     def gte(self, var1:int):
         return True
 
-    @debug_log
-    @validate(var1=['gt:1'])
+    @Debugger
+    @validate_arguments(var1=['gt:1'])
     def gt(self, var1:int):
         return True
 
-    @debug_log
-    @validate(var1=['lte:5'])
+    @Debugger
+    @validate_arguments(var1=['lte:5'])
     def lte(self, var1:int):
         return True
 
-    @debug_log
-    @validate(var1=['lt:5'])
+    @Debugger
+    @validate_arguments(var1=['lt:5'])
     def lt(self, var1:int):
         return True
 
-    @debug_log
-    @validate(var1=['ifSetType:dict'])
+    @Debugger
+    @validate_arguments(var1=['ifSetType:dict'])
     def ifSetType(self, var1:dict=None):
         return True
 
-    @debug_log
-    @validate(var1=['contains:yes,no'])
+    @Debugger
+    @validate_arguments(var1=['contains:yes,no'])
     def contains(self, var1:str=None):
         return True
 
-    @debug_log
-    @validate(var1=['contains:yes'])
+    @Debugger
+    @validate_arguments(var1=['contains:yes'])
     def contains2(self, var1:str=None):
         return True
 
-    @debug_log
-    @validate(var1=['isType:str,list,dict,int'])
+    @Debugger
+    @validate_arguments(var1=['isType:str,list,dict,int'])
     def isTypeMulti(self, var1):
         return True
 
 class MathItems(BaseClass):
     
-    @debug_log
-    @validate(var1=['gt_param:var2'], var2=[])
+    @Debugger
+    @validate_arguments(var1=['gt_param:var2'], var2=[])
     def gt(self, var1:int, var2:int):
         return True    
 
-    @debug_log
-    @validate(var1=['gte_param:var2'])
+    @Debugger
+    @validate_arguments(var1=['gte_param:var2'])
     def gte(self, var1:int, var2:int):
         return True    
 
-    @debug_log
-    @validate(var1=['lt_param:var2'])
+    @Debugger
+    @validate_arguments(var1=['lt_param:var2'])
     def lt(self, var1:int, var2:int):
         return True    
 
-    @debug_log
-    @validate(var1=['lte_param:var2'])
+    @Debugger
+    @validate_arguments(var1=['lte_param:var2'])
     def lte(self, var1:int, var2:int):
         return True
 

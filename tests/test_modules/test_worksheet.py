@@ -97,8 +97,8 @@ def test_getColumnCounts():
 
 
 #     # wrapper function to take care of some pre-work on removing columns
-#     @debug_log
-#     @validate(start=['lt_param:stop'])
+#     @Debugger
+#     @validate_arguments(start=['lt_param:stop'])
 #     def removeColumns(self, column:int=None, start:int=None, stop:int=None):
 #         if None != column:
 #             start = column
@@ -530,8 +530,8 @@ def test_getColumnCounts():
 #     #   Most of the time the workflow here is to clear your sheet, so you can write the worksheet data to it
 #     #   consider carefully what could go wrong if you don't have data in the worksheet and you do not commit
 #     #   the worksheetData object's data to the sheet. That's dangerous!
-#     @debug_log
-#     @validate()
+#     @Debugger
+#     @validate_arguments
 #     def clearAllRecords(self, deleteWorksheetData:bool=False):
 #         self.__getWorksheetObj().clear()
 #         # This is DANGEROUS, bc you can lose ALL of your data

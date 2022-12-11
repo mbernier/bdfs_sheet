@@ -1,6 +1,6 @@
 import sys, getopt, os, gspread
 from modules.base import BaseClass
-from modules.decorator import debug_log, validate
+from modules.decorator import Debugger
 
 # @todo refactor to pull out the getops functionality from this script
 #   create a class that takes in getopt options and data
@@ -35,12 +35,12 @@ To Use the SheetProcessor, pass in some commands:
 
 
 """
-    @debug_log
+    @Debugger
     def __init__(self):
         # set the default spreadsheet id from the constants or configuration
         self.spreadsheet = None
 
-    @debug_log
+    @Debugger
     def main(self, argv):
         outputfile = ''
 
@@ -109,7 +109,7 @@ To Use the SheetProcessor, pass in some commands:
 
 
     # setup the sheet object if not setup, return it either way
-    @debug_log
+    @Debugger
     def __setUpSpreadsheet(self):
         if None == self.spreadsheet:
             # self.spreadsheet = getattr(sys.modules[self.spreadsheet_class["module"]], self.spreadsheet_class["class"])
@@ -120,14 +120,14 @@ To Use the SheetProcessor, pass in some commands:
 
     # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
     # if use_cached is false, go retrieve it again
-    @debug_log
+    @Debugger
     def listWorksheets(self):
         return self.spreadsheet.getWorksheets()
 
 
     # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
     #   to make sure that the spreadsheet is valid for what we want to do
-    @debug_log
+    @Debugger
     def checkWorksheetColumns(self, checkExtras = True, addMissingColumns = False):
         self.spreadsheet.checkWorksheetColumns(checkExtras = checkExtras, addMissingColumns = addMissingColumns)
         return

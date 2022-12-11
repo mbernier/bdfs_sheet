@@ -1,14 +1,12 @@
 import gspread, sys
 from dataclasses import dataclass, field as dc_field
-
+from collections import OrderedDict
+from pprint import pprint 
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import utils as gspread_utils
 from gspread.worksheet import Worksheet
 from modules.base import BaseClass
-from modules.decorator import debug_log, validate
-from collections import OrderedDict
-from pprint import pprint 
-
+from modules.decorator import Debugger
 from modules.worksheets.data import WorksheetData
 
 # @todo the spreadsheet ID should be given by the extending class
@@ -37,7 +35,7 @@ from modules.worksheets.data import WorksheetData
 @dataclass
 class Worksheet_DataClass():
     title:str  = dc_field(default_factory=str)              # The Sheet title
-    gspread_worksheet = None                                 # The worksheet object itself, allows us to run gspread functions
+    gspread_worksheet:Worksheet = None                                 # The worksheet object itself, allows us to run gspread functions
     expectedColumns:list = dc_field(default_factory=list)   # A list of columns we expect to have in the sheet
     uncommitted_title: str = dc_field(default_factory=str) # temp storage if we change the title of the worksheet, until commit
     sheetData:list = dc_field(default_factory=list)        # source of truth for the data of the worksheet
@@ -51,9 +49,8 @@ class Bdfs_Worksheet(BaseClass):
     logger_name = "Worksheet"
     data: Worksheet_DataClass = Worksheet_DataClass()
 
-    @debug_log
-    @validate()
-    def __init__(self, worksheet):
+    @Debugger
+    def __init__(self, worksheet:Worksheet):
 
         # store the gspread worksheet for use later
         self.data.gspread_worksheet = worksheet
@@ -65,7 +62,7 @@ class Bdfs_Worksheet(BaseClass):
         self.getTitle()
 
 
-    @debug_log
+    @Debugger
     def __checkSetup(self):
         # if we don't know what cols are expected, we cannot check the sheet is setup properly
         if [] == self.getExpectedColumns():
@@ -98,7 +95,7 @@ class Bdfs_Worksheet(BaseClass):
     # get rid of any trailing columns that exist
     # don't need todo this, because we're doing everything locally and then committing, so we don't really
     # care what is in the spreadsheet at the end, we will just remove it by not having it and not committing it later
-    @debug_log
+    @Debugger
     def gspread_worksheet_resize_to_data(self): # test
         self.data.gspread_worksheet.resize(cols=self.getColumnCounts()['data'])
 
@@ -119,21 +116,20 @@ class Bdfs_Worksheet(BaseClass):
     # 'update_title'
 
     # if we have a new title passed, return that, otherwise return the original title
-    @debug_log
+    @Debugger
     def getTitle(self): #tested
         if "" == self.data.uncommitted_title:
             return self.getOriginalTitle()
         return self.data.uncommitted_title
 
     # always returns self.data.title
-    @debug_log
+    @Debugger
     def getOriginalTitle(self): #tested
         return self.data.title
 
 
     # if a new title is set, store it until we commit the sheet
-    @debug_log
-    @validate()
+    @Debugger
     def setTitle(self, title:str) -> str: #tested
         self.data.uncommitted_title = title
         return self.getTitle()
@@ -151,7 +147,7 @@ class Bdfs_Worksheet(BaseClass):
     # 'get_values', 
 
     #will return something like -- "A1:CT356"
-    @debug_log
+    @Debugger
     def getDataRange(self): #tested]
         self.getData()
         return f"{self.getA1(1,1)}:{self.getA1(self.getData().width(), self.getData().height())}"
@@ -170,7 +166,7 @@ class Bdfs_Worksheet(BaseClass):
     # 'updated',  
 
     # write the data out to the google worksheet
-    @debug_log
+    @Debugger
     def commit(self):
         dataRange = self.getDataRange()
         sheetData = self.__getSheetData()
@@ -206,8 +202,7 @@ class Bdfs_Worksheet(BaseClass):
     #   Most of the time the workflow here is to clear your sheet, so you can write the worksheet data to it
     #   consider carefully what could go wrong if you don't have data in the worksheet and you do not commit
     #   the worksheetData object's data to the sheet. That's dangerous!
-    @debug_log
-    @validate()
+    @Debugger
     def clearAllRecords(self, deleteWorksheetData:bool=False):
         
         self.__getWorksheetObj().clear()
@@ -223,7 +218,7 @@ class Bdfs_Worksheet(BaseClass):
     #
     ####
 
-    @debug_log
+    @Debugger
     def getData(self): #tested
         # we can defer grabbing the data until we get here
         if [] == self.data.sheetData:
@@ -251,14 +246,14 @@ class Bdfs_Worksheet(BaseClass):
     # 'columns_auto_resize', 
     # 'sort'
 
-    @debug_log
+    @Debugger
     def getExpectedColumns(self): #tested
         return self.__mergeExpectedColumns()
 
 
     # since we have multiple options for how the columns should be setup
     #   Get the columns that we care about and return them
-    @debug_log
+    @Debugger
     def __mergeExpectedColumns(self):
         expectedCols = self.cols_expected
         for index in self.cols_expected_extra:
@@ -271,14 +266,13 @@ class Bdfs_Worksheet(BaseClass):
     # use_cache = True will return the cache, if False it gets data from the live worksheet
     #   if there are empty columns at the end, the row_values() method will not get them, it will get everything from
     #       the first column to the last value in the row
-    @debug_log
+    @Debugger
     def getColumns(self): #tested
         return self.getData().getHeaders()
         
 
     # return the number of columns in the worksheet
-    @debug_log
-    @validate()
+    @Debugger
     def getColumnCounts(self): 
         obj = {
             'data': self.getData().width(),
@@ -288,9 +282,9 @@ class Bdfs_Worksheet(BaseClass):
 
 
     # wrapper function to take care of some pre-work on removing columns
-    @debug_log
-    @validate(start=['lt_param:stop'])
+    @Debugger
     def removeColumns(self, column:int=None, start:int=None, stop:int=None):
+        Helper.validate_lt_param(item=stop, param="start", paramValue=start)
         if None != column:
             start = column
             end = column
@@ -315,8 +309,8 @@ class Bdfs_Worksheet(BaseClass):
     #       [1:a,2:b,3:c,4:d,5:"",6:e,7:f,8:g]
     #       so, when you go to delete 7, it either isn't there or now "f" is in the 7th spot, so if you pass [7:7]
     #           to the worksheet delete function, it will delete "f" instead of deleting the correct item
+    @Debugger
     def X_removeEmptyColumns(self, removeTrailingEmpties = False):
-        self.debug("removeEmptyColumns(removeTrailingEmpties={})".format(removeTrailingEmpties))
 
         counter = 1
         delete_items = []
@@ -446,7 +440,7 @@ class Bdfs_Worksheet(BaseClass):
         else: 
             self.info("The worksheet %s does not have all the columns we expect" % self.getTitle())
             #figure out what's missing and complain so that we can get that shit fixed
-            missing_columns = list(set(colsToCheck) - set(self.getColumns()))
+            missing_columns = list(setData(colsToCheck) - setData(self.getColumns()))
             self.setMissingColumns(missing_columns)
             self.console("Worksheet: {} is missing these columns: ".format(self.getTitle()), data=str(self.getMissingColumns()))
 

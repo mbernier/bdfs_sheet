@@ -58,7 +58,7 @@ def test_debug(caplog):
         logger = Logger()
         logger.debug("test")
 
-        # without @debug_log decorator
+        # without @Debugger decorator
         # assert caplog.record_tuples == [("logs", logging.DEBUG, "Logger:: test")] 
         popped = caplog.record_tuples.pop()
         # with debug decorator
@@ -137,7 +137,7 @@ def test_method(caplog):
     with caplog.at_level(logging.DEBUG):
         logger = Logger()
         logger._method("__notinitmethod__", {"one": 1, "two": 2})
-        #without @debug_log decorator
+        #without @Debugger decorator
         # assert caplog.record_tuples == [('logs', 10, 'Logger::                                __notinitmethod__one,two')]
         
         popped = caplog.record_tuples.pop()

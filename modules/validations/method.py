@@ -67,7 +67,7 @@ class Validation_Method(Validation):
         self.data.classBeingValidated = tempSelf
         self.data.methodName = func.__name__
 
-        validationArgs = {}
+        validationArgs = {} 
 
         # create a new Dict, that can take data from the various places we get data
         #   this will be passed to the function call at the end

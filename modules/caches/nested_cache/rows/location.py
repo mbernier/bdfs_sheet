@@ -1,11 +1,14 @@
-import sys
+import sys, pydantic
+from pydantic import Field
+from pydantic import validate_arguments
 from collections import OrderedDict
 from pprint import pprint
+from typing import Union
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested_cache.row import Nested_Cache_Row
 from modules.caches.exception import Nested_Cache_Row_Exception, Nested_Cache_Row_Location_Exception, Flat_Cache_Exception
 from modules.config import config
-from modules.decorator import debug_log, validate
+from modules.decorator import Debugger
 
 
 # This is a wrapper for Nested_Cache on top of Flat Cache
@@ -17,8 +20,8 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
 
     _width = 0
 
-    @debug_log
-    @validate()
+    @Debugger
+    @validate_arguments
     def __init__(self, locations:list=None):
 
         self._storage = Flat_Cache()
@@ -29,20 +32,20 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
 
 
     # allows setting many locations at once
-    @debug_log
-    @validate()
+    @Debugger
+    @validate_arguments
     def load(self, locations:list):
         for location in locations:
             self.add(location)
 
 
-    @debug_log
-    @validate() # no reason to check if one exists, they must both exist
+    @Debugger
+    @validate_arguments # no reason to check if one exists, they must both exist
     def add(self, location:str):
 
         try:
             # set the location with width as index
-            self.set(location, self.width()) # handles both location and index setting
+            self.set_at_location(location, self.width()) # handles both location and index setting
             self._width += 1
         except Nested_Cache_Row_Exception as err:
             raise Nested_Cache_Row_Location_Exception(str(err))
@@ -55,54 +58,54 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
 
     # This will return the index if location is given, or the location if index is given
     #   if it is set, the item must exist in the Row
-    @debug_log
-    @validate(position=['isType:int,str'])
-    def get(self, position):
-        return self._storage.get(position)
+    @Debugger
+    @validate_arguments
+    def get_at_location(self, position: Union[int, str]):
+        return self._storage.get_at_location(position)
 
 
     # gets both index and location, then returns them in the correct order based on type
-    @debug_log
-    @validate(position=['isType:int,str'])
-    def getLocationIndex(self, position):
+    @Debugger
+    @validate_arguments
+    def getLocationIndex(self, position: Union[int, str]):
 
         if type(position) is int: # we have the index
-            return self.get(position), position
+            return self.get_at_location(position), position
     
         else: # we have the location
-            return position, self.get(position)
+            return position, self.get_at_location(position)
 
 
 
     # this overrides the Nested_Cache_Row default of setting data to the same thing
     #   for both index and location, so that we have the ability to reference in either
     #   direction
-    @debug_log
-    @validate(position=['isType:int,str'])
-    def set(self, position, otherPosition=None):
+    @Debugger
+    @validate_arguments
+    def set_at_location(self, position: Union[int, str], otherPosition=None):
         if None == otherPosition:
-            otherPosition = self.get(position)
+            otherPosition = self.get_at_location(position)
 
         # then set the data, because Nested_Cache_Row sets the data for both Index/Location at the same time
         # we want the location row to have index point to location and location point to index
         try:
-            self._storage.set(position, data=otherPosition)
-            self._storage.set(otherPosition, data=position)
+            self._storage.set_at_location(position, data=otherPosition)
+            self._storage.set_at_location(otherPosition, data=position)
         except Flat_Cache_Exception as err:
             raise Nested_Cache_Row_Location_Exception(str(err))
 
 
 
     # Change the index of a location
-    @debug_log
-    @validate()
-    def update(self, position):
+    @Debugger
+    @validate_arguments
+    def update(self, position: Union[int, str]):
         raise Exception("double check that the indexes get updated correctly if an index changes, also add tests")
-        currentIndex = self.get(location)
+        currentIndex = self.get_at_location(location)
         self._storage.update(currentIndex, None) # reset the current index to None
 
         try:
-            self._storage.set(index, data=location) # add the new index
+            self._storage.set_at_location(index, data=location) # add the new index
             self._storage.update(location, data=index) # update location to have the new index
         except Nested_Cache_Row_Exception as err:
             raise Nested_Cache_Row_Location_Exception(str(err))
@@ -110,23 +113,23 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
 
 
     # return only the string keys from the storage
-    @debug_log
+    @Debugger
     def getLocationKeys(self) -> list:
         keys = [] 
 
         for index in range(0,self.width()):
             # will get the location name for each index, in the correct order
-            keys.append(self._storage.get(index))
+            keys.append(self._storage.get_at_location(index))
         
         return keys
 
-    @debug_log
+    @Debugger
     def width(self) -> int:
         return self._width
 
 
-    @debug_log
-    @validate()
+    @Debugger
+    @validate_arguments
     def move(self, location:str, newIndex:int):
         raise Nested_Cache_Row_Location_Exception("move is not implemented yet")
         # consider using self.update() where possible?
@@ -153,11 +156,11 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
         #   if everything went OK, delete StorageCopy, if not - throw exception
 
 
-    @debug_log
+    @Debugger
     def getAsList(self):
         return self._storage.getAsList()
 
 
-    @debug_log
+    @Debugger
     def getAsDict(self):
         return self._storage.getAsDict()
