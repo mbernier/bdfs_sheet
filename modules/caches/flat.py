@@ -88,13 +88,6 @@ class Flat_Cache(BdfsCache):
         self.data.storage.clear()
 
 
-    # delete the location from the cache completely
-    @Debugger
-    def delete_at_location(self, location: Union[int,str]):
-        if self.get_at_location(location):
-            del self.data.storage[location]
-
-
     # give us everything
     @Debugger
     def value(self):

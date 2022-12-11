@@ -94,16 +94,16 @@ def test_update_exception2():
 
 def test_getAsList():
     cache = Nested_Cache(['b','c','d'],[[3],[None, 4, None],[None, None, 5]])
-    assert cache.getRow(1) == [3, None, None]
-    assert cache.getRow(2) == [None, 4, None]
-    assert cache.getRow(3) == [None, None, 5]
+    assert cache.getRowAsList(1) == [3, None, None]
+    assert cache.getRowAsList(2) == [None, 4, None]
+    assert cache.getRowAsList(3) == [None, None, 5]
 
 
 def test_getAsDict():
     cache = Nested_Cache(['b','c','d'],[[3],[None, 4, None],[None, None, 5]])
-    assert cache.getRow(1, asObj="dict") == {'b': 3, 'c': None, 'd': None}
-    assert cache.getRow(2, asObj="dict") == {'b': None, 'c': 4, 'd': None}
-    assert cache.getRow(3, asObj="dict") == {'b': None, 'c': None, 'd': 5}
+    assert cache.getRowAsDict(1, asObj="dict") == {'b': 3, 'c': None, 'd': None}
+    assert cache.getRowAsDict(2, asObj="dict") == {'b': None, 'c': 4, 'd': None}
+    assert cache.getRowAsDict(3, asObj="dict") == {'b': None, 'c': None, 'd': 5}
 
 
 def test_getLocationThatExists():
@@ -127,6 +127,7 @@ def test_getLocationThatDoesntExist2():
 
 
 
+
 def test_getRow():
     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
     assert cache.getRow(3) == [5, None, None]
@@ -147,6 +148,9 @@ def test_getRowAsDict():
 def test_getRowAsDict2():
     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
     assert cache.getRow(row=3, asObj="dict") == {'b': 5, 'c': None, 'd': None}
+
+
+
 
 
 # Adding data to columns that exist should change nothing about the width
