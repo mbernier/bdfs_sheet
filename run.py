@@ -6,6 +6,7 @@ from modules.base import BaseClass
 from modules.cache import BdfsCache
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested import Nested_Cache
+from modules.caches.nested_cache.row import Nested_Cache_Row
 from modules.caches.nested_cache.rows.location import Nested_Cache_Rows_Location
 from modules.caches.exception import Nested_Cache_Row_Exception
 # from modules.cell import Cell
@@ -43,4 +44,7 @@ if __name__ == "__main__":
     # sheet = BdfsInventory_Test_Spreadsheet() 
     # test_worksheet = sheet.getWorksheet('test_easy_data')
     # test_worksheet.gspread_worksheet_resize_to_data()
-    cache = Nested_Cache(['b','c','d'],[[3]])
+    
+    testData = ["one", "two", "three", "four"]
+    row = Nested_Cache_Rows_Location(testData)
+    print(row.getLocationIndex(1))

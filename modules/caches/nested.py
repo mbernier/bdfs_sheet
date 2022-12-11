@@ -1,10 +1,6 @@
 import sys, pydantic
 from collections import OrderedDict
-from pprint import pprint
-from typing import Union
-from pydantic import Field
-from pydantic.typing import Annotated
-from pydantic import validator, validate_arguments
+from enum import Enum, IntEnum
 from modules.cache import BdfsCache
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested_cache.rows.data import Nested_Cache_Rows_Data
@@ -14,7 +10,11 @@ from modules.config import config
 from modules.decorator import Debugger
 from modules.logger import Logger
 from modules.validation import Validation
-from enum import Enum, IntEnum
+from typing import Union
+from pprint import pprint
+from pydantic import Field, validator, validate_arguments
+from pydantic.typing import Annotated
+
 
 # for validating items that can be either int/str
 class str_list(str, Enum):
@@ -194,7 +194,8 @@ class Nested_Cache(BdfsCache):
         for index, location in enumerate(locations):
             cellData = None
             if None != rowData:
-                cellData = rowData[index]
+                if index in rowData:
+                    cellData = rowData[index]
             # add based on the index, bc
             newRow.add_at(location=location, index=index, data=cellData)
 

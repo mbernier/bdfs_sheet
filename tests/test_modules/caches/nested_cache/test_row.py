@@ -1,4 +1,4 @@
-import pytest
+import pytest, pydantic
 from modules.caches.nested_cache.row import Nested_Cache_Row
 from modules.caches.exception import Nested_Cache_Row_Exception, Flat_Cache_Exception
 from modules.validations.exception import Validation_Exception
@@ -35,6 +35,7 @@ def test_creation_with_data_on_create():
 # test width
 def test_width():
     row = Nested_Cache_Row(testData)
+    print(row.width())
     assert 5 == row.width()
 
 ####
@@ -46,22 +47,22 @@ def test_width():
 # add a location that doesn't exist
 def test_add_location_does_not_exist():
     row = Nested_Cache_Row(testData)
-    row.add(7,"seven")
+    row.add_at(7,"seven")
 
 # add an index that exists
 def test_add_index_that_does_exist():
     row = Nested_Cache_Row(testData)
     with pytest.raises(Nested_Cache_Row_Exception) as excinfo:
-        row.add(1, 500)
-    assert "Flat_Cache has '2' at location: 1. To update data in the cache, use updateData()" in excinfo.value.message
+        row.add_at(1, 500)
+    assert "Flat_Cache has '1' at location: 1. To update data in the cache, use update_at_location()" in excinfo.value.message
 
 
 # add something that isn't a string
 def test_add_not_string_as_location():
     row = Nested_Cache_Row(testData)
-    with pytest.raises(Validation_Exception) as excinfo:
-        row.add([1,2,4],400)
-    assert excinfo.value.message == "index was expected to be type int, but <class 'list'> was found for method add"
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
+        row.add_at([1,2,4],400)
+    assert "index\n  value is not a valid integer" in str(excinfo.value)
 
 ####
 #
@@ -73,12 +74,12 @@ def test_add_not_string_as_location():
 
 def test_get_by_index():
     row = Nested_Cache_Row(testData)
-    assert 2 == row.get(1)
+    assert 1 == row.get_at(1)
 
 # get data from index that doesn't exist
 def test_get_by_index_dne():
     row = Nested_Cache_Row(testData)
-    assert None == row.get(17)
+    assert None == row.get_at(17)
 
 ####
 #
@@ -90,16 +91,16 @@ def test_get_by_index_dne():
 def test_set_by_index_exists():
     row = Nested_Cache_Row(testData)
     with pytest.raises(Nested_Cache_Row_Exception) as excinfo:
-        row.setData(1, "banana")
-    assert "Flat_Cache has '2' at location: 1. To update data in the cache, use updateData()" in excinfo.value.message
+        row.set_at(1, "banana")
+    assert "Flat_Cache has '1' at location: 1. To update data in the cache, use update_at_location()" in excinfo.value.message
 
 
 # set a location that doesn't exists
 def test_get_by_index_dne():
     row = Nested_Cache_Row(testData)
-    row.setData(17, "banana")
+    row.set_at(17, "banana")
 
-    assert "banana" == row.get(17)
+    assert "banana" == row.get_at(17)
 
 ####
 #
@@ -110,7 +111,7 @@ def test_get_by_index_dne():
 # update successful
 def test_update_by_index_exists():
     row = Nested_Cache_Row(testData)
-    row.updateData(1, "banana")
+    row.update_at(1, "banana")
 
 
 # update fail (location doesn't exist, try add)
@@ -118,5 +119,7 @@ def test_update_by_index_dne():
     row = Nested_Cache_Row(testData)
 
     with pytest.raises(Nested_Cache_Row_Exception) as excinfo:
-        row.updateData(17, "banana")
+        row.update_at(17, "banana")
     assert "There is nothing to update at position '17' consider using set" in excinfo.value.message
+
+

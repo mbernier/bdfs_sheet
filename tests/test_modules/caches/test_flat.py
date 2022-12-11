@@ -19,7 +19,7 @@ def test_empty_cache_get_at_location():
     cache = Flat_Cache()
     value = cache.get_at_location(location="a")
     assert value == None
-
+ 
 
 def test_cache_set_at_location():
     cache = Flat_Cache()
@@ -140,7 +140,7 @@ def test_delete_at_location():
     assert 3 == cache.get_at_location("b")
     assert 5 == cache.get_at_location("d")
     assert None == cache.get_at_location("c")
-    assert cache.data.storage == {'b': 3, 'd': 5}
+    assert cache.data.storage == {'b': 3, 'c': None, 'd': 5}
 
 def test_delete2():
     cache = Flat_Cache()
@@ -151,6 +151,37 @@ def test_delete2():
     assert cache.data.storage == {'b': 3, 'c': 4, 'd': 5}
 
     cache.delete_at_location(location="c")
+
+    assert 3 == cache.get_at_location(location="b")
+    assert 5 == cache.get_at_location(location="d")
+    assert None == cache.get_at_location(location="c")
+    assert cache.data.storage == {'b': 3, 'c':None, 'd': 5}
+
+
+def test_delete_at_location():
+    cache = Flat_Cache()
+    cache.set_at_location("b",3)
+    cache.set_at_location("c",4)
+    cache.set_at_location("d",5)
+
+    assert cache.data.storage == {'b': 3, 'c': 4, 'd': 5}
+
+    cache.remove_location("c")
+
+    assert 3 == cache.get_at_location("b")
+    assert 5 == cache.get_at_location("d")
+    assert None == cache.get_at_location("c")
+    assert cache.data.storage == {'b': 3, 'd': 5}
+
+def test_delete2():
+    cache = Flat_Cache()
+    cache.set_at_location(location="b",data=3)
+    cache.set_at_location(location="c",data=4)
+    cache.set_at_location(location="d",data=5)
+
+    assert cache.data.storage == {'b': 3, 'c': 4, 'd': 5}
+
+    cache.remove_location(location="c")
 
     assert 3 == cache.get_at_location(location="b")
     assert 5 == cache.get_at_location(location="d")

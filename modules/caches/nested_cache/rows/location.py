@@ -1,15 +1,13 @@
 import sys, pydantic
-from pydantic import Field
-from pydantic import validate_arguments
 from collections import OrderedDict
-from pprint import pprint
-from typing import Union
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested_cache.row import Nested_Cache_Row
-from modules.caches.exception import Nested_Cache_Rows_Location_Exception
+from modules.caches.exception import Flat_Cache_Exception, Nested_Cache_Row_Exception, Nested_Cache_Rows_Location_Exception
 from modules.config import config
 from modules.decorator import Debugger
-
+from pprint import pprint
+from pydantic import Field, validate_arguments
+from typing import Union
 
 # This is a wrapper for Nested_Cache on top of Flat Cache
 #   in order to reduce the complexity in the Nested_Cache implementation
@@ -34,34 +32,38 @@ class Nested_Cache_Rows_Location(Nested_Cache_Row):
     # allows setting many locations at once
     @Debugger
     @validate_arguments
-    def load(self, locations:list):
+    def load(self, locations:list=None):
         for location in locations:
-            self.add(location)
+            self.add_at(location)
 
 
     @Debugger
     @validate_arguments # no reason to check if one exists, they must both exist
-    def add(self, location:str):
+    def add_at(self, position:Union[int,str]):
 
         try:
             # set the location with width as index
-            self.set_at_location(location, self.width()) # handles both location and index setting
+            super()._set_at_location(self.width(), position)
+            super()._set_at_location(position, self.width()) # handles both location and index setting
             self._width += 1
         except Nested_Cache_Row_Exception as err:
             raise Nested_Cache_Rows_Location_Exception(str(err))
 
-    def remove(self, location):
+    @Debugger
+    @validate_arguments
+    def remove(self, position:Union[int,str]):
         raise Exception("remove() is not implemented")
         # @todo:
             # decrement width
             # modify the indexes after the one that was removed
 
+
     # This will return the index if location is given, or the location if index is given
     #   if it is set, the item must exist in the Row
     @Debugger
     @validate_arguments
-    def get_at_location(self, position: Union[int, str]):
-        return self._storage.get_at_location(position)
+    def get_at(self, position: Union[int, str]):
+        return super()._get_at_location(position)
 
 
     # gets both index and location, then returns them in the correct order based on type
@@ -70,10 +72,10 @@ class Nested_Cache_Rows_Location(Nested_Cache_Row):
     def getLocationIndex(self, position: Union[int, str]):
 
         if type(position) is int: # we have the index
-            return self.get_at_location(position), position
+            return (super()._get_at_location(position), position)
     
         else: # we have the location
-            return position, self.get_at_location(position)
+            return (position, super()._get_at_location(position))
 
 
 
@@ -82,15 +84,15 @@ class Nested_Cache_Rows_Location(Nested_Cache_Row):
     #   direction
     @Debugger
     @validate_arguments
-    def set_at_location(self, position: Union[int, str], otherPosition=None):
+    def set_at(self, position: Union[int, str], otherPosition:Union[int,str]=None):
         if None == otherPosition:
-            otherPosition = self.get_at_location(position)
+            otherPosition = super()._get_at_location(position)
 
         # then set the data, because Nested_Cache_Row sets the data for both Index/Location at the same time
         # we want the location row to have index point to location and location point to index
         try:
-            self._storage.set_at_location(position, data=otherPosition)
-            self._storage.set_at_location(otherPosition, data=position)
+            super()._set_at_location(position, data=otherPosition)
+            super()._set_at_location(otherPosition, data=position)
         except Flat_Cache_Exception as err:
             raise Nested_Cache_Rows_Location_Exception(str(err))
 
@@ -99,14 +101,14 @@ class Nested_Cache_Rows_Location(Nested_Cache_Row):
     # Change the index of a location
     @Debugger
     @validate_arguments
-    def update(self, position: Union[int, str]):
+    def update_at(self, position: Union[int, str], otherPosition:Union[int,str]):
         raise Exception("double check that the indexes get updated correctly if an index changes, also add tests")
-        currentIndex = self.get_at_location(location)
-        self._storage.update(currentIndex, None) # reset the current index to None
+        currentIndex = self.get_at_location(position)
+        super()._update_at_location(currentIndex, None) # reset the current index to None
 
         try:
-            self._storage.set_at_location(index, data=location) # add the new index
-            self._storage.update(location, data=index) # update location to have the new index
+            super()._set_at_location(index, data=position) # add the new index
+            super()._update_at_location(position, data=index) # update location to have the new index
         except Nested_Cache_Row_Exception as err:
             raise Nested_Cache_Rows_Location_Exception(str(err))
 
@@ -115,11 +117,10 @@ class Nested_Cache_Rows_Location(Nested_Cache_Row):
     # return only the string keys from the storage
     @Debugger
     def getLocationKeys(self) -> list:
-        keys = [] 
-
+        keys = []
         for index in range(0,self.width()):
             # will get the location name for each index, in the correct order
-            keys.append(self._storage.get_at_location(index))
+            keys.append(super()._get_at_location(index))
         
         return keys
 
@@ -130,7 +131,7 @@ class Nested_Cache_Rows_Location(Nested_Cache_Row):
 
     @Debugger
     @validate_arguments
-    def move(self, location:str, newIndex:int):
+    def move(self, position:Union[int,str], new:Union[int,str]):
         raise Nested_Cache_Rows_Location_Exception("move is not implemented yet")
         # consider using self.update() where possible?
         # add testing!!
@@ -158,9 +159,9 @@ class Nested_Cache_Rows_Location(Nested_Cache_Row):
 
     @Debugger
     def getAsList(self):
-        return self._storage.getAsList()
+        return super().getAsList()
 
 
     @Debugger
     def getAsDict(self):
-        return self._storage.getAsDict()
+        return super().getAsDict()

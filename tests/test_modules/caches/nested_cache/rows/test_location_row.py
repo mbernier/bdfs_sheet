@@ -48,7 +48,7 @@ def test_width():
 # add a location that doesn't exist
 def test_add():
     row = Nested_Cache_Rows_Location(testData)
-    row.add("anotherHeader")
+    row.add_at("anotherHeader")
     assert 5 == row.width()
 
 
@@ -56,16 +56,16 @@ def test_add():
 def test_add_location_that_exists():
     row = Nested_Cache_Rows_Location(testData)
     with pytest.raises(Nested_Cache_Rows_Location_Exception) as excinfo:
-        row.add("two")
-    assert "Flat_Cache has '1' at location: two. To update data in the cache, use updateData()" in excinfo.value.message
+        row.add_at("two")
+    assert "Flat_Cache has '1' at location: two. To update data in the cache, use update_at_location()" in excinfo.value.message
 
 
 # add something that isn't a string
 def test_add_not_string():
     row = Nested_Cache_Rows_Location(testData)
     with pytest.raises(Validation_Exception) as excinfo:
-        row.add([1,2,3])
-    assert "location was expected to be type str, but <class 'list'> was found for method add" in excinfo.value.message
+        row.add_at([1,2,3])
+    assert "location was expected to be type str, but <class 'list'> was found for method add_at" in excinfo.value.message
 
 ####
 #
@@ -76,12 +76,12 @@ def test_add_not_string():
 # get a location from index
 def test_get_index_by_location():
     row = Nested_Cache_Rows_Location(testData)
-    assert 0 == row.get("one")
+    assert 0 == row.get_at("one")
 
 # get an index from location
 def test_get_location_by_index():
     row = Nested_Cache_Rows_Location(testData)
-    assert "one" == row.get(0)
+    assert "one" == row.get_at(0)
 
 ####
 #
@@ -109,18 +109,18 @@ def test_get_locationIndex2():
 def test_set_existing_location():
     row = Nested_Cache_Rows_Location(testData)
     with pytest.raises(Nested_Cache_Rows_Location_Exception) as excinfo:
-        row.setData(0,"zero")
-    assert "Flat_Cache has 'one' at location: 0. To update data in the cache, use updateData()" in excinfo.value.message
+        row.set_at(0,"zero")
+    assert "Flat_Cache has 'one' at location: 0. To update data in the cache, use update_at_location()" in excinfo.value.message
 
 
 # set a location that doesn't exists
 def test_set_dne_location():
     row = Nested_Cache_Rows_Location(testData)
-    row.setData(5,"five")
+    row.set_at(5,"five")
     assert ['one', 'two', 'three', 'four', 'five'] == row.getAsList()
     assert OrderedDict([('one', 0), ('two', 1), ('three', 2), ('four', 3), ('five', 5)]) == row.getAsDict()
 
-    row.setData("six", 6)
+    row.set_at("six", 6)
     assert ['one', 'two', 'three', 'four', 'five', 'six'] == row.getAsList()
     assert OrderedDict([('one', 0), ('two', 1), ('three', 2), ('four', 3), ('five', 5), ('six', 6)]) == row.getAsDict()
 
@@ -131,18 +131,19 @@ def test_set_dne_location():
 #
 ####
 
-# update successful
 # def test_updateData():
 #     row = Nested_Cache_Rows_Location(testData)
-#     row.updateData("one", 7)
-#     row.updateData(5, "seventeen")
+#     row.update_at("one", 7)
+#     row.update_at(5, "seventeen")
 #     print(row.getAsList())
+
 
 # # update fail (location doesn't exist, try add)
 # def test_update_fail():
 #     row = Nested_Cache_Rows_Location(testData)
-#     row.updateData("one", 7)
-#     print(row.getAsList())
+#     with pytest.raises(Nested_Cache_Rows_Location_Exception) as excinfo:
+#         row.update_at("seven", 7)
+#     assert "index\n  value is not a valid integer" in str(excinfo.value)
 
 
 ####
