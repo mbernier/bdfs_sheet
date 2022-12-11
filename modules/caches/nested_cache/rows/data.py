@@ -16,32 +16,40 @@ from modules.decorator import Debugger
 #   to the Flat Cache either way.
 class Nested_Cache_Rows_Data(Flat_Cache):
 
-    @Debugger
-    @validate_arguments
-    def __init__(self, location=None, index=None, data=None):
-
-        self._storage = Flat_Cache()
-
-        # take in a list of locations that we care about if they are there and setup the row
-        if None != data && None != location && None != index:
-            self.set_at_location(location=index, data=data[index])
-        else: 
-            raise Nested_Cache_Rows_Data_Exception("Either location, index, and data need to be set or need to all be None")
-
 
     @Debugger
     @validate_arguments
-    def add(self, location:str, index:int, data=None):
-        
+    def createDataDicts(self, location, index, data):
         locationData = {
             "position": index,
             "data": data
         }
-        self.set_at_location(index, locationData)
 
         indexData = {
             "position": location,
             "data": data
         }
-        self.set_at_location(index, indeData)
 
+        return locationData, indexData
+
+    @Debugger
+    @validate_arguments
+    def add_at_location(self, location:str, index:int, data=None):
+        
+        locationData, indexData = self.createDataDicts()
+
+        self.write(location=location, data=locationData)
+        self.write(location=index, data=indexData)
+
+    @Debugger
+    @validate_arguments
+    def set_at_location(self, location:str, index:int, data=None):
+        locationData, indexData = self.createDataDicts()
+        super().set_at_location(location, locationData)
+        super().set_at_location(index, indexData)
+
+    @Debugger
+    @validate_arguments
+    def remove_location(self, location:str, index:int):
+        super().remove_location(location)
+        super().remove_location(index)

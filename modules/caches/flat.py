@@ -41,31 +41,34 @@ class Flat_Cache(BdfsCache):
     @validate_arguments(config=dict(smart_union=True))
     def set_at_location(self, location: Union[int,str], data=None):
         if None == self.get_at_location(location):
-            self.__write(location=location, data=data)
+            self.write(location=location, data=data)
         else:
             raise Flat_Cache_Exception("Flat_Cache has '{}' at location: {}. To update data in the cache, use update_at_location()".format(self.get_at_location(location), location))
 
 
     # remove the data from the location, but keep the location index
     @Debugger
-    def unset_at_location(self, location):
+    def unset_at_location(self, location: Union[int,str]):
         if self.get_at_location(location):
             self.data.storage[location] = None
 
 
     #change the data at the location
     @Debugger
-    def update_at_location(self, location, data=None):
+    def update_at_location(self, location: Union[int,str], data=None):
         if None == self.get_at_location(location):
             raise Flat_Cache_Exception("There is nothing to update at position '{}' consider using set".format(location))
-        self.__write(location=location, data=data)
+        self.write(location=location, data=data)
 
 
     # get the data at the location
     @Debugger
-    def get_at_location(self, location):
+    def get_at_location(self, location: Union[int,str]):
         return self.data.storage.get(location)
 
+    @Debugger
+    def remove_location(self, location: Union[int,str]):
+        del self.data.storage[location]
 
     # returns a list of keys from the storage dict
     @Debugger
@@ -75,7 +78,7 @@ class Flat_Cache(BdfsCache):
 
     # write data to the cache location
     @Debugger
-    def __write(self, location, data=None):
+    def write(self, location: Union[int,str], data=None):
         self.data.storage[location] = data
 
 
@@ -87,7 +90,7 @@ class Flat_Cache(BdfsCache):
 
     # delete the location from the cache completely
     @Debugger
-    def delete_at_location(self, location):
+    def delete_at_location(self, location: Union[int,str]):
         if self.get_at_location(location):
             del self.data.storage[location]
 
@@ -129,7 +132,7 @@ class Flat_Cache(BdfsCache):
         return output
 
     @Debugger
-    def validate_locationExists(self, location):
+    def validate_locationExists(self, location: Union[int,str]):
         if location in self.data.storage.keys():
             return True
         return False

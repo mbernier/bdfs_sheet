@@ -14,7 +14,7 @@ def test_cache_creation():
      assert cache.getAsListOfLists() == [[]]
 
 
-def test_empty_cache_cache_get_row_item():
+def test_empty_cache_get_row_item():
     cache = Nested_Cache([], [])
     value = cache.get_row_item(row=1,location="test")
     assert value == None
