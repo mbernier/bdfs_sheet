@@ -16,12 +16,12 @@ class Nested_Cache_Row_Exception(Flat_Cache_Exception):
         self.message = message
         super().__init__(self.message)
 
-class Nested_Cache_Row_Location_Exception(Flat_Cache_Exception):
+class Nested_Cache_Rows_Location_Exception(Flat_Cache_Exception):
     def __init__(self, message="Flat_Cache Exception raised"):
         self.message = message
         super().__init__(self.message)
 
-class Nested_Cache_Row_Data_Exception(Flat_Cache_Exception):
+class Nested_Cache_Rows_Data_Exception(Flat_Cache_Exception):
     def __init__(self, message="Flat_Cache Exception raised"):
         self.message = message
         super().__init__(self.message)

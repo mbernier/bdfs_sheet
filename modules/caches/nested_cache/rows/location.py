@@ -6,7 +6,7 @@ from pprint import pprint
 from typing import Union
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested_cache.row import Nested_Cache_Row
-from modules.caches.exception import Nested_Cache_Row_Exception, Nested_Cache_Row_Location_Exception, Flat_Cache_Exception
+from modules.caches.exception import Nested_Cache_Rows_Location_Exception
 from modules.config import config
 from modules.decorator import Debugger
 
@@ -16,7 +16,7 @@ from modules.decorator import Debugger
 #   and to wrap Flat_Cache with the logic needed for Nested_Cache in a clean way.
 #   A nested Cache Row can be created with values or not and can be written 
 #   to the Flat Cache either way.
-class Nested_Cache_Row_Location(Nested_Cache_Row):
+class Nested_Cache_Rows_Location(Nested_Cache_Row):
 
     _width = 0
 
@@ -48,7 +48,7 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
             self.set_at_location(location, self.width()) # handles both location and index setting
             self._width += 1
         except Nested_Cache_Row_Exception as err:
-            raise Nested_Cache_Row_Location_Exception(str(err))
+            raise Nested_Cache_Rows_Location_Exception(str(err))
 
     def remove(self, location):
         raise Exception("remove() is not implemented")
@@ -92,7 +92,7 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
             self._storage.set_at_location(position, data=otherPosition)
             self._storage.set_at_location(otherPosition, data=position)
         except Flat_Cache_Exception as err:
-            raise Nested_Cache_Row_Location_Exception(str(err))
+            raise Nested_Cache_Rows_Location_Exception(str(err))
 
 
 
@@ -108,7 +108,7 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
             self._storage.set_at_location(index, data=location) # add the new index
             self._storage.update(location, data=index) # update location to have the new index
         except Nested_Cache_Row_Exception as err:
-            raise Nested_Cache_Row_Location_Exception(str(err))
+            raise Nested_Cache_Rows_Location_Exception(str(err))
 
 
 
@@ -131,7 +131,7 @@ class Nested_Cache_Row_Location(Nested_Cache_Row):
     @Debugger
     @validate_arguments
     def move(self, location:str, newIndex:int):
-        raise Nested_Cache_Row_Location_Exception("move is not implemented yet")
+        raise Nested_Cache_Rows_Location_Exception("move is not implemented yet")
         # consider using self.update() where possible?
         # add testing!!
         # start:

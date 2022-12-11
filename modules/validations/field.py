@@ -38,7 +38,7 @@ class Validation_Field(Validation):
 
     def getParams(self):
         Logger.method("__getParams")
-        return Nested_Cache_Row_LocationvalidatedData
+        return Nested_Cache_Rows_LocationvalidatedData
 
 
     def __getParamToValidate(self):

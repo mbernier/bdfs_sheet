@@ -8,7 +8,7 @@ from pydantic import validator, validate_arguments
 from modules.cache import BdfsCache
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested_cache.rows.data import Nested_Cache_Rows_Data
-from modules.caches.nested_cache.rows.location import Nested_Cache_Row_Location
+from modules.caches.nested_cache.rows.location import Nested_Cache_Rows_Location
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
 from modules.config import config
 from modules.decorator import Debugger
@@ -70,7 +70,7 @@ class Nested_Cache(BdfsCache):
     @Debugger
     # used in order to setup the locations row, so that we can check against it in the future
     def __addLocations(self, locations:list):
-        locationRow = Nested_Cache_Row_Location(locations)
+        locationRow = Nested_Cache_Rows_Location(locations)
 
         self.__setLocationRow(locationRow)
 
@@ -83,7 +83,7 @@ class Nested_Cache(BdfsCache):
 
     # create row[0] from the Locations Row, setup the OrderedDict for Location Headers
     @Debugger
-    def __setLocationRow(self, locationRow:Nested_Cache_Row_Location):
+    def __setLocationRow(self, locationRow:Nested_Cache_Rows_Location):
         # set the storage Row
         if len(self._storage) == 0:
             self._storage.append(locationRow)
@@ -97,7 +97,7 @@ class Nested_Cache(BdfsCache):
     # do we know about this location?
     @Debugger
     def locationExists(self, position: Union[int,str]):
-        locationData = self._storage[0].get_at_location(position)
+        locationData = self._storage[0].get_at(position)
         if None == locationData:
             return False
         return True
@@ -139,11 +139,8 @@ class Nested_Cache(BdfsCache):
         obj = []
         row = self.getRow(row)
         for location in self.__getLocations():
-            positionalData = row.get_at_location(location)
-            if None == positionalData:
-                obj.append(None)
-            else:
-                obj.append(row.get_at_location(location)['data'])
+            positionalData = row.getAsList(position=location)
+            obj.append(positionalData)
         return obj
 
     @Debugger
@@ -153,11 +150,8 @@ class Nested_Cache(BdfsCache):
         obj = {}
         row = self.getRow(row)
         for location in self.__getLocations():
-            positionalData = row.get_at_location(location)
-            if None == positionalData:
-                obj[location] = None
-            else:
-                obj[location] = row.get_at_location(location)['data']
+            positionalData = row.getAsDict(location)
+            obj.update(positionalData)
         return obj
 
 
@@ -177,7 +171,7 @@ class Nested_Cache(BdfsCache):
         self.validation_rowExists(row)
 
         try:
-            self._storage[row].set_at(position=position, data)
+            self._storage[row].set_at(position=position, data=data)
         except Flat_Cache_Exception:
             raise Nested_Cache_Exception("There is already data at row:{} position:{}, to change this data use update(row, location/index, data)".format(row, position))
 
@@ -190,7 +184,7 @@ class Nested_Cache(BdfsCache):
         self.__appendRow(newRow)
 
     # created outside of appendRow, so it could be used in unsetRow as well
-    @debugger
+    @Debugger
     @validate_arguments
     def createRowFromData(self, rowData:list=None):
         newRow = Nested_Cache_Rows_Data()
@@ -202,7 +196,7 @@ class Nested_Cache(BdfsCache):
             if None != rowData:
                 cellData = rowData[index]
             # add based on the index, bc
-            newRow.add_at_location(location=location, index=index, data=cellData)
+            newRow.add_at(location=location, index=index, data=cellData)
 
         return newRow
 

@@ -1,10 +1,11 @@
 import sys
 from collections import OrderedDict
 from pprint import pprint
+from typing import Union
 from pydantic import validator, validate_arguments
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested_cache.row import Nested_Cache_Row
-from modules.caches.exception import Nested_Cache_Row_Exception, Flat_Cache_Exception
+from modules.caches.exception import Nested_Cache_Rows_Data_Exception
 from modules.config import config
 from modules.decorator import Debugger
 
@@ -23,7 +24,8 @@ class Nested_Cache_Rows_Data(Flat_Cache):
     ####
     @Debugger
     @validate_arguments
-    def createDataDicts(self, location, index, data):
+    def createDataDicts(self, location:str, index:int, data=None):
+
         locationData = {
             "position": index,
             "data": data
@@ -63,12 +65,12 @@ class Nested_Cache_Rows_Data(Flat_Cache):
     @validate_arguments
     def add_at(self, location:str, index:int, data=None):
 
-        locationData, indexData = self.createDataDicts()
+        locationData, indexData = self.createDataDicts(location=location, index=index, data=data)
 
         self.write(location=location, data=locationData)
         self.write(location=index, data=indexData)
 
-    def add_at_location(self):
+    def add_at_location(*args, **kwargs):
         raise Nested_Cache_Rows_Data_Exception("add_at_location DNE for Nested_Cache_Rows_Data, use add_at()")
 
 
@@ -82,12 +84,12 @@ class Nested_Cache_Rows_Data(Flat_Cache):
     @validate_arguments
     def set_at(self, location:str, index:int, data=None):
 
-        locationData, indexData = self.createDataDicts()
+        locationData, indexData = self.createDataDicts(location=location, index=index, data=data)
 
         super().set_at_location(location, locationData)
         super().set_at_location(index, indexData)
 
-    def set_at_location(self):
+    def set_at_location(*args, **kwargs):
         raise Nested_Cache_Rows_Data_Exception("set_at_location DNE for Nested_Cache_Rows_Data, use set_at()")
 
     ####
@@ -103,8 +105,8 @@ class Nested_Cache_Rows_Data(Flat_Cache):
         return dictData["data"]
 
 
-    def get_at_location(self):
-        raise Nested_Cache_Rows_Data_Exception("get_at_location DNE for Nested_Cache_Rows_Data, use get_at()")
+    def get_at_location(*args, **kwargs):
+        raise Nested_Cache_Rows_Data_Exception("get_at_location is not available for Nested_Cache_Rows_Data, use get_at()")
 
 
     ####
@@ -124,6 +126,8 @@ class Nested_Cache_Rows_Data(Flat_Cache):
         super().update_at_location(indexDict["position"], locationDict)
         super().update_at_location(locationDict["position"], indexDict)
 
+    def unset_at_location(*args, **kwargs):
+        raise Nested_Cache_Rows_Data_Exception("unset_at_location is not available for Nested_Cache_Rows_Data, use unset_at")
 
     ####
     #
@@ -139,7 +143,7 @@ class Nested_Cache_Rows_Data(Flat_Cache):
         super().remove_location(index)
 
     def remove_location(self):
-        raise Nested_Cache_Rows_Data_Exception("remove_location is not available, use remove_position")
+        raise Nested_Cache_Rows_Data_Exception("remove_location is not available for Nested_Cache_Rows_Data, use remove_position")
 
     ####
     #
@@ -177,26 +181,26 @@ class Nested_Cache_Rows_Data(Flat_Cache):
 
 
     @Debugger
-    def getAsList(self):
+    def getAsList(self, position:Union[str,int]=None):
         output = []
 
         storageKeys = self._storage.keys()
         for storageIndex in storageKeys:
-            if type(storageIndex) is int:
+            if type(storageIndex) is int or (None != position and storageIndex == position):
                 output.insert(storageIndex, self.get_at(storageIndex))
         return output
 
     @Debugger
     def getAsListRaw(self):
-        raise Nested_Cache_Rows_Data_Exception("Raw list doesn't make sense, bc we have the same data in a string and an int position in storage, use getAsDictRaw")
+        raise Nested_Cache_Rows_Data_Exception("Raw list doesn't make sense for Nested_Cache_Rows_Data, bc we have the same data in a string and an int position in storage, use getAsDictRaw")
 
 
     @Debugger
-    def getAsDict(self):
+    def getAsDict(self, position:Union[str,int]=None):
         output = OrderedDict()
         storageKeys = self._storage.keys()
         for storageIndex in storageKeys:
-            if type(storageIndex) is str:
+            if type(storageIndex) is str or (None != position and storageIndex == position):
                 output[storageIndex] = self.get_at(storageIndex)
         return output
 
