@@ -157,9 +157,12 @@ def test_getRowAsDict2():
 def test_width_fromAdds():
     cache = Nested_Cache(['b','c','d'],[[3]])
     assert 3 == cache.width()
-    cache.set_row_item(row=1,position="c",data=4)
+    rowItem = cache.get_row_item(row=1, position='c')
+    print(f"RowItem: {rowItem}")
+    assert None == rowItem
+    cache.set_row_item(row=1, position="c", data=4)
     assert 3 == cache.width()
-    cache.set_row_item(row=1,position="d",data=4)
+    cache.set_row_item(row=1, position="d", data=4)
     assert 3 == cache.width()
 
 
@@ -170,7 +173,7 @@ def test_fail_fromAddingColsThatDontExist():
     cache = Nested_Cache(['b','c','d'],[[3]])
     with pytest.raises(Nested_Cache_Exception) as excinfo:
         cache.set_row_item(row=1,position="e",data=4)
-    assert excinfo.value.message == "position 'e' doesn't exist, to add it use addLocation(location)"
+    assert excinfo.value.message == "Location 'e' doesn't exist, to add it use addLocation(location)"
 
 
 def test_addUnrecognizedLocation():

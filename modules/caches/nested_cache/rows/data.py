@@ -2,7 +2,7 @@ import sys
 from collections import OrderedDict
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested_cache.row import Nested_Cache_Row
-from modules.caches.exception import Nested_Cache_Rows_Data_Exception
+from modules.caches.exception import Nested_Cache_Rows_Data_Exception, Flat_Cache_Exception
 from modules.config import config
 from modules.decorator import Debugger
 from typing import Union
@@ -14,6 +14,7 @@ from pydantic import validator, validate_arguments
 #   and to wrap Flat_Cache with the logic needed for Nested_Cache in a clean way.
 #   A nested Cache Row can be created with values or not and can be written 
 #   to the Flat Cache either way.
+# This assumes that it is created with the headers/indexes passed in - see NestedCache createRowFromData() method
 class Nested_Cache_Rows_Data(Nested_Cache_Row):
 
     ####
@@ -32,13 +33,20 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
 
         indexData = {
             "position": location,
-            "data": data
+            "data": data 
         }
 
         return locationData, indexData
 
+    @Debugger
+    @validate_arguments
     def getBothDicts(self, position:Union[int, str]):
         dict1 = super()._get_at_location(position)
+        
+        # we don't have anything here to return, we can't create a data dict either bc we only have position
+        if dict1 == None:
+            return None, None
+
         dict2 = super()._get_at_location(dict1["position"])
 
         locationDict = dict1 if type(dict1["position"]) is int else dict2
@@ -46,6 +54,8 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
 
         return locationDict, indexDict
 
+    @Debugger
+    @validate_arguments
     def getOtherPosition(self, position:Union[int, str]):
         dict1 = super()._get_at_location(position)
 
@@ -65,9 +75,12 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
     def add_at(self, location:str, index:int, data=None):
 
         locationData, indexData = self.createDataDicts(location=location, index=index, data=data)
-
-        self.write(location=location, data=locationData)
-        self.write(location=index, data=indexData)
+        try:
+            self._add_at_location(location=location, data=locationData)
+            self._add_at_location(location=index, data=indexData)
+        except Flat_Cache_Exception as err:
+            raise Nested_Cache_Rows_Data_Exception(str(err))
+        
 
     def add_at_location(*args, **kwargs):
         raise Nested_Cache_Rows_Data_Exception("add_at_location DNE for Nested_Cache_Rows_Data, use add_at()")
@@ -83,13 +96,32 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
     @validate_arguments
     def set_at(self, location:str, index:int, data=None):
 
-        locationData, indexData = self.createDataDicts(location=location, index=index, data=data)
 
-        super()._set_at_location(location, locationData)
-        super()._set_at_location(index, indexData)
+        currentLocationData, currentIndexData = self.getBothDicts(location)
+
+        if currentLocationData == None:
+            self.add_at(location=location, index=index, data=data)
+        else: 
+            locationData, indexData = self.createDataDicts(location=location, index=index, data=data)
+            # print(f"locationData: {locationData}")
+            # print(f"indexData: {indexData}")
+            atLoc = super()._get_at_location(location)
+            # print(f"atLoc: {atLoc}")
+            atLoc = super()._get_at_location(index)
+            # print(f"atLoc: {atLoc}")
+            
+            try:
+                if (self.get_at(location) == None and self.get_at(index) == None):
+                    # make sure that both location/index dicts have data = None
+                    self.unset_at(location) #unset both location and index in one go
+                    self.update_at(location, data)
+            except Flat_Cache_Exception as err:
+                raise Nested_Cache_Rows_Data_Exception(str(err))
+        
 
     def set_at_location(*args, **kwargs):
         raise Nested_Cache_Rows_Data_Exception("set_at_location DNE for Nested_Cache_Rows_Data, use set_at()")
+
 
     ####
     #
@@ -101,12 +133,34 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
     @validate_arguments
     def get_at(self, position:Union[int,str]):
         dictData = super()._get_at_location(position)
+        if None == dictData:
+            return None
         return dictData["data"]
 
-
     def get_at_location(*args, **kwargs):
-        raise Nested_Cache_Rows_Data_Exception("get_at_location is not available for Nested_Cache_Rows_Data, use get_at()")
+        raise Nested_Cache_Rows_Data_Exception("get_at_location DNE for Nested_Cache_Rows_Data, use get_at()")
 
+    ####
+    #
+    # Update Data Methods
+    #
+    ####
+
+    @Debugger
+    @validate_arguments
+    def update_at(self, position:Union[int,str], data=None):
+
+        locationDict, indexDict = self.getBothDicts(position)
+        locationDict['data'] = data
+        indexDict['data'] = data
+
+        # can get the proper otherLocation from the other dict's position attr
+        # this is an update at action, because we don't want to lose the index:location mapping
+        self._update_at_location(indexDict["position"], locationDict)
+        self._update_at_location(locationDict["position"], indexDict)
+
+    def unset_at_location(*args, **kwargs):
+        raise Nested_Cache_Rows_Data_Exception("unset_at_location DNE for Nested_Cache_Rows_Data, use unset_at()")
 
     ####
     #
@@ -122,11 +176,11 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
         indexDict['data'] = None
         # can get the proper otherLocation from the other dict's position attr
         # this is an update at action, because we don't want to lose the index:location mapping
-        super()._update_at_location(indexDict["position"], locationDict)
-        super()._update_at_location(locationDict["position"], indexDict)
+        self._update_at_location(indexDict["position"], locationDict)
+        self._update_at_location(locationDict["position"], indexDict)
 
     def unset_at_location(*args, **kwargs):
-        raise Nested_Cache_Rows_Data_Exception("unset_at_location is not available for Nested_Cache_Rows_Data, use unset_at")
+        raise Nested_Cache_Rows_Data_Exception("unset_at_location DNE for Nested_Cache_Rows_Data, use unset_at()")
 
     ####
     #
@@ -138,11 +192,11 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
     @validate_arguments
     def remove_position(self, position:Union[int, str]):
         raise Exception("Need to adjust the indexes after the one removed")
-        super()._remove_location(location)
-        super()._remove_location(index)
+        self._remove_location(location)
+        self._remove_location(index)
 
-    def remove_location(self):
-        raise Nested_Cache_Rows_Data_Exception("remove_location is not available for Nested_Cache_Rows_Data, use remove_position")
+    def remove_location(self, *args, **kwargs):
+        raise Nested_Cache_Rows_Data_Exception("remove_location DNE for Nested_Cache_Rows_Data, use remove_position()")
 
     ####
     #
@@ -153,10 +207,14 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
     @Debugger
     @validate_arguments
     def clear_all(self):
-        for position in self._storage:
-            dataObj = super()._get_at_location(position)
-            dataObj['data'] = None
-            super._update_at_location(position, data)
+        for position in self._storage.getKeys():
+            if type(position) is str: # pick one, doesn't matter, just reducing work by 1/2
+                locationdict, indexdict = self.getBothDicts(position)
+                locationdict['data'] = None
+                indexdict['data'] = None
+                self._update_at_location(position, locationdict)
+                # get the correct index
+                self._update_at_location(locationdict['position'], indexdict)
 
     ####
     #
@@ -167,7 +225,7 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
     @Debugger
     def __str__(self) -> str:
         output = "Nested_Cache_Rows_Data: \n"
-        storageKeys = self._storage.keys()
+        storageKeys = self._storage.getKeys()
         for storageIndex in storageKeys:
             if type(storageIndex) is str:
                 output += "\t{}: {}\n".format(storageIndex, self.get_at(storageIndex))
@@ -180,10 +238,11 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
 
 
     @Debugger
+    @validate_arguments
     def getAsList(self, position:Union[str,int]=None):
         output = []
 
-        storageKeys = self._storage.keys()
+        storageKeys = self._storage.getKeys()
         for storageIndex in storageKeys:
             if type(storageIndex) is int or (None != position and storageIndex == position):
                 output.insert(storageIndex, self.get_at(storageIndex))
@@ -195,16 +254,20 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
 
 
     @Debugger
+    @validate_arguments
     def getAsDict(self, position:Union[str,int]=None):
         output = OrderedDict()
-        storageKeys = self._storage.keys()
+        storageKeys = self._storage.getKeys()
         for storageIndex in storageKeys:
             if type(storageIndex) is str or (None != position and storageIndex == position):
                 output[storageIndex] = self.get_at(storageIndex)
         return output
 
+
     @Debugger
     def getAsDictRaw(self):
-        # get everything that we have in the Flat_Cache and return it
-        output = super().getAsDict()
+        output = OrderedDict()
+        storageKeys = self._storage.getKeys()
+        for storageIndex in storageKeys:
+            output[storageIndex] = self.get_at(storageIndex)
         return output

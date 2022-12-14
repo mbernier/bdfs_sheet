@@ -1,4 +1,4 @@
-import sys, pytest
+import sys, pytest, pydantic
 from collections import OrderedDict
 from modules.caches.nested_cache.rows.location import Nested_Cache_Rows_Location
 from modules.caches.exception import Nested_Cache_Rows_Location_Exception
@@ -63,9 +63,10 @@ def test_add_location_that_exists():
 # add something that isn't a string
 def test_add_not_string():
     row = Nested_Cache_Rows_Location(testData)
-    with pytest.raises(Validation_Exception) as excinfo:
-        row.add_at([1,2,3])
-    assert "location was expected to be type str, but <class 'list'> was found for method add_at" in excinfo.value.message
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
+        row.add_at([1,2,4])
+    assert "value is not a valid integer" in str(excinfo.value)
+
 
 ####
 #
@@ -122,7 +123,7 @@ def test_set_dne_location():
 
     row.set_at("six", 6)
     assert ['one', 'two', 'three', 'four', 'five', 'six'] == row.getAsList()
-    assert OrderedDict([('one', 0), ('two', 1), ('three', 2), ('four', 3), ('five', 5), ('six', 6)]) == row.getAsDict()
+    assert OrderedDict([('one', 0), ('two', 1), ('three', 2), ('four', 3), ('five', 5), ('six', '6')]) == row.getAsDict()
 
 
 ####

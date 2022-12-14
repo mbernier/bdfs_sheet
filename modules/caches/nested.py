@@ -18,7 +18,7 @@ from pydantic.typing import Annotated
 
 # for validating items that can be either int/str
 class str_list(str, Enum):
-    str="str"
+    str="str" 
     list="list"
 
 # effectively a list of Flat Caches, allows for better control over the data and how it is stored/accessed
@@ -169,9 +169,10 @@ class Nested_Cache(BdfsCache):
     def __setRow(self, row:Annotated[int, Field(gt=0)], position:Union[int,str], data=None):
 
         self.validation_rowExists(row)
+        location, index = self.__getLocationIndex(position=position)
 
         try:
-            self._storage[row].set_at(position=position, data=data)
+            self._storage[row].set_at(location=location, index=index, data=data)
         except Flat_Cache_Exception:
             raise Nested_Cache_Exception("There is already data at row:{} position:{}, to change this data use update(row, location/index, data)".format(row, position))
 

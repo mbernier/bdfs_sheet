@@ -13,6 +13,8 @@ from typing import Union
 class Flat_Cache_Data(PydanticBaseModel):
     storage:dict = Field(default_factory=dict)
 
+raise Exception("this is confusing - use insert, update, delete instead of set, get, add, remove. Insert can go if Null, Update otherwise, Delete deletes. Update to unset a field, delete to remove a row")
+
 class Flat_Cache(BdfsCache):
 
     ####
@@ -33,15 +35,15 @@ class Flat_Cache(BdfsCache):
                 self.set_at_location(index, value)
 
 
-    # put data in a location if it doesn't have that data, if it does, error out
+    # put data in a location if it doesn't have data, if it does, error out
     @Debugger
     @validate_arguments(config=dict(smart_union=True))
     def set_at_location(self, location: Union[int,str], data=None):
+        print(f"FC: location: {location}, data: {self.get_at_location(location)}")
         if None == self.get_at_location(location):
             self.write(location=location, data=data)
         else:
             raise Flat_Cache_Exception("Flat_Cache has '{}' at location: {}. To update data in the cache, use update_at_location()".format(self.get_at_location(location), location))
-
 
     # remove the data from the location, but keep the location index
     @Debugger
@@ -74,7 +76,7 @@ class Flat_Cache(BdfsCache):
     # returns a list of keys from the storage dict
     @Debugger
     def getKeys(self):
-        self.data.storage.keys()
+        return self.data.storage.keys()
 
 
     # write data to the cache location

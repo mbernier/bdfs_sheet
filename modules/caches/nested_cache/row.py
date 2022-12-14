@@ -49,9 +49,11 @@ class Nested_Cache_Row(BaseClass):
     def add_at_location(*args, **kwargs):
         raise Nested_Cache_Row_Exception("add_at_location is not available for Nested_Cache_Row")
 
-
+    # this can be used for either row or child classes, so it can be an int or a str
+    @Debugger
+    @validate_arguments
     def _add_at_location(self, location:Union[int,str], data=None):
-        self._storage.add_at_location(location=location, data=data)
+        self._storage.set_at_location(location=location, data=data)
 
 
     @Debugger
@@ -62,24 +64,26 @@ class Nested_Cache_Row(BaseClass):
 
     @Debugger
     @validate_arguments # can be an index or a location string
-    def get_at(self, position:int):
-        return self._get_at_location(position)
+    def get_at(self, index:int):
+        return self._get_at_location(index)
 
 
     def get_at_location(*args, **kwargs):
         raise Nested_Cache_Row_Exception("get_at_location is not available for Nested_Cache_Row")
 
-
+    # this can be used for either row or child classes, so it can be an int or a str
+    @Debugger
+    @validate_arguments
     def _get_at_location(self, location:Union[int,str]):
-        return self._storage.get_at_location(location=location)
-
+        data = self._storage.get_at_location(location=location)
+        print(f"row::data: {data}")
+        return data
 
     @Debugger
     @validate_arguments # index and location must be passed for set, bc the data has to be the same
     def set_at(self, index:int, data=None):
         try:
             self._set_at_location(location=index, data=data)
-
         except Flat_Cache_Exception as err:
             raise Nested_Cache_Row_Exception(str(err))
 
@@ -87,7 +91,9 @@ class Nested_Cache_Row(BaseClass):
     def set_at_location(*args, **kwargs):
         raise Nested_Cache_Row_Exception("set_at_location is not available for Nested_Cache_Row")
 
-
+    # this can be used for either row or child classes, so it can be an int or a str
+    @Debugger
+    @validate_arguments
     def _set_at_location(self, location:Union[int,str], data=None):
         self._storage.set_at_location(location=location, data=data)
 
@@ -101,13 +107,17 @@ class Nested_Cache_Row(BaseClass):
     @validate_arguments
     def update_at(self, index:int, data=None):
         try:
-            self._update_at_location(index, data)
+            self._update_at_location(location=index, data=data)
         except Flat_Cache_Exception as err:
             raise Nested_Cache_Row_Exception(str(err))
 
     def update_at_location(*args, **kwargs):
         raise Nested_Cache_Row_Exception("update_at_location is not available for Nested_Cache_Row")
 
+
+    # this can be used for either row or child classes, so it can be an int or a str
+    @Debugger
+    @validate_arguments
     def _update_at_location(self, location:Union[int,str], data=None):
         self._storage.update_at_location(location=location, data=data)
 

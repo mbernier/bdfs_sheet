@@ -46,6 +46,8 @@ class Nested_Cache_Rows_Location(Nested_Cache_Row):
             super()._set_at_location(self.width(), position)
             super()._set_at_location(position, self.width()) # handles both location and index setting
             self._width += 1
+        except Flat_Cache_Exception as err:
+            raise Nested_Cache_Rows_Location_Exception(str(err))
         except Nested_Cache_Row_Exception as err:
             raise Nested_Cache_Rows_Location_Exception(str(err))
 
