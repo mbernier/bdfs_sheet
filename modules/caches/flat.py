@@ -13,7 +13,7 @@ from typing import Union
 class Flat_Cache_Data(PydanticBaseModel):
     storage:dict = Field(default_factory=dict)
 
-raise Exception("this is confusing - use insert, update, delete instead of set, get, add, remove. Insert can go if Null, Update otherwise, Delete deletes. Update to unset a field, delete to remove a row")
+raise Exception("this is confusing - use insert, update, delete, select instead of set, get, add, remove. Insert can go if Null, Update otherwise, Delete deletes. Update to unset a field, delete to remove a row")
 
 class Flat_Cache(BdfsCache):
 
