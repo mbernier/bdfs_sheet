@@ -19,53 +19,6 @@ class Nested_Cache_Rows_Data(Nested_Cache_Row):
 
     ####
     #
-    # Helper methods, bc data is stored in two places in Nested_Cache_Rows_Data
-    #
-    ####
-    @Debugger
-    @validate_arguments
-    def createDataDicts(self, location:str, index:int, data=None):
-
-        locationData = {
-            "position": index,
-            "data": data
-        }
-
-        indexData = {
-            "position": location,
-            "data": data 
-        }
-
-        return locationData, indexData
-
-    @Debugger
-    @validate_arguments
-    def getBothDicts(self, position:Union[int, str]):
-        dict1 = super()._get_at_location(position)
-        
-        # we don't have anything here to return, we can't create a data dict either bc we only have position
-        if dict1 == None:
-            return None, None
-
-        dict2 = super()._get_at_location(dict1["position"])
-
-        locationDict = dict1 if type(dict1["position"]) is int else dict2
-        indexDict = dict2 if dict1 == locationDict else dict1
-
-        return locationDict, indexDict
-
-    @Debugger
-    @validate_arguments
-    def getOtherPosition(self, position:Union[int, str]):
-        dict1 = super()._get_at_location(position)
-
-        locationPosition = position if type(position) is str else dict1["position"]
-        indexPosition = dict1["position"] if position == locationPosition else position
-
-        return locationPosition, indexPosition
-
-    ####
-    #
     # Add Data Methods
     #
     ####

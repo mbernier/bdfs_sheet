@@ -11,7 +11,7 @@ from typing import Union
 
 # stores everything by index, so that we don't have to keep track of the headers
 #   Header management can be handled by the Nested_Cache class
-class Nested_Cache_Row(BaseClass):
+class Nested_Cache_Row(Flat_Cache):
 
     _storage = None
 

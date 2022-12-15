@@ -6,7 +6,7 @@ from modules.caches.nested import Nested_Cache
 from modules.caches.exception import Nested_Cache_Exception
 from modules.caches.exception import Flat_Cache_Exception
 
-#raise Exception("Need to test with new Data Row functionality replacing original functionality")
+raise Exception("Need to test with new Data Row functionality replacing original functionality")
 
 def test_cache_creation():
      cache = Nested_Cache([], [])
