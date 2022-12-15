@@ -23,28 +23,29 @@ class Flat_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def __init__(self, locations:OrderedDict=None, data:list=None):
+    def __init__(self, locations:list=None, data:list=None):
         
         self.data = Flat_Cache_Data()
         
         if None != locations: # locations are set    
             self.load_locations(locations=locations)
 
-            if None != initdata: # initdata is set
+            if None != data: # initdata is set
                 self.load(data=data)
         
-        elif None != initdata: # locations are not set and initdata is set
+        elif None != data: # locations are not set and initdata is set
             raise Flat_Cache_Exception("Need locations in order to load data to Flat_Cache")
 
 
     @Debugger
     @validate_arguments
-    def load_locations(self, locations:OrderedDict):
+    def load_locations(self, locations:list):
         if len(self.getKeys()) > 0:
             raise Flat_Cache_Exception("Locations are already loaded, to add new keys use add_location(location)")
 
-        for index, location in locations:
+        for location in locations:
             self.add_location(location)
+
 
     @Debugger
     @validate_arguments
@@ -78,13 +79,13 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def getBothDicts(self, position:Union[int, str]):
-        dict1 = super()._get_at_location(position)
+        dict1 = self.data.storage[position]
         
         # we don't have anything here to return, we can't create a data dict either bc we only have position
         if dict1 == None:
             return None, None
 
-        dict2 = super()._get_at_location(dict1["position"])
+        dict2 = self.data.storage[dict1["position"]]
 
         locationDict = dict1 if type(dict1["position"]) is int else dict2
         indexDict = dict2 if dict1 == locationDict else dict1
@@ -155,7 +156,7 @@ class Flat_Cache(BdfsCache):
     def __select_string_keys(self):
         output = {}
         for key in self.getKeys():
-            output[key] = self.get(key)
+            output[key] = self.select(key)
         return output
 
 
@@ -168,6 +169,7 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def delete(self, position:Union[str,int]):
+        self.fail_if_position_dne(position)
         self.__write(position, None)
 
 
@@ -196,11 +198,12 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def __writeSpecial(self, location:str, index:int, data=None):
-        locationDict, indexDict = createDataDicts(self, location=location, index=index, data=data)
+        locationDict, indexDict = self.createDataDicts(location=location, index=index, data=data)
         
-        # set the data to whatever is passed
-        locationDict['data'] = data
-        indexDict['data'] = data
+        if None != data: # it's already set, why set it again?
+            # set the data to whatever is passed
+            locationDict['data'] = data
+            indexDict['data'] = data
 
         # write the data to storage
         self.data.storage[location] = locationDict
@@ -221,7 +224,7 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def fail_if_position_dne(self, position:Union[int,str]):
-        if not self.locationExists(position):
+        if not self.positionExists(position):
             raise Flat_Cache_Exception("Location '{}' does not exist, try \"add_location('{}')\"".format(position, position))
 
 
@@ -229,19 +232,17 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def add_location(self, location: Union[int,str]):
-        if self.locationExists(location):
+        if self.positionExists(location):
             raise Flat_Cache_Exception("Location '{}' alread exists".format(location))
         else:
-            locationDict, indexDict = self.createDataDicts(location, self.size(), None)
-            self.data.storage[location] = locationDict
-            self.data.storage[index] = indexDict
+            self.__writeSpecial(location=location, index=self.size(), data=None)
 
 
     # remove a location from storage
     @Debugger
     @validate_arguments
     def remove_location(self, position: Union[int,str]):
-        self.fail_if_location_dne(location)
+        self.fail_if_position_dne(position)
 
         # cache the data locally just in case
         removeLocationDict, removeIndexDict = self.getBothDicts(position)
@@ -253,7 +254,7 @@ class Flat_Cache(BdfsCache):
         del self.data.storage[removeIndex]
 
         # update the indexes after the removed index
-        for changeIndex in range(removeIndex+1, self.size()):
+        for changeIndex in range(removeIndex+1, self.size()+1):
             # shift the index to one position lower
             changeIndexTo = changeIndex - 1
 
@@ -264,11 +265,11 @@ class Flat_Cache(BdfsCache):
     @validate_arguments
     def update_index(self, oldIndex, newIndex):
 
-        if self.locationExists(newIndex):
+        if self.positionExists(newIndex):
             raise Flat_Cache_Exception(f"Cannot move index:{oldIndex} to index:{newIndex} bc there is already data at index:{newIndex}")
 
         # get whatever we have at the original Index
-        indexDict = self.select(oldIndex)
+        locationDict, indexDict = self.getBothDicts(oldIndex)
 
         # delete the item at the oldIndex, so that we don't have two copies
         del self.data.storage[oldIndex]
@@ -282,7 +283,6 @@ class Flat_Cache(BdfsCache):
     # Clear Data
     #
     ####
-
 
     # clears the entire cache
     @Debugger
@@ -302,10 +302,11 @@ class Flat_Cache(BdfsCache):
     def getKeys(self, all:bool=False):
         output = []
         for key in self.data.storage.keys():
-            if False == all and type(key) is str: # by default we return the strings
+            if True == all:
                 output.append(key)
-            else: # if asked, we can return the strings and integer keys
+            elif type(key) is str: # by default we return the strings
                 output.append(key)
+                
         return output
 
 
