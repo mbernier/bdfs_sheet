@@ -49,9 +49,11 @@ if __name__ == "__main__":
     row = Nested_Cache_Rows_Location(testData)
     print(row.getLocationIndex(1))
 
-    finish:
-        test location
-        test data
-        test nested
-        run all tests
+@TODO list:
+    [x] flat cache -> SQL
+    [] row ->SQL (is this == flat_cache?)
+    [] lcoation row -> SQL
+    [] data row -> SQL
+    [] nested->SQL
+
         
