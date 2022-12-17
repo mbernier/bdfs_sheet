@@ -1,4 +1,4 @@
-import pytest
+import pytest, pydantic
 
 from modules import caches
 from modules.caches.flat import Flat_Cache
@@ -9,33 +9,52 @@ from modules.caches.exception import Flat_Cache_Exception
 def test_cache_creation():
      cache = Nested_Cache([], [])
      assert cache != None
-     assert cache.getAsListOfLists() == [[]]
+     assert cache.getAsListOfLists() == []
 
 
 def test_empty_cache_select():
     cache = Nested_Cache([], [])
-    value = cache.select(row=0,position="test")
-    assert value == None
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        value = cache.select(row=0,position="test")
+    assert excinfo.value.message == "Row 0 doesn't exist, to add it use insert(rowData)"
 
-def test_empty_cache_cache_select():
+def test_empty_cache_select2():
     cache = Nested_Cache([], [])
+
+    with pytest.raises(Flat_Cache_Exception) as excinfo:
+        cache.insert([1])
+    assert excinfo.value.message == "Location '0' does not exist, try \"add_location('0')\""
+
+    cache.add_location("test")
+
+    assert cache.height() == 0
+    
+    cache.insert([1])
+
+    cache.select(0, "test")
+
     value = cache.select(0, "test")
-    assert value == None
+    
 
 
 def test_cache_trySetOnNewRow():
     cache = Nested_Cache(['a'],[[1]])
-    with pytest.raises(Nested_Cache_Exception) as excinfo:
+
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.insert(1, position="a", data=1)
-    assert excinfo.value.message == "Row 2 doesn't exist, to add it use appendRow()"
+    assert "unexpected keyword arguments: 'position', 'data' (type=type_error)" in str(excinfo.value)
+
     value = cache.select(0, "a")
-    assert value == None
+
+    assert value == 1
+
 
 def test_cache_trysetOnNewRow2():
     cache = Nested_Cache(['a'],[[1]])
-    with pytest.raises(Nested_Cache_Exception) as excinfo:
+
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.insert(row=1, position="a", data=1)
-    assert excinfo.value.message == "Row 1 doesn't exist, to add it use appendRow()"
+    assert "unexpected keyword arguments: 'row', 'position', 'data' (type=type_error)" in str(excinfo.value)
     
     cache.insert([1])
 
@@ -47,19 +66,19 @@ def test_cache_set_again():
     cache = Nested_Cache(['a'],[[2]])
     value = cache.select(0, "a")
 
-    with pytest.raises(Nested_Cache_Exception) as excinfo:
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.insert(0, "a", 1)
-    assert excinfo.value.message == "There is already data at row:1 location:a/index:0, to change this data use update(row, location/index, data)"
+    assert "2 positional arguments expected but 4 given (type=type_error)" in str(excinfo.value)
 
 
 def test_cache_set_again2():
     cache = Nested_Cache(["a"],[[2]])
-    value = cache.select(position="a", row=1)
+    value = cache.select(position="a", row=0)
 
-    with pytest.raises(Nested_Cache_Exception) as excinfo:
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.insert(row=0, position="a", data=1)
     # assert excinfo.value.message == "Nested_Cache has 2 at a. To update data in the cache, use update()"
-    assert excinfo.value.message == "There is already data at row:1 location:a/index:0, to change this data use update(row, location/index, data)"
+    assert "unexpected keyword arguments: 'row', 'position', 'data' (type=type_error)" in str(excinfo.value)
 
 
 def test_update():

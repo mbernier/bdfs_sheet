@@ -3,7 +3,7 @@ from collections import OrderedDict
 from enum import Enum, IntEnum
 from modules.cache import BdfsCache
 from modules.caches.flat import Flat_Cache
-from modules.caches.nested_cache.rows.data import Nested_Cache_Rows_Data
+from modules.caches.nested_cache.row import Nested_Cache_Row
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
 from modules.config import config
 from modules.decorator import Debugger
@@ -68,10 +68,19 @@ class Nested_Cache(BdfsCache):
 
     # do we know about this location?
     @Debugger
-    def locationExists(self, position: Union[int,str]):
+    @validate_arguments
+    def locationExists(self, position: Union[int,str])->Union[int,str]:
         # just check the first row for the key
         return position in self._storage[0].getKeys(all=True)
 
+
+    @Debugger
+    @validate_arguments
+    def add_location(self, position: Union[int,str]):
+        self._locations.append(position)
+        if self.height() > 0:
+            for row in self._storage:
+                self._storage[row].add_location(position)
 
     ####
     #
@@ -122,7 +131,8 @@ class Nested_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def insert(self, rowData:list=None):
-        newRow = Nested_Cache_Rows_Data(self.getLocations(), rowData)
+        print(self.getLocations())
+        newRow = Nested_Cache_Row(self.getLocations(), rowData)
         self._storage.append(newRow)
         Logger.info("Height: {}".format(self.height()))
         self.__increaseHeight()
@@ -234,7 +244,7 @@ class Nested_Cache(BdfsCache):
 
 
     @Debugger
-    def width(self):
+    def width(self) -> int:
         return self._storage[0].width()
 
 
@@ -245,7 +255,7 @@ class Nested_Cache(BdfsCache):
 
 
     @Debugger
-    def getAsListOfLists(self):
+    def getAsListOfLists(self) -> list:
         output = []
         for rowindex, row in enumerate(self._storage):
             rowAsList = row.getAsList()
@@ -254,7 +264,7 @@ class Nested_Cache(BdfsCache):
 
 
     @Debugger
-    def getAsListOfDicts(self):
+    def getAsListOfDicts(self) -> list[dict]:
         output = []
         for index, row in enumerate(self._storage):
             rowAsDict = row.getAsDict()
@@ -269,7 +279,7 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def validation_locationExists(self, location:str):
+    def validation_locationExists(self, location:str) -> bool:
         Logger.validation_method_debug("validation_locationExists", locals())
         if not self.locationExists(location):
             raise Nested_Cache_Exception("Location '{}' doesn't exist, to add it use addLocation(location)".format(location))
@@ -278,7 +288,7 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def validation_indexExists(self, index:int):
+    def validation_indexExists(self, index:int) -> bool:
         Logger.validation_method_debug("validation_indexExists", locals())
         if not self.locationExists(index):
             raise Nested_Cache_Exception("Index '{}' doesn't exist, to add it use addLocation(location)".format(index))
@@ -287,8 +297,8 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def validation_rowExists(self, row:Annotated[int, Field(gt=-1)]):
+    def validation_rowExists(self, row:Annotated[int, Field(gt=-1)]) -> bool:
         Logger.validation_method_debug("validation_rowExists", locals())
         if not self.rowExists(row):
-            raise Nested_Cache_Exception("Row {} doesn't exist, to add it use appendRow()".format(row))
+            raise Nested_Cache_Exception("Row {} doesn't exist, to add it use insert(rowData)".format(row))
         return True

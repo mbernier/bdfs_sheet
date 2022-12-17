@@ -56,7 +56,7 @@ class Flat_Cache(BdfsCache):
 
     ####
     #
-    # Helper methods, bc data is stored in two places in Nested_Cache_Rows_Data
+    # Helper methods, bc data is stored in two places in Nested_Cache_Row
     #
     ####
 
