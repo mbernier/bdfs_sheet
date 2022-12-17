@@ -17,85 +17,41 @@ class Nested_Cache_Row(Flat_Cache):
 
     @Debugger
     @validate_arguments
-    def __init__(self, data:list=None):
-        self.load(data)
+    def __init__(self, headers:list=None, data:list=None):
+        self.load(headers, data)
 
 
     @Debugger
     @validate_arguments
-    def load(self, data:list=None):
-        data = self.__prepData(data)
-        self._storage = Flat_Cache(data)
+    def load(self, headers:list=None, data:list=None):
+        self._storage = Flat_Cache(headers, data)
 
+
+    #insert with index=None is the same as appending to the end
     @Debugger
     @validate_arguments
-    def __prepData(self, data:list=None):
-
-        if None == data:
-            return {}
-
-        return {i: data[i] for i in range(0, len(data))}
-
-
-    @Debugger
-    @validate_arguments
-    def add_at(self, index:int, data=None):
+    def insert(self, position:Union[int,str]=None, data=None):
         try:
-            self._add_at_location(index, data)
+            self._storage.insert(position=position, data=data)
         except Flat_Cache_Exception as err:
             raise Nested_Cache_Row_Exception(str(err))
 
 
-    def add_at_location(*args, **kwargs):
-        raise Nested_Cache_Row_Exception("add_at_location is not available for Nested_Cache_Row")
-
-    # this can be used for either row or child classes, so it can be an int or a str
-    @Debugger
-    @validate_arguments
-    def _add_at_location(self, location:Union[int,str], data=None):
-        self._storage.set_at_location(location=location, data=data)
-
-
-    @Debugger
-    @validate_arguments
-    def append(self, data=None):
-        self._storage.set_at_location(self.width(),data)
-
-
+    #index=None means get all
     @Debugger
     @validate_arguments # can be an index or a location string
-    def get_at(self, index:int):
-        return self._get_at_location(index)
-
-
-    def get_at_location(*args, **kwargs):
-        raise Nested_Cache_Row_Exception("get_at_location is not available for Nested_Cache_Row")
-
-    # this can be used for either row or child classes, so it can be an int or a str
-    @Debugger
-    @validate_arguments
-    def _get_at_location(self, location:Union[int,str]):
-        data = self._storage.get_at_location(location=location)
-        print(f"row::data: {data}")
+    def select(self, position:Union[int,str]=None):
+        data = self._storage.select(position=position)
         return data
+
 
     @Debugger
     @validate_arguments # index and location must be passed for set, bc the data has to be the same
-    def set_at(self, index:int, data=None):
+    def update(self, position:Union[int,str], data=None):
         try:
-            self._set_at_location(location=index, data=data)
+            self._storage.update(position=position, data=data)
         except Flat_Cache_Exception as err:
             raise Nested_Cache_Row_Exception(str(err))
-
-
-    def set_at_location(*args, **kwargs):
-        raise Nested_Cache_Row_Exception("set_at_location is not available for Nested_Cache_Row")
-
-    # this can be used for either row or child classes, so it can be an int or a str
-    @Debugger
-    @validate_arguments
-    def _set_at_location(self, location:Union[int,str], data=None):
-        self._storage.set_at_location(location=location, data=data)
 
 
     @Debugger
@@ -103,26 +59,10 @@ class Nested_Cache_Row(Flat_Cache):
     def width(self):
         return self._storage.size()
 
-    @Debugger
-    @validate_arguments
-    def update_at(self, index:int, data=None):
-        try:
-            self._update_at_location(location=index, data=data)
-        except Flat_Cache_Exception as err:
-            raise Nested_Cache_Row_Exception(str(err))
-
-    def update_at_location(*args, **kwargs):
-        raise Nested_Cache_Row_Exception("update_at_location is not available for Nested_Cache_Row")
-
-
-    # this can be used for either row or child classes, so it can be an int or a str
-    @Debugger
-    @validate_arguments
-    def _update_at_location(self, location:Union[int,str], data=None):
-        self._storage.update_at_location(location=location, data=data)
 
     def getAsList(self):
         return self._storage.getAsList()
+
 
     def getAsDict(self):
         return self._storage.getAsDict()

@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
 @TODO list:
     [x] flat cache -> SQL
-    [] row ->SQL (is this == flat_cache?)
+    [x] row ->SQL (is this == flat_cache?)
     [] lcoation row -> SQL
     [] data row -> SQL
     [] nested->SQL
