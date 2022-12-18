@@ -41,19 +41,8 @@ if __name__ == "__main__":
     # run.main(sys.argv[1:]) 
 
 
-    # sheet = BdfsInventory_Test_Spreadsheet() 
-    # test_worksheet = sheet.getWorksheet('test_easy_data')
-    # test_worksheet.gspread_worksheet_resize_to_data()
-    
-    testData = ["one", "two", "three", "four"]
-    row = Nested_Cache_Rows_Location(testData)
-    print(row.getLocationIndex(1))
-
-@TODO list:
-    [x] flat cache -> SQL
-    [x] row ->SQL (is this == flat_cache?)
-    [] lcoation row -> SQL
-    [] data row -> SQL
-    [] nested->SQL
+    sheet = BdfsInventory_Test_Spreadsheet() 
+    test_worksheet = sheet.getWorksheet('test_easy_data')
+    test_worksheet.gspread_worksheet_resize_to_data()
 
         
