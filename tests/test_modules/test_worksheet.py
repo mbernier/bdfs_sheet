@@ -125,3 +125,10 @@ def test_addColumns():
 def test_commit():
     #pushes all the changes we have make to the sheet
     test_worksheet.commit()
+
+def test_commit_with_larger_data():
+    # the worksheet is only 5 columns wide right now, let's see what happens if we add a lot more data
+    test_worksheet.addColumn("newColumn4")
+    test_worksheet.addColumn("newColumn5")
+    test_worksheet.addColumn("newColumn6")
+    test_worksheet.commit()

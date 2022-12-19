@@ -211,6 +211,7 @@ class Bdfs_Worksheet(BaseClass):
 
             # Logger.debug("Updating the spreadsheet with this data: ", batch_update)
             # do a batch update, because doing this one column at a time hit the rate limits super fast
+            # also, because we are sending in the data range of our local data, we can go outside the worksheet's data range!
             self.data.gspread_worksheet.batch_update(batch_update)
             # reset the flag, in case we do other things
             self.changed('data', False)
