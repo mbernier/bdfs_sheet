@@ -11,6 +11,10 @@ For each sheet, the core classes will do the following:
     a. if it does not, it will create them in the local data
 3. If there were changes, it will commit them to the google sheet - we track what changed on any methods that change data, so we only commit if legit changes were made
 
+To do:
+
+
+
 
 
 From there, we will be able to pull the data and do things with it as needed (such as update multiple Shopify sites, update Juniper wholesale system, etc)
