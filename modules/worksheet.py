@@ -183,7 +183,8 @@ class Bdfs_Worksheet(BaseClass):
     # 'update_note', 
     # 'updated',   
 
-    # write the data out to the google worksheet
+    # overwrites whatever is in the sheet with the local storage data we have
+    #   does not give a fuck what is in the worksheet, it will clear it before writing
     @Debugger
     def commit(self):
         
@@ -209,7 +210,9 @@ class Bdfs_Worksheet(BaseClass):
                 'values': [headers]+values,
             }]
 
-            # Logger.debug("Updating the spreadsheet with this data: ", batch_update)
+            # kill the data in the sheet, so that we are not writing into data that is differently sized than our current local data
+            self.data.gspread_worksheet.clear()
+
             # do a batch update, because doing this one column at a time hit the rate limits super fast
             # also, because we are sending in the data range of our local data, we can go outside the worksheet's data range!
             self.data.gspread_worksheet.batch_update(batch_update)
