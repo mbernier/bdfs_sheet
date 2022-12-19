@@ -1,7 +1,6 @@
 import gspread, sys
 from dataclasses import dataclass, field as dc_field
 from collections import OrderedDict
-from pprint import pprint 
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import utils as gspread_utils
 from gspread.worksheet import Worksheet
@@ -10,7 +9,7 @@ from modules.decorator import Debugger
 from modules.logger import Logger
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
-from pydantic import Field, validate_arguments
+from pydantic import validate_arguments
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -101,22 +100,6 @@ class Bdfs_Worksheet(BaseClass):
             raise Bdfs_Worksheet_Exception(f"there is no {index} in data.changes, add it to __setup() to track it")
 
 
-    #shitty method to allow quick running of code from here
-    def playground(self):
-        Logger.info("# of columns in worksheet: {}".format(self.__getWorksheetColumnCount()))
-        Logger.info("# of columns in dataStore: {}".format(self.getColumnCount()))
-
-        # we don't need to remove the empty columns at the end, because we already pulled the data
-        #   and we will commit what we want to keep, so we don't need to clean up the sheet we only need
-        #   to keep the local data clean.      
-        # self.removeEmptyColumnsTrailing()
-
-        # @todo make sure that any data that gets updated in the data object have their "updated_date" field changed to time.now()
-
-
-
-
-
     ####
     #
     # gSpread worksheet accessor methods - all private
@@ -183,7 +166,8 @@ class Bdfs_Worksheet(BaseClass):
     #will return something like -- "A1:CT356"
     @Debugger
     def getDataRange(self) -> str: #tested
-        return f"{self.getA1(1,1)}:{self.getA1(self.width(), self.height())}"
+        dataRange = f"{self.getA1(1,1)}:{self.getA1(self.height()+1, self.width())}"
+        return dataRange
 
 
     ####
@@ -202,12 +186,10 @@ class Bdfs_Worksheet(BaseClass):
     # write the data out to the google worksheet
     @Debugger
     def commit(self):
-
-        worksheet = self.__getWorksheetObj()
-
+        
         # if the title is changed, push it
         if self.isChanged('title') == True:
-            worksheet.update_title(self.getTitle())
+            self.data.gspread_worksheet.update_title(self.getTitle())
             # reset the flag, in case we do other things
             self.changed('title', False)
         
@@ -219,15 +201,17 @@ class Bdfs_Worksheet(BaseClass):
             # get the meta about our new data to commit
             dataRange = self.getDataRange()
 
+            headers = self.getColumns()
             values = self.getDataAsListOfLists()
 
             batch_update = [{
                 'range': dataRange,
-                'values': values,
+                'values': [headers]+values,
             }]
-            Logger.debug("Updating the spreadsheet with this data: ", batch_update)
+
+            # Logger.debug("Updating the spreadsheet with this data: ", batch_update)
             # do a batch update, because doing this one column at a time hit the rate limits super fast
-            worksheet.batch_update(batch_update)
+            self.data.gspread_worksheet.batch_update(batch_update)
             # reset the flag, in case we do other things
             self.changed('data', False)
 
@@ -317,7 +301,6 @@ class Bdfs_Worksheet(BaseClass):
     @validate_arguments
     def addColumn(self, name:str, index:int=None):
         self.getData()
-        print(self.getDataAsListOfLists())
         # will handle adding at the end or the index, depending on what's passed
         self.data.sheetData.addHeader(name=name, index=index)
         self.changed("data")
@@ -328,7 +311,7 @@ class Bdfs_Worksheet(BaseClass):
     @validate_arguments
     def removeColumns(self, column:int=None, start:int=None, stop:int=None):
         self.getData()
-        print("remove_columns is not built or tested yet")
+        raise Exception("remove_columns is not built or tested yet")
 
 
     ####

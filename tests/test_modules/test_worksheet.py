@@ -2,6 +2,7 @@ import sys, gspread
 from modules.spreadsheets.bdfs_test import BdfsInventory_Test_Spreadsheet
 
 worksheetName = "test_easy_data"
+renameWorksheetName = "test_easy_data_new_title"
 copyFromWorksheetName = "demo_worksheet"
 
 
@@ -21,8 +22,17 @@ try:
     testWorksheetExists = spreadsheet.worksheet(worksheetName)
     print(f"Worksheet: {worksheetName} found, deleting it")
     spreadsheet.del_worksheet(testWorksheetExists)
+
 except gspread.exceptions.WorksheetNotFound:
     print(f"Worksheet: {worksheetName} isn't found, creating it")
+
+try:
+    testWorksheetExists = spreadsheet.worksheet(renameWorksheetName)
+    print(f"Worksheet: {renameWorksheetName} found, deleting it")
+    spreadsheet.del_worksheet(testWorksheetExists)
+
+except gspread.exceptions.WorksheetNotFound:
+    print(f"Worksheet: {renameWorksheetName} wasn't found, isn't that nice!")
 
 worksheet1 = spreadsheet.worksheet(copyFromWorksheetName)
 worksheet2 = worksheet1.duplicate(1, None, worksheetName)
@@ -80,7 +90,7 @@ def test_getA1():
 
 def test_getDataRange():
     dataRange = test_worksheet.getDataRange()
-    assert dataRange == "A1:C3"
+    assert dataRange == "A1:C4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
 
 def test_getExpectedColumns():
@@ -107,8 +117,11 @@ def test_getColumnCounts():
 def test_addColumns():
     
     test_worksheet.addColumn("newColumn1")
-    assert test_worksheet.getExpectedColumns() == ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 'Color', 'UnitedPorte URL', 'Image 1 URL', 'Image 1 SEO', 'Image 2 URL', 'Image 2 SEO', 'Image 3 URL', 'Image 3 SEO', 'Image 4 URL', 'Image 4 SEO', 'Image 5 URL', 'Image 5 SEO', 'Description', 'newColumn1']
+    assert test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn1']
 
     test_worksheet.addColumn(name="newColumn3", index=3)
-    assert test_worksheet.getExpectedColumns() == ['Updated Date', 'Title', 'Hardware', 'newColumn3', 'Published', 'Type', 'On BDFS?', 'Vendor', 'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 'Color', 'UnitedPorte URL', 'Image 1 URL', 'Image 1 SEO', 'Image 2 URL', 'Image 2 SEO', 'Image 3 URL', 'Image 3 SEO', 'Image 4 URL', 'Image 4 SEO', 'Image 5 URL', 'Image 5 SEO', 'Description']
+    assert test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'newColumn1']
     
+def test_commit():
+    #pushes all the changes we have make to the sheet
+    test_worksheet.commit()

@@ -4,7 +4,6 @@ from modules.base import BaseClass
 from modules.caches.nested import Nested_Cache
 from modules.logger import Logger, logger_name
 from modules.worksheets.exception import Bdfs_Worksheet_Data_Exception
-from pprint import pprint
 from modules.decorator import Debugger
 from pydantic import validate_arguments
 
@@ -214,7 +213,7 @@ class Bdfs_Worksheet_Data(BaseClass):
         self.__appendRemovedHeader(header)
 
         # make sure to clean up the location storage
-        self.__removeHeaderFrom_sheetData(index=index, name=headerName)
+        self.__removeHeaderFrom_sheetData(index=index, name=header)
 
     @Debugger
     @validate_arguments

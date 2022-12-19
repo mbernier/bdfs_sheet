@@ -134,7 +134,7 @@ class Nested_Cache(BdfsCache):
             raise Nested_Cache_Exception(f"Column Name: '{location}' already exists")
 
         if self.height() > 0:
-            for row in range(0,self.height()):
+            for row in range(0, self.height()):
                 self._storage[row].insert_location(position=location, index=index)
 
         # Update the _locations list

@@ -214,7 +214,7 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def positionExists(self, position: Union[int,str]):
-        print(self.data)
+        
         return (position in self.data.storage.keys()) # use the storage object here, to prevent excess looping through keys
 
 
@@ -240,14 +240,11 @@ class Flat_Cache(BdfsCache):
     @validate_arguments
     def delete_location(self, position: Union[int,str]):
         self.fail_if_position_dne(position)
-        print(f"position: {position}")
+        
         # cache the data locally just in case
         removeLocationDict, removeIndexDict = self.getBothDicts(position)
         removeLocation = removeIndexDict['position']
         removeIndex = removeLocationDict['position']
-        
-        print(f"removeLocation: {removeLocation}")
-        print(f"removeIndex: {removeIndex}")
 
         # remove the old locations from storage
         del self.data.storage[removeLocation]
@@ -273,12 +270,11 @@ class Flat_Cache(BdfsCache):
             # if we shift 3->4 first, then we overwrite 4 and 5 to 3
             rangeToShift = reversed(rangeToShift)
             
-        print("\n")
         # update the indexes after the removed index
         for changeIndex in rangeToShift:
             # shift the index to one position lower
             changeIndexTo = changeIndex + shiftBy
-            print(f"{changeIndex} -> {changeIndexTo}")
+            
             # allows us to migrate to a new index
             self.update_index(changeIndex, changeIndexTo)
 
@@ -286,8 +282,7 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def insert_location(self, position:str, index:int=None):
-        print("\n\nFlat:Insert_location")
-        print(self.data)
+        
         if self.positionExists(position):
             raise Flat_Cache_Exception(f"Position '{position}' already exists, you cannot insert a new location to Flat_Cache that already exists")
     
@@ -305,12 +300,10 @@ class Flat_Cache(BdfsCache):
         # we put the location in with None as the data
         self.__writeSpecial(location=position, index=index, data=None)
         self.increaseSize()
-        
 
     @Debugger
     @validate_arguments
     def update_index(self, oldIndex, newIndex):
-        print(f"oldIndex: {oldIndex}, newIndex: {newIndex}")
         if self.positionExists(newIndex):
             raise Flat_Cache_Exception(f"Cannot move index:{oldIndex} to index:{newIndex} bc there is already data at index:{newIndex}")
 
@@ -358,7 +351,7 @@ class Flat_Cache(BdfsCache):
             raise Flat_Cache_Exception(f"Flat Cache can output either int or str keys, but not '{keyType}'")
 
         for indexKey in range(0,self.size()):
-            print(f"indexKey: {indexKey}")
+
             if int is keyType or True == all:
                 # append indexKey or 
                 # add the index key first if True == all
@@ -367,7 +360,7 @@ class Flat_Cache(BdfsCache):
             if str is keyType or True == all:
                 # get the string keys in the correct order
                 output.append(self.data.storage[indexKey]['position'])
-        print(f"keys: {output}")
+        
         return output
 
     # self.data.size is managed through the places where we update locations, via increaseSize() and decreaseSize()
