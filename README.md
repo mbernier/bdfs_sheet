@@ -3,6 +3,16 @@ We will use this code to simplify our world more than the original script. The p
 
 This code will rely on the Google Sheet called [BDFS Inventory](https://docs.google.com/spreadsheets/d/1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8/edit#gid=891609024) as the source of truth for the data. Rather than an amazon database (mostly for cost reasons at the moment) being able to swap this out at a later time is part of the reason for the Object Oriented code, that makes it much easier in the future than making changes to the manager code or the CSV logic I wrote previously.
 
+## Sheet Checks:
+For each sheet, the core classes will do the following:
+
+1. Clean up any extra columns from the spreadsheet, because of how gspread python package works (it pulls only the columns up to the last data it can find)
+2. Identify that the sheet has the columns that we are expecting
+    a. if it does not, it will create them in the local data
+3. If there were changes, it will commit them to the google sheet - we track what changed on any methods that change data, so we only commit if legit changes were made
+
+
+
 From there, we will be able to pull the data and do things with it as needed (such as update multiple Shopify sites, update Juniper wholesale system, etc)
 
 This will eventually scale to allow us to do the same for Doors.Forsale, including all of the doors that UnitedPorte provides. If we get another vendor, we can write similar scripts that will allow us to pull data and push it to the systems we care about.

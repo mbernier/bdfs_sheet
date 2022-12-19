@@ -2,15 +2,17 @@
 import sys
 from modules.base import BaseClass
 from modules.caches.nested import Nested_Cache
-from modules.logger import Logger
-from modules.worksheets.exception import WorksheetData_Exception
+from modules.logger import Logger, logger_name
+from modules.worksheets.exception import Bdfs_Worksheet_Data_Exception
 from pprint import pprint
 from modules.decorator import Debugger
 from pydantic import validate_arguments
-class WorksheetData(BaseClass):
+
+logger_name.name = "WorksheetData"
+
+class Bdfs_Worksheet_Data(BaseClass):
 
     dataStore:Nested_Cache = None
-    logger_name = "WorksheetData"
     _emptyHeaderIndexes = []
     _uniqueHeaders = []
     _duplicateHeaders = [] 
@@ -132,6 +134,13 @@ class WorksheetData(BaseClass):
     #
     ####
 
+    @Debugger
+    @validate_arguments
+    def addHeader(self, name:str, index:int=None):
+        # add to the end of the data
+        self.dataStore.insert_location(location=name, index=index)
+
+
     # fancy logic that just calls removeHeader(index)
     # returns the number of headers removed
     @Debugger
@@ -165,7 +174,7 @@ class WorksheetData(BaseClass):
         elif None != header:
             self.__removeHeader_byName(header)
         else:
-            raise WorksheetData_Exception("You must pass either an index or a header to removeHeader()")
+            raise Bdfs_Worksheet_Data_Exception("You must pass either an index or a header to removeHeader()")
 
 
     # removed the header from the headers list
@@ -226,3 +235,11 @@ class WorksheetData(BaseClass):
     @Debugger
     def height(self):
         return self.dataStore.height()
+
+    @Debugger
+    def getAsListOfLists(self):
+        return self.dataStore.getAsListOfLists()
+    
+    @Debugger
+    def getAsListOfDicts(self):
+        return self.dataStore.getAsListOfDicts()

@@ -4,14 +4,13 @@ from modules.cache import BdfsCache
 from modules.caches.exception import Flat_Cache_Exception
 from modules.decorator import Debugger
 from modules.logger import logger_name
-from pprint import pprint
 from pydantic import BaseModel as PydanticBaseModel, Field, validate_arguments
 from pydantic.dataclasses import dataclass
 from typing import Union
 
-
 class Flat_Cache_Data(PydanticBaseModel):
     storage:dict = Field(default_factory=dict)
+    size:int = Field(default_factory=int)
 
 logger_name.name = "Nested_Cache"
 
@@ -42,11 +41,11 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def load_locations(self, locations:list):
-        if len(self.getKeys()) > 0:
-            raise Flat_Cache_Exception("Locations are already loaded, to add new keys use add_location(location)")
+        if self.size() > 0:
+            raise Flat_Cache_Exception("Locations are already loaded, to add new keys use insert_location(location)")
 
         for location in locations:
-            self.add_location(location)
+            self.insert_location(position=location)
 
 
     @Debugger
@@ -81,6 +80,9 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def getBothDicts(self, position:Union[int, str]):
+        
+        self.fail_if_position_dne(position)
+
         dict1 = self.data.storage[position]
         
         # we don't have anything here to return, we can't create a data dict either bc we only have position
@@ -97,9 +99,9 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def getOtherPosition(self, position:Union[int, str]):
-        self.fail_if_location_dne(position)
+        self.fail_if_position_dne(position)
 
-        dict1 = super()._get_at_location(position)
+        dict1 = self.data.storage[position]
 
         locationPosition = position if type(position) is str else dict1["position"]
         indexPosition = dict1["position"] if position == locationPosition else position
@@ -148,18 +150,10 @@ class Flat_Cache(BdfsCache):
     @validate_arguments
     def select(self, position: Union[int,str] = None):
         if None == position:
-            return self.__select_string_keys()
+            return self.getAsDict()
         else:
             self.fail_if_position_dne(position)
             return self.data.storage.get(position)['data']
-
-
-    @Debugger
-    def __select_string_keys(self):
-        output = {}
-        for key in self.getKeys():
-            output[key] = self.select(key)
-        return output
 
 
     ####
@@ -220,63 +214,114 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def positionExists(self, position: Union[int,str]):
-        return (position in self.getKeys(all=True))
+        print(self.data)
+        return (position in self.data.storage.keys()) # use the storage object here, to prevent excess looping through keys
 
 
     @Debugger
     @validate_arguments
     def fail_if_position_dne(self, position:Union[int,str]):
         if not self.positionExists(position):
-            raise Flat_Cache_Exception("Location '{}' does not exist, try \"add_location('{}')\"".format(position, position))
+            raise Flat_Cache_Exception("Location '{}' does not exist, try \"insert_location('{}')\"".format(position, position))        
+    
 
-
-    # add a new location to storage
     @Debugger
-    @validate_arguments
-    def add_location(self, location: Union[int,str]):
-        if self.positionExists(location):
-            raise Flat_Cache_Exception("Location '{}' alread exists".format(location))
-        else:
-            self.__writeSpecial(location=location, index=self.size(), data=None)
+    def increaseSize(self):
+        self.data.size += 1
+    
+
+    @Debugger
+    def decreaseSize(self):
+        self.data.size -= 1
 
 
     # remove a location from storage
     @Debugger
     @validate_arguments
-    def remove_location(self, position: Union[int,str]):
+    def delete_location(self, position: Union[int,str]):
         self.fail_if_position_dne(position)
-
+        print(f"position: {position}")
         # cache the data locally just in case
         removeLocationDict, removeIndexDict = self.getBothDicts(position)
         removeLocation = removeIndexDict['position']
         removeIndex = removeLocationDict['position']
+        
+        print(f"removeLocation: {removeLocation}")
+        print(f"removeIndex: {removeIndex}")
 
         # remove the old locations from storage
         del self.data.storage[removeLocation]
         del self.data.storage[removeIndex]
 
-        # update the indexes after the removed index
-        for changeIndex in range(removeIndex+1, self.size()+1):
-            # shift the index to one position lower
-            changeIndexTo = changeIndex - 1
+        self.__shift_indexes(removeIndex+1, -1)
+        self.decreaseSize()
 
+
+    @Debugger
+    @validate_arguments
+    def __shift_indexes(self, shiftFromIndex:int, shiftBy:int):
+        # we can go from the index to the end, bc we are shifting down
+        # e.g. 3->2, 4->3, 5->4
+        # assumes you don't care about what's in 2, so 3 can replace, then 3 is gone so 4 can replace
+        rangeToShift = range(
+                            shiftFromIndex, 
+                            self.size() # use size+1 here so that we can 
+                        )
+        if shiftBy > 0:
+            # we need to go through from the end to the index, so we don't overwrite data that exists
+            # e.g. 3->4, 4->5, 5->6
+            # if we shift 3->4 first, then we overwrite 4 and 5 to 3
+            rangeToShift = reversed(rangeToShift)
+            
+        print("\n")
+        # update the indexes after the removed index
+        for changeIndex in rangeToShift:
+            # shift the index to one position lower
+            changeIndexTo = changeIndex + shiftBy
+            print(f"{changeIndex} -> {changeIndexTo}")
             # allows us to migrate to a new index
             self.update_index(changeIndex, changeIndexTo)
+
+
+    @Debugger
+    @validate_arguments
+    def insert_location(self, position:str, index:int=None):
+        print("\n\nFlat:Insert_location")
+        print(self.data)
+        if self.positionExists(position):
+            raise Flat_Cache_Exception(f"Position '{position}' already exists, you cannot insert a new location to Flat_Cache that already exists")
+    
+        if None == index or index == self.size():
+            index = self.size()
+        elif index > self.size(): # we have this second, bc if index is None for this, python barfs
+            # we are well beyond the limit
+            # @todo, maybe, allow entering indexes with no positional dataDict and adding checks whenever we retrieve both dicts, to validate whether we have a named dict.
+                # another option would be to add the positional dicts, but as strings of the index dict like "FC_auto:1" and adding checks for "FC_auto", then throwing errors if they don't get fixed
+                # this is a lot of extra work that is not needed right now
+            raise Flat_Cache_Exception(f"index '{index}' is much greater than the current size of Flat_Cache: {self.size()}, try adding items in between {self.size()} and '{index}'")
+        else:
+            self.__shift_indexes(index,1)
+
+        # we put the location in with None as the data
+        self.__writeSpecial(location=position, index=index, data=None)
+        self.increaseSize()
+        
 
     @Debugger
     @validate_arguments
     def update_index(self, oldIndex, newIndex):
-
+        print(f"oldIndex: {oldIndex}, newIndex: {newIndex}")
         if self.positionExists(newIndex):
             raise Flat_Cache_Exception(f"Cannot move index:{oldIndex} to index:{newIndex} bc there is already data at index:{newIndex}")
 
         # get whatever we have at the original Index
         locationDict, indexDict = self.getBothDicts(oldIndex)
 
-        # delete the item at the oldIndex, so that we don't have two copies
+        # delete the old data
         del self.data.storage[oldIndex]
+        del self.data.storage[indexDict['position']]
 
-        #create the item at the newIndex, overwrite the position value of the location item
+        #create the item at the new positions
         self.__writeSpecial(location=indexDict['position'], index=newIndex, data=indexDict['data'])
 
 
@@ -300,21 +345,35 @@ class Flat_Cache(BdfsCache):
 
     # returns a list of the string keys from the storage dict
     @Debugger
-    @validate_arguments
-    def getKeys(self, all:bool=False):
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def getKeys(self, keyType=None, all:bool = False):
         output = []
-        for key in self.data.storage.keys():
-            if True == all:
-                output.append(key)
-            elif type(key) is str: # by default we return the strings
-                output.append(key)
-                
+
+        #pydantic didn't like typing or being passed "types", so changed method sig from keyType:type=str or keyType=str to keyType=None
+        #   and then overloaded the default here
+        if None == keyType:
+            keyType = str
+
+        if not str is keyType and not int is keyType: # we don't have expected types
+            raise Flat_Cache_Exception(f"Flat Cache can output either int or str keys, but not '{keyType}'")
+
+        for indexKey in range(0,self.size()):
+            print(f"indexKey: {indexKey}")
+            if int is keyType or True == all:
+                # append indexKey or 
+                # add the index key first if True == all
+                output.append(indexKey)
+            
+            if str is keyType or True == all:
+                # get the string keys in the correct order
+                output.append(self.data.storage[indexKey]['position'])
+        print(f"keys: {output}")
         return output
 
-
+    # self.data.size is managed through the places where we update locations, via increaseSize() and decreaseSize()
     @Debugger
     def size(self):
-        return len(self.getKeys())
+        return self.data.size
 
 
     @Debugger
@@ -327,17 +386,16 @@ class Flat_Cache(BdfsCache):
 
     @Debugger
     def getAsList(self):
-        data = self.data.storage
         output = []
-        for index in self.getKeys():
+        for index in self.getKeys(keyType=int):
             output.insert(index, self.select(index))
         return output
 
 
     @Debugger
     def getAsDict(self):
-        data = self.data.storage
         output = OrderedDict()
-        for index in self.getKeys():
-            output[index] = self.select(index)
+        for index in self.getKeys(keyType=int): #it really doesn't matter which type you choose here
+            position, index = self.getOtherPosition(index)
+            output[position] = self.select(index)
         return output

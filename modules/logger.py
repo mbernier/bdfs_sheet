@@ -25,10 +25,10 @@ class LoggerName():
     name: str = "Logger"
 
 logger_name = LoggerName()
+print(logger_name.name)
 
 class Logger():
     base_logger_name = "logs"
-    logger_name:str = ""
     logger_configured = False
     output_to_console = False
 
@@ -83,7 +83,7 @@ class Logger():
                 print(msg)
 
     @staticmethod
-    def logger_name():
+    def logger_name() ->str:
         return logger_name.name
 
     # handle prefix and new_lines being added to the string, one call to do everything, reduce repetition above
@@ -96,7 +96,7 @@ class Logger():
             dataBgColor = "on_" + dataBgColor
 
         # add the classname
-        new_msg = Logger.logger_name()
+        new_msg = logger_name.name
         new_msg += ":: " + msg
         msg = new_msg
         

@@ -1,16 +1,10 @@
-import sys, pydantic
-from collections import OrderedDict
-from enum import Enum, IntEnum
 from modules.cache import BdfsCache
 from modules.caches.flat import Flat_Cache
-from modules.caches.nested_cache.row import Nested_Cache_Row
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
-from modules.config import config
 from modules.decorator import Debugger
 from modules.logger import Logger, logger_name
-from modules.validation import Validation
 from typing import Union
-from pydantic import Field, validator, validate_arguments
+from pydantic import Field, validate_arguments
 from pydantic.typing import Annotated
 
 
@@ -51,34 +45,6 @@ class Nested_Cache(BdfsCache):
     def __setup(self, locations:list, data:list):
         for rowData in data:
             self.insert(rowData)
-
-
-    ####
-    #
-    # Location Row functionality
-    #
-    ####
-
-    @Debugger
-    def getLocations(self) -> list:
-        return self._locations
-
-
-    # do we know about this location?
-    @Debugger
-    @validate_arguments
-    def locationExists(self, position: Union[int,str])->Union[int,str]:
-        # just check the first row for the key
-        return position in self._storage[0].getKeys(all=True)
-
-
-    @Debugger
-    @validate_arguments
-    def add_location(self, position: Union[int,str]):
-        self._locations.append(position)
-        if self.height() > 0:
-            for row in self._storage:
-                self._storage[row].add_location(position)
 
     ####
     #
@@ -129,7 +95,7 @@ class Nested_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def insert(self, rowData:list=None):
-        newRow = Nested_Cache_Row(self.getLocations(), rowData)
+        newRow = Flat_Cache(self.getLocations(), rowData)
         self._storage.append(newRow)
         Logger.info("Height: {}".format(self.height()))
         self.__increaseHeight()
@@ -148,6 +114,37 @@ class Nested_Cache(BdfsCache):
     # Column Methods
     #
     ####
+
+    @Debugger
+    def getLocations(self) -> list:
+        return self._locations
+
+
+    # do we know about this location?
+    @Debugger
+    @validate_arguments
+    def locationExists(self, position: Union[int,str])->Union[int,str]:
+        return position in self._locations
+
+
+    @Debugger
+    @validate_arguments
+    def insert_location(self, location:str, index:int=None):
+        if self.locationExists(location):
+            raise Nested_Cache_Exception(f"Column Name: '{location}' already exists")
+
+        if self.height() > 0:
+            for row in range(0,self.height()):
+                self._storage[row].insert_location(position=location, index=index)
+
+        # Update the _locations list
+        if None == index:
+            #put it at the end
+            self._locations.append(location)
+        else:
+            #put it at the right location
+            self._locations.insert(index, location)
+
 
     # Delete the column, but first make sure we have all the correct data that we need in order to properly
     #   remove the column from every row in the dataset
@@ -242,7 +239,7 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     def width(self) -> int:
-        return self._storage[0].width()
+        return self._storage[0].size()
 
 
     @Debugger

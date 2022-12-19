@@ -23,9 +23,9 @@ def test_empty_cache_select2():
 
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.insert([1])
-    assert excinfo.value.message == "Location '0' does not exist, try \"add_location('0')\""
+    assert excinfo.value.message == "Location '0' does not exist, try \"insert_location('0')\""
 
-    cache.add_location("test")
+    cache.insert_location("test")
 
     assert cache.height() == 0
     
@@ -97,7 +97,7 @@ def test_update_exception():
     cache = Nested_Cache(['b'],[[3]])
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.update(0, position=2, data=5)
-    assert excinfo.value.message == "Location '2' does not exist, try \"add_location('2')\""
+    assert excinfo.value.message == "Location '2' does not exist, try \"insert_location('2')\""
     assert 3 == cache.select(0, "b")
 
 
@@ -105,7 +105,7 @@ def test_update_exception2():
     cache = Nested_Cache(['b'],[[3]])
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.update(row=0,position="c",data=5)
-    assert excinfo.value.message == "Location 'c' does not exist, try \"add_location('c')\""
+    assert excinfo.value.message == "Location 'c' does not exist, try \"insert_location('c')\""
     assert 3 == cache.select(row=0, position="b")
 
 
@@ -130,14 +130,14 @@ def test_getLocationThatDoesntExist():
     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         assert cache.select(2,"e") == None
-    assert excinfo.value.message == "Location 'e' does not exist, try \"add_location('e')\""
+    assert excinfo.value.message == "Location 'e' does not exist, try \"insert_location('e')\""
 
 
 def test_getLocationThatDoesntExist2():
     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         assert cache.select(row=2,position="e") == None
-    assert excinfo.value.message == "Location 'e' does not exist, try \"add_location('e')\""
+    assert excinfo.value.message == "Location 'e' does not exist, try \"insert_location('e')\""
 
     
 

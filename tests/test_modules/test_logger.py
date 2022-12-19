@@ -1,19 +1,25 @@
 import pytest, logging, configparser, re
 from modules.loggers.exception import Logger_Exception
-from modules.logger import Logger
+from modules.logger import Logger, logger_name
 
+#
+# Note: Due to the way pytest runs, adding logger_name.name = "Logger" to the first line of each test is necessary
+#
 
 def clean_logs_for_matching(logs):
+    logger_name.name = "Logger"
     logs = str(logs)
     return re.sub("0x[0-9a-z]*", "classPointer", logs)
 
 def test_clean_logs_for_matching():
+    logger_name.name = "Logger"
     string = clean_logs_for_matching("0x37382hdd")
     assert string == "classPointer"
 
 
 # this is the method for testing that python logging is working
 def test_logging_default(caplog):
+    logger_name.name = "Logger"
     with caplog.at_level(logging.INFO):
         logging.getLogger().info("boo %s", "arg")
         popped = caplog.record_tuples.pop()
@@ -21,6 +27,7 @@ def test_logging_default(caplog):
 
 
 def test_info(caplog):
+    logger_name.name = "Logger"
     with caplog.at_level(logging.INFO):
         Logger.info("test")
         popped = caplog.record_tuples.pop()
@@ -28,6 +35,7 @@ def test_info(caplog):
 
 
 def test_warning(caplog):
+    logger_name.name = "Logger"
     with caplog.at_level(logging.WARNING):
         Logger.warning("test")
         popped = caplog.record_tuples.pop()
@@ -35,6 +43,7 @@ def test_warning(caplog):
 
 
 def test_critical(caplog):
+    logger_name.name = "Logger"
     with caplog.at_level(logging.CRITICAL):
         with pytest.raises(Logger_Exception) as excinfo:
             Logger.critical("test")
@@ -44,6 +53,7 @@ def test_critical(caplog):
 
 
 def test_error(caplog):
+    logger_name.name = "Logger"
     with caplog.at_level(logging.ERROR):
         Logger.error("test")
         popped = caplog.record_tuples.pop()
@@ -51,6 +61,7 @@ def test_error(caplog):
 
 
 def test_debug(caplog):
+    logger_name.name = "Logger"
     with caplog.at_level(logging.DEBUG):
         Logger.debug("test")
 
@@ -62,12 +73,13 @@ def test_debug(caplog):
 
 
 def test_console(capsys):
+    logger_name.name = "Logger"
     Logger.console("test")
     captured = capsys.readouterr()
     assert "  CONSOLE: Logger:: test\n" in captured.out
 
 def testprepareString():
-
+    logger_name.name = "Logger"
     assert "Logger:: test"                          == Logger.prepareString("test")
     assert "Logger:: testone,two"                   == Logger.prepareString("test", data={"one": 1, "two": 2})
     assert "prefix Logger:: testone,two"            == Logger.prepareString("test", data={"one": 1, "two": 2}, prefix="prefix ")
@@ -79,6 +91,7 @@ def testprepareString():
     assert "prefix Logger:: testpostfix"           == Logger.prepareString("test", data={"one": 1, "two": 2}, prefix="prefix ", postfix="postfix", textColor="dark_green", bgColor="white", dataColor="white", dataBgColor="dark_green", bypassReplace=True)
 
 def test_insert_newlines():
+    logger_name.name = "Logger"
     msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco"
     validation = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore\n\t\t\t\t\t\tet dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco"
 
@@ -86,16 +99,17 @@ def test_insert_newlines():
 
 
 def test_prefixStr():
+    logger_name.name = "Logger"
     string = Logger.prefixStr("test", "~~~")
     assert "~~~test" == string
 
 def test_methodNamePrefix():
-
+    logger_name.name = "Logger"
     string = Logger.methodNamePrefix("__notinitmethod__")
     assert "\t\t\t\t" == string
 
 def test_prefixMethonName():
-
+    logger_name.name = "Logger"
     string = Logger.prefixMethodName("someMethod")
     assert "someMethod" == string
 
@@ -103,12 +117,14 @@ def test_prefixMethonName():
     assert "\t\t\t\t__notinitmethod__" == string
 
 def test_appendNewLines():
+    logger_name.name = "Logger"
     # self, msg: str, new_lines: int=0):
 
     string = Logger.appendNewLines("message", 3)
     assert "message\n\n\n" == string
 
 def test_postfixStr():
+    logger_name.name = "Logger"
     # self, msg:str, postfix:str="", new_lines:int =0):
     
     string = Logger.postfixStr("message")
@@ -123,7 +139,7 @@ def test_postfixStr():
 
 def test_method(caplog):
     # self, method:str, data:Typevar_List_Str=None):
-
+    logger_name.name = "Logger"
     with caplog.at_level(logging.DEBUG):
         Logger.method("__notinitmethod__", {"one": 1, "two": 2})
         #without @Debugger decorator
@@ -136,7 +152,8 @@ def test_method(caplog):
 
 
 def test_validation_method_debug(caplog):
-
+    logger_name.name = "Logger"
+    
     from modules.config import config_for_testing
     config_for_testing()
 
@@ -147,6 +164,7 @@ def test_validation_method_debug(caplog):
         assert popped == ('logs', 10, 'Logger:: methodNameone,two')
 
 def test_validation_method_debug2(caplog):
+    logger_name.name = "Logger"
     from modules.config import config
     config()
 
@@ -155,8 +173,7 @@ def test_validation_method_debug2(caplog):
 
     assert caplog.record_tuples == []
 
-def test_change_logger_name(caplog):    
-    from modules.logger import logger_name
+def test_change_logger_name(caplog):
     logger_name.name = "TEST_LOGGER"
     
     with caplog.at_level(logging.ERROR):
