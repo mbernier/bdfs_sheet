@@ -7,7 +7,9 @@ from gspread import utils as gspread_utils
 from gspread.worksheet import Worksheet
 from modules.base import BaseClass
 from modules.decorator import Debugger
+from modules.logger import Logger
 from modules.worksheets.data import WorksheetData
+from pydantic import Field, validate_arguments
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -47,11 +49,11 @@ class Worksheet_DataClass():
 class Bdfs_Worksheet(BaseClass):
 
     logger_name = "Worksheet"
-    data: Worksheet_DataClass = Worksheet_DataClass()
 
     @Debugger
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def __init__(self, worksheet:Worksheet):
-
+        self.data = Worksheet_DataClass()
         # store the gspread worksheet for use later
         self.data.gspread_worksheet = worksheet
         self.data.title = worksheet.title
@@ -67,14 +69,14 @@ class Bdfs_Worksheet(BaseClass):
         # if we don't know what cols are expected, we cannot check the sheet is setup properly
         if [] == self.getExpectedColumns():
             #fail if no one set the spreadsheetId on the wrapper class
-            self.critical("Cols expected was not set before instantiating Spreadsheet class")
+            Logger.critical("Cols expected was not set before instantiating Spreadsheet class")
             raise Exception("cols_expected parameter is not set")
 
 
     #shitty method to allow quick running of code from here
     def playground(self):
-        self.info("# of columns in worksheet: {}".format(self.__getWorksheetColumnCount()))
-        self.info("# of columns in dataStore: {}".format(self.getColumnCount()))
+        Logger.info("# of columns in worksheet: {}".format(self.__getWorksheetColumnCount()))
+        Logger.info("# of columns in dataStore: {}".format(self.getColumnCount()))
 
         # we don't need to remove the empty columns at the end, because we already pulled the data
         #   and we will commit what we want to keep, so we don't need to clean up the sheet we only need
@@ -130,6 +132,7 @@ class Bdfs_Worksheet(BaseClass):
 
     # if a new title is set, store it until we commit the sheet
     @Debugger
+    @validate_arguments
     def setTitle(self, title:str) -> str: #tested
         self.data.uncommitted_title = title
         return self.getTitle()
@@ -163,7 +166,7 @@ class Bdfs_Worksheet(BaseClass):
     # 'update_cell', 
     # 'update_cells', 
     # 'update_note', 
-    # 'updated',  
+    # 'updated',   
 
     # write the data out to the google worksheet
     @Debugger
@@ -178,7 +181,7 @@ class Bdfs_Worksheet(BaseClass):
             'values': values,
         }]
 
-        self.debug("Updating the spreadsheet with this data: ", batch_update)
+        Logger.debug("Updating the spreadsheet with this data: ", batch_update)
 
         worksheet = self.__getWorksheetObj()
 
@@ -203,6 +206,7 @@ class Bdfs_Worksheet(BaseClass):
     #   consider carefully what could go wrong if you don't have data in the worksheet and you do not commit
     #   the worksheetData object's data to the sheet. That's dangerous!
     @Debugger
+    @validate_arguments
     def clearAllRecords(self, deleteWorksheetData:bool=False):
         
         self.__getWorksheetObj().clear()
@@ -283,6 +287,7 @@ class Bdfs_Worksheet(BaseClass):
 
     # wrapper function to take care of some pre-work on removing columns
     @Debugger
+    @validate_arguments
     def removeColumns(self, column:int=None, start:int=None, stop:int=None):
         Helper.validate_lt_param(item=stop, param="start", paramValue=start)
         if None != column:
@@ -308,8 +313,7 @@ class Bdfs_Worksheet(BaseClass):
     #       but, your sheet looks like this:
     #       [1:a,2:b,3:c,4:d,5:"",6:e,7:f,8:g]
     #       so, when you go to delete 7, it either isn't there or now "f" is in the 7th spot, so if you pass [7:7]
-    #           to the worksheet delete function, it will delete "f" instead of deleting the correct item
-    @Debugger
+    #           to the worksheet delete function, it will delete "f" instead of deleting the correct itemv
     def X_removeEmptyColumns(self, removeTrailingEmpties = False):
 
         counter = 1
@@ -335,17 +339,17 @@ class Bdfs_Worksheet(BaseClass):
                     # start is empty, so we are in the first pass through the loop
                     start = counter
                     end = counter
-                    self.debug("Setting start to {}".format(counter))
+                    Logger.debug("Setting start to {}".format(counter))
                 elif counter == end+1:
                     # if we are still in a range of empties, increase the range
                     end = counter
-                    self.debug("Setting end to {}".format(counter))
+                    Logger.debug("Setting end to {}".format(counter))
                 else:
                     # we reached another empty number, which means the previous range is completed
                     ranges.append({"start":start, "end": end})
                     start = counter
                     end = counter
-                    self.debug("New item is {}".format(counter))
+                    Logger.debug("New item is {}".format(counter))
             
             # count which column we are on
             counter+= 1
@@ -359,7 +363,7 @@ class Bdfs_Worksheet(BaseClass):
         currentSheetColsAvailable = self.__getWorksheetObj().col_count
 
         if removeTrailingEmpties:
-            self.debug("We have permission to remove the trailing empty columns")
+            Logger.debug("We have permission to remove the trailing empty columns")
             # I was deleting the empties off the end, but there was a race condition on the delete that would cause the next function
             #   to think that there were more columns than there actually were because the range delete for the end of the sheet was taking
             #   a while to run. So, we don't remove those anymore.
@@ -377,10 +381,10 @@ class Bdfs_Worksheet(BaseClass):
         while len(ranges) > 0:
             rangeToKill = ranges.pop()
 
-            self.info("Removing item from {}:{} from columns".format(rangeToKill["start"], rangeToKill["end"]))
+            Logger.info("Removing item from {}:{} from columns".format(rangeToKill["start"], rangeToKill["end"]))
             del columns[rangeToKill["start"]:rangeToKill["end"]]
 
-            self.info("Removing item from {}:{} from worksheet".format(
+            Logger.info("Removing item from {}:{} from worksheet".format(
                     self.getA1(1, rangeToKill["start"]), 
                     self.getA1(1, rangeToKill["end"])))
             self.__getWorksheetObj().delete_columns(rangeToKill["start"], rangeToKill["end"])
@@ -410,7 +414,7 @@ class Bdfs_Worksheet(BaseClass):
     #     # add in the new columns, so that we have everything we need
     #     addedColumns = worksheet.addMissingColumns()
 
-    #     self.info("{} columns were added to {}".format(addedColumns, worksheet.getTitle()))
+    #     Logger.info("{} columns were added to {}".format(addedColumns, worksheet.getTitle()))
 
     #     # double check that we don't have extra empties at the end of the sheet, just in case
     #     worksheet.removeEmptyColumns(removeTrailingEmpties=True)
@@ -423,7 +427,7 @@ class Bdfs_Worksheet(BaseClass):
 
 
     def X_checkColumns(self, cols_expected, cols_expected_extra):
-        self.debug("Workheet.checkColumns(cols_expected={},cols_expected_extra={})".format(cols_expected, cols_expected_extra))
+        Logger.debug("Workheet.checkColumns(cols_expected={},cols_expected_extra={})".format(cols_expected, cols_expected_extra))
 
         # What columns do we need to care about?
         colsToCheck = self.calculateExpectedColumns(cols_expected, cols_expected_extra)
@@ -436,9 +440,9 @@ class Bdfs_Worksheet(BaseClass):
         firstrow_result = self.compareLists(self.getColumns(), colsToCheck)
 
         if firstrow_result:
-            self.info("The worksheet %s has all the columns we expect" % self.getTitle())
+            Logger.info("The worksheet %s has all the columns we expect" % self.getTitle())
         else: 
-            self.info("The worksheet %s does not have all the columns we expect" % self.getTitle())
+            Logger.info("The worksheet %s does not have all the columns we expect" % self.getTitle())
             #figure out what's missing and complain so that we can get that shit fixed
             missing_columns = list(setData(colsToCheck) - setData(self.getColumns()))
             self.setMissingColumns(missing_columns)
@@ -448,7 +452,7 @@ class Bdfs_Worksheet(BaseClass):
     # Create a list of columns that we are expecting to find in this worksheet
     # @return the list of expected columns
     def X_calculateExpectedColumns(self, cols_expected: list, cols_expected_extra: dict, checkExtras: bool = True):
-        self.debug("calculateExpectedColumns(cols_expected={},cols_expected_extra={}, checkExtras={})".format(cols_expected, cols_expected_extra, checkExtras))
+        Logger.debug("calculateExpectedColumns(cols_expected={},cols_expected_extra={}, checkExtras={})".format(cols_expected, cols_expected_extra, checkExtras))
         # set the columns to the default
         expectedCols = cols_expected
 
@@ -491,31 +495,31 @@ class Bdfs_Worksheet(BaseClass):
 #   https://docs.gspread.org/en/latest/user-guide.html#getting-all-values-from-a-worksheet-as-a-list-of-lists
 
     def X_addMissingColumns(self):
-        self.debug("addMissingColumns()")
+        Logger.debug("addMissingColumns()")
 
-        self.debug("Attempting to add these columns: {}".format(self.getMissingColumns()))
+        Logger.debug("Attempting to add these columns: {}".format(self.getMissingColumns()))
 
         missingColumnCount = len(self.getMissingColumns())
-        self.debug("missingColumnCount: {}".format(missingColumnCount))
+        Logger.debug("missingColumnCount: {}".format(missingColumnCount))
 
         # if there are no missing columns, do nothing!
         if 0 != missingColumnCount: 
 
             currentSheetColsAvailable = self.__getWorksheetObj().col_count
-            self.debug("currentSheetColsAvailable: {}".format(currentSheetColsAvailable))
+            Logger.debug("currentSheetColsAvailable: {}".format(currentSheetColsAvailable))
 
             expectedColumnCount = len(self.getExpectedColumns())
-            self.debug("expectedColumnCount: {}".format(expectedColumnCount))
+            Logger.debug("expectedColumnCount: {}".format(expectedColumnCount))
 
             str_list = list(filter(None, self.getColumns()))
-            self.debug("current count: {}".format(len(str_list)))
+            Logger.debug("current count: {}".format(len(str_list)))
 
             nextColumnIndex = self.getColumnCount()+1
             totalColumnsNeeded = 0
             # add more columns to the current worksheet to make sure we can keep adding columns
             if (nextColumnIndex + missingColumnCount) > int(currentSheetColsAvailable):
                 totalColumnsNeeded= nextColumnIndex + missingColumnCount - int(currentSheetColsAvailable)
-                self.debug("Adding {} empty columns".format(totalColumnsNeeded))
+                Logger.debug("Adding {} empty columns".format(totalColumnsNeeded))
                 # to be careful, add enough columns to handle all the missing columns
                 self.__getWorksheetObj().add_cols(totalColumnsNeeded)
             
@@ -533,17 +537,17 @@ class Bdfs_Worksheet(BaseClass):
 
     # # actually create a new column in the worksheet, if columnNumber is included it will create the column 
     # def addColumn(self, columnName: str = ""):
-    #     self.debug("addColumn({})".format(columnName))
+    #     Logger.debug("addColumn({})".format(columnName))
 
     #     # we want to add a column at the next open position after the current columns, so grab the current column list length
     #     newColumnNumber = self.getColumnCount() + 1
 
-    #     self.info("Adding a column to position [1,{}] with title {}".format(newColumnNumber, columnName))
+    #     Logger.info("Adding a column to position [1,{}] with title {}".format(newColumnNumber, columnName))
 
     #     # add the column name in the new column, row 1 
     #     response = self.__getWorksheetObj().update_cell(1, newColumnNumber, columnName)
 
-    #     self.info("Response from the update_cell call: {}".format(response))
+    #     Logger.info("Response from the update_cell call: {}".format(response))
 
     #     # internal call to update our cache without pulling it from the worksheet, will also update the column count
     #     self.__addToColumnList(columnName)
@@ -554,7 +558,7 @@ class Bdfs_Worksheet(BaseClass):
     #   you can write it to the worksheet if you would like, or not with storeToWorkSheet = True/False
     #   @returns the ordered list or a list of orderedDicts for use in other methods
     def X_sortTheColumns(self, cols_to_keep, data, storeToWorksheet = True, returnAsOrderedDicts = False):
-        self.debug(
+        Logger.debug(
             "Worksheet.sortTheColumns(cols_to_keep={}, data={}, storeToWorksheet={},returnAsOrderedDicts={})"
                 .format(
                     cols_to_keep,
@@ -595,7 +599,7 @@ class Bdfs_Worksheet(BaseClass):
         # calculate the A1 Notation of the range from A1 -> the height and width of our new List
         end_cell = gself.getA1(len(output_list),len(temp_list))
 
-        self.debug("The output_list data is {}".format(output_list))
+        Logger.debug("The output_list data is {}".format(output_list))
 
         if storeToWorksheet:
             #remove all the stuff in the sheet that's there right now
@@ -612,7 +616,7 @@ class Bdfs_Worksheet(BaseClass):
         return output_list
 
     def X_removeAllButExpectedColumns(self, storeToWorksheet=True, returnAsOrderedDicts = False):
-        self.debug("removeAllButExpectedColumns()")
+        Logger.debug("removeAllButExpectedColumns()")
         cols_expected = self.getExpectedColumns()
         self.sortTheColumns(cols_to_keep=cols_expected, storeToWorksheet=storeToWorksheet, returnAsOrderedDicts=returnAsOrderedDicts)
 
@@ -641,9 +645,9 @@ class Bdfs_Worksheet(BaseClass):
     # 'rows_auto_resize', 
     # 'unhide_rows', 
 
-
+    @Debugger
     def getRowCount(self):
-        self.debug("getRowCount()")
+        Logger.debug("getRowCount()")
         return self.getData().height()
 
 
@@ -659,8 +663,10 @@ class Bdfs_Worksheet(BaseClass):
     # 'unmerge_cells',
 
     # creates A1 notation for the row and column given
+    @Debugger
+    @validate_arguments
     def getA1(self, row, column):
-        self.debug("getA1(row={}, column={})", (row, column))
+        Logger.debug("getA1(row={}, column={})", (row, column))
         return gspread_utils.rowcol_to_a1(row, column)
 
 

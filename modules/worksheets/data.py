@@ -2,9 +2,11 @@
 import sys
 from modules.base import BaseClass
 from modules.caches.nested import Nested_Cache
+from modules.logger import Logger
 from modules.worksheets.exception import WorksheetData_Exception
 from pprint import pprint
-
+from modules.decorator import Debugger
+from pydantic import validate_arguments
 class WorksheetData(BaseClass):
 
     dataStore:Nested_Cache = None
@@ -15,10 +17,14 @@ class WorksheetData(BaseClass):
     _headers = []
     _removedHeaders = []
 
+    @Debugger
+    @validate_arguments
     def __init__(self, sheetData = None):
         if None != sheetData:
             self.load(sheetData)
 
+    @Debugger
+    @validate_arguments
     def load(self, sheetData=None):
         # store all the data in the data store
         headers = sheetData.pop(0)
@@ -34,8 +40,9 @@ class WorksheetData(BaseClass):
 
 
     # replaces empty headers with "NoHeaderFound_{index}"
+    @Debugger
+    @validate_arguments
     def __prepHeaders(self, headers):
-        self.debug("__prepHeaders(headers={})".format(headers))
         uniqueHeaders = []
         duplicateHeaders = []
         emptyHeaderIndexes = []
@@ -56,7 +63,7 @@ class WorksheetData(BaseClass):
                 duplicateHeaders.append(header)
 
         if 0 < len(duplicateHeaders):
-            self.critical("There are duplicate headers in your spreadsheet with these names: {}".format(duplicateHeaders))
+            Logger.critical("There are duplicate headers in your spreadsheet with these names: {}".format(duplicateHeaders))
 
         return headers, uniqueHeaders, duplicateHeaders, emptyHeaderIndexes
 
@@ -66,50 +73,56 @@ class WorksheetData(BaseClass):
     #
     ####
 
+    @Debugger
     def getHeaders(self):
-        self.debug("getHeaders()")
         return self._headers
 
+
+    @Debugger
+    @validate_arguments
     def __setHeaders(self, headers):
-        self.debug("__setHeaders(headers={})".format(headers))
         self._headers = headers
 
+    @Debugger
     def __getUniqueHeaders(self):
-        self.debug("__getUniqueHeaders()")
         return self._uniqueHeaders
 
+    @Debugger
+    @validate_arguments
     def __setUniqueHeaders(self, headers):
-        self.debug("__setUniqueHeaders(headers={})".format(headers))
         self._uniqueHeaders = headers
 
+    @Debugger
+    @validate_arguments
     def __appendUniqueHeader(self, header):
-        self.debug("__appendUniqueHeader(header={})".format(header))
         self._uniqueHeaders.append(header)
 
-
+    @Debugger
     def __getDuplicateHeaders(self):
-        self.debug("__getDuplicateHeaders()")
         return self._duplicateHeaders
 
+    @Debugger
+    @validate_arguments
     def __setDuplicateHeaders(self, headers):
-        self.debug("__setDuplicateHeaders(headers={})".format(headers))
         self._duplicateHeaders = headers
 
-
+    @Debugger
+    @validate_arguments
     def __appendDuplicateeHeader(self, header):
-        self.debug("__appendDuplicateHeader(header={})".format(header))
         self._uniqueHeaders.append(header)
 
+    @Debugger
     def __getEmptyHeaderIndexes(self):
-        self.debug("__getEmptyHeaderIndexes()")
         return self._emptyHeaderIndexes
 
+    @Debugger
+    @validate_arguments
     def __setEmptyHeaderIndexes(self, headers):
-        self.debug("__setEmptyHeaders(headers={})".format(headers))
         self._emptyHeaderIndexes = headers
 
+    @Debugger
+    @validate_arguments
     def __appendEmptyHeaderIndex(self, index):
-        self.debug("__appendEmptyHeader(index={})".format(index))
         self._emptyHeaderIndexes.append(index)
 
 
@@ -121,8 +134,9 @@ class WorksheetData(BaseClass):
 
     # fancy logic that just calls removeHeader(index)
     # returns the number of headers removed
+    @Debugger
+    @validate_arguments
     def removeHeaders(self, start, end):
-        self.debug("removeColumns(start={}, end={})", (start, end))
         currentWidth = self.width()
 
         if start > self.width:
@@ -140,8 +154,9 @@ class WorksheetData(BaseClass):
             return end-start
 
 
+    @Debugger
+    @validate_arguments
     def removeHeader(self, index=None, header=None):
-        self.debug("removeHeader(index={})".format(index))
 
         # causes lookup of the name from the index
         if None != index:
@@ -155,16 +170,17 @@ class WorksheetData(BaseClass):
 
     # removed the header from the headers list
     # @return the value from the headers list that was removed
+    @Debugger
+    @validate_arguments
     def __removeHeader_byIndex(self, index):
-        self.debug("__removeHeader_ByIndex(index={})".format(index))
         header = self._headers.pop(index)
 
         self.__removeHeader(index=index, header=header)
         return header
 
-
+    @Debugger
+    @validate_arguments
     def __removeHeader_byName(self, header):
-        self.debug("__removeHeader_ByName(header={})".format(header))
         index = self._headers.index(header)
         self._headers.pop(index)
 
@@ -172,8 +188,9 @@ class WorksheetData(BaseClass):
         return header
 
 
+    @Debugger
+    @validate_arguments
     def __removeHeader(self, index, header):
-        self.debug("__removeHeader(index={}, header={})", (index, header))
 
         # remove the name from all the places
         self.__removeHeaderFrom_uniqueHeaders_byName(header=header)
@@ -190,9 +207,9 @@ class WorksheetData(BaseClass):
         # make sure to clean up the location storage
         self.__removeHeaderFrom_sheetData(index=index, name=headerName)
 
-
+    @Debugger
+    @validate_arguments
     def __removeHeaderFrom_sheetData(self, index, name):
-        self.debug("__removeHeaderFrom_sheetData(index={},name={})", (index, name))
         self._sheetData.deleteColumn(index=index, location=name)
 
 
@@ -202,11 +219,10 @@ class WorksheetData(BaseClass):
     #
     ####
 
-
+    @Debugger
     def width(self):
-        self.debug("width()")
         return len(self.getHeaders())
 
+    @Debugger
     def height(self):
-        self.debug("height()")
         return self.dataStore.height()

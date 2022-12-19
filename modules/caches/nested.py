@@ -7,10 +7,9 @@ from modules.caches.nested_cache.row import Nested_Cache_Row
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
 from modules.config import config
 from modules.decorator import Debugger
-from modules.logger import Logger
+from modules.logger import Logger, logger_name
 from modules.validation import Validation
 from typing import Union
-from pprint import pprint
 from pydantic import Field, validator, validate_arguments
 from pydantic.typing import Annotated
 
@@ -25,10 +24,9 @@ from pydantic.typing import Annotated
 #   flat cache data is: location: {position: , data: } // index can be inferred from the position in the Flat_Cache item
 #   locations flat cache is the same thing, it's the first row
 
+logger_name.name = "Nested_Cache"
+
 class Nested_Cache(BdfsCache):
-
-    logger_name = "Nested_Cache"
-
     _height = 0
 
     _storage: list = []
@@ -131,7 +129,6 @@ class Nested_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def insert(self, rowData:list=None):
-        print(self.getLocations())
         newRow = Nested_Cache_Row(self.getLocations(), rowData)
         self._storage.append(newRow)
         Logger.info("Height: {}".format(self.height()))

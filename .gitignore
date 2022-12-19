@@ -133,3 +133,5 @@ token.json
 
 # ignore anything I created for testing things
 matt_*.py
+
+service_account.json

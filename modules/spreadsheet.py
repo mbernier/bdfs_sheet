@@ -3,6 +3,7 @@ from dataclasses import dataclass, field as dc_field
 from modules.base import BaseClass
 from modules.logger import Logger
 from modules.decorator import Debugger
+from modules.spreadsheets.exception import SpreadSheetException
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import worksheet, utils as gspread_utils
 from pprint import pprint
@@ -23,7 +24,7 @@ class Spreadsheet_Data():
     service_account = None
 
 
-class Spreadsheet(BaseClass): 
+class Bdfs_Spreadsheet(BaseClass): 
 
     data:Spreadsheet_Data = Spreadsheet_Data()
 
@@ -44,7 +45,7 @@ class Spreadsheet(BaseClass):
         if None == self.getWorksheetKeeperPattern():
             Logger.warning("worksheetKeeperPattern is not set, this is OK")
 
-        if None == self.data.worksheet_class:
+        if None == self.data.worksheetClassName:
             Logger.critical("You must set a worksheet_class in your Spreadsheet Object: ".self.__class__.__name__)
 
         self.getWorksheetClassName()
@@ -61,14 +62,18 @@ class Spreadsheet(BaseClass):
 
     @Debugger
     def getWorksheetClass(self):
-        return self.importClass(self.data.worksheet_class)
+        return self.importClass(self.worksheet_class)
 
 
     # if we haven't parsed the worksheet class name, do it, otherwise return it
     @Debugger
     def getWorksheetClassName(self):
-        if None == self.data.worksheetClassName:
-            self.data.worksheetClassName = self.data.worksheet_class.split(".").pop()
+        if self.data.worksheetClassName == "":
+            if self.worksheet_class != None:
+                self.data.worksheetClassName = self.worksheet_class.split(".").pop()
+            else:
+                raise SpreadSheetException("worksheetKeeperPattern is not set in child class")
+
         return self.data.worksheetClassName
 
 
@@ -116,12 +121,24 @@ class Spreadsheet(BaseClass):
 
     @Debugger
     def getWorksheetKeeperPattern(self):
+        if self.data.worksheetKeeperPattern == "":
+            if self.worksheetKeeperPattern != None:
+                self.data.worksheetKeeperPattern = self.worksheetKeeperPattern
+            else:
+                raise SpreadSheetException("worksheetKeeperPattern is not set in child class")
+
         return self.data.worksheetKeeperPattern
 
 
     # get the id that we have set and return it
     @Debugger
     def getSpreadsheetId(self):
+        if self.data.spreadsheetId == "":
+            if self.spreadsheetId != None:
+                self.data.spreadsheetId = self.spreadsheetId
+            else:
+                raise SpreadSheetException("Spreadsheet ID is not set in child class")
+
         return self.data.spreadsheetId
 
 

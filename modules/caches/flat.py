@@ -3,6 +3,7 @@ from collections import OrderedDict
 from modules.cache import BdfsCache
 from modules.caches.exception import Flat_Cache_Exception
 from modules.decorator import Debugger
+from modules.logger import logger_name
 from pprint import pprint
 from pydantic import BaseModel as PydanticBaseModel, Field, validate_arguments
 from pydantic.dataclasses import dataclass
@@ -12,6 +13,7 @@ from typing import Union
 class Flat_Cache_Data(PydanticBaseModel):
     storage:dict = Field(default_factory=dict)
 
+logger_name.name = "Nested_Cache"
 
 class Flat_Cache(BdfsCache):
 

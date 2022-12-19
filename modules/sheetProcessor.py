@@ -1,6 +1,7 @@
 import sys, getopt, os, gspread
 from modules.base import BaseClass
 from modules.decorator import Debugger
+from modules.logger import Logger
 
 # @todo refactor to pull out the getops functionality from this script
 #   create a class that takes in getopt options and data
@@ -47,16 +48,14 @@ To Use the SheetProcessor, pass in some commands:
         try:
             opts, args = getopt.getopt(argv, "chs:w:l",["spreadsheet-id=","worksheets=","check-worksheet-cols","check-and-add-missing-cols"])
         except getopt.GetoptError as msg:
-            self.critical(msg)
-            sys.exit(2)
+            Logger.critical(msg)
 
         if [] == opts:
-            self.critical("No Options were passed!"+ "\n" + self.help_output)
-            sys.exit()
+            Logger.critical("No Options were passed!"+ "\n" + self.help_output)
 
         for opt, arg in opts:     
             if opt == '-h' or opt == None:
-                self.debug("user selected -h option")
+                Logger.debug("user selected -h option")
                 print(self.help_output)
                 sys.exit()
 
@@ -70,8 +69,8 @@ To Use the SheetProcessor, pass in some commands:
 
             if opt in ("-c", "--check-worksheet-cols"):
                 # check the column titles and see if they fit our preferences
-                self.debug("user selected -c option")
-                self.console("Checking column titles on worksheets")
+                Logger.debug("user selected -c option")
+                Logger.console("Checking column titles on worksheets")
                 self.checkWorksheetColumns(checkExtras = True, addMissingColumns = False)
                 sys.exit()
 
@@ -83,30 +82,28 @@ To Use the SheetProcessor, pass in some commands:
                 sys.exit()
 
             elif opt in ("-s", "--spreadsheet-id"):
-                self.debug("user selected -s option")
+                Logger.debug("user selected -s option")
                 # override spreadsheet ID
-                self.console("Overriding the default worksheet to be: " + arg)  
+                Logger.console("Overriding the default worksheet to be: " + arg)  
                 self.spreadsheet_id = arg
             
             elif opt in ("-l", "--list-worksheets"):
-                self.debug("user selected -l option")
-                self.console("Current Worksheet List:")
+                Logger.debug("user selected -l option")
+                Logger.console("Current Worksheet List:")
                 print(self.listWorksheets())
                 sys.exit()
             
             elif opt in ("-w", "--worksheets"):
-                self.debug("user selected -w option")
-                self.console('Processing worksheet: ' + arg)
+                Logger.debug("user selected -w option")
+                Logger.console('Processing worksheet: ' + arg)
                 self.processWorksheets(arg)
                 sys.exit()
             
             else:
-                self.critical("Somehow we got through all options with no option selected")
-                self.console(self.default_output)
-                self.debug(opts)
-                self.debug(args)
-                sys.exit()
-
+                Logger.console(self.default_output)
+                Logger.debug(opts)
+                Logger.debug(args)
+                Logger.critical("Somehow we got through all options with no option selected")
 
     # setup the sheet object if not setup, return it either way
     @Debugger

@@ -1,5 +1,6 @@
 # setup_logger.py
-import logging, sys
+import logging
+from dataclasses import dataclass
 from pydantic import BaseModel as PydanticBaseModel
 from modules.config import config
 from modules.helper import Helper
@@ -19,10 +20,15 @@ logging.basicConfig(level=logging_level)
 #define the main logger object
 logger = logging.getLogger('logs')
 
+@dataclass
+class LoggerName():
+    name: str = "Logger"
+
+logger_name = LoggerName()
 
 class Logger():
     base_logger_name = "logs"
-    logger_name = ""
+    logger_name:str = ""
     logger_configured = False
     output_to_console = False
 
@@ -76,6 +82,9 @@ class Logger():
             if None != msg:
                 print(msg)
 
+    @staticmethod
+    def logger_name():
+        return logger_name.name
 
     # handle prefix and new_lines being added to the string, one call to do everything, reduce repetition above
     @staticmethod
@@ -87,8 +96,10 @@ class Logger():
             dataBgColor = "on_" + dataBgColor
 
         # add the classname
-        msg = Logger.logger_name + ":: " + msg
-
+        new_msg = Logger.logger_name()
+        new_msg += ":: " + msg
+        msg = new_msg
+        
         # change the color to make it pretty
         msg = colored(msg, textColor, bgColor)
 
