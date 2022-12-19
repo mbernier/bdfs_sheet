@@ -38,11 +38,5 @@ if __name__ == "__main__":
     # run = BdfsInventory_SheetProcessor()
     # run.main(sys.argv[1:]) 
 
-
-    list1 = ['Name', 'Birthday', 'Email', 'newColumn3', 'newColumn1']
-    list2 = [['Matt', '1/1/2001', 'matt@example.com', None, None], ['Bob', '1/2/2023', 'bob@example.com', None, None], ['Mary', '5/7/2017', 'mary@example.com', None, None]]
-
-    print([list1]+list2)
-    print("\n\n")
-    print(list2.insert(0,list1))
-    print("\n\n")
+    list1 = {'Name': ['name'], 'Birthday': ['birthday'], 'Price': ["cost", "shipping", "fees"]}
+    list2 = {'Name','Birthday'}

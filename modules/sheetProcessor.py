@@ -80,12 +80,6 @@ To Use the SheetProcessor, pass in some commands:
                 self.console("Checking column titles on worksheets")
                 self.checkWorksheetColumns(checkExtras = True, addMissingColumns = True)
                 sys.exit()
-
-            elif opt in ("-s", "--spreadsheet-id"):
-                Logger.debug("user selected -s option")
-                # override spreadsheet ID
-                Logger.console("Overriding the default worksheet to be: " + arg)  
-                self.spreadsheet_id = arg
             
             elif opt in ("-l", "--list-worksheets"):
                 Logger.debug("user selected -l option")

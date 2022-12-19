@@ -3,19 +3,13 @@ We will use this code to simplify our world more than the original script. The p
 
 This code will rely on the Google Sheet called [BDFS Inventory](https://docs.google.com/spreadsheets/d/1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8/edit#gid=891609024) as the source of truth for the data. Rather than an amazon database (mostly for cost reasons at the moment) being able to swap this out at a later time is part of the reason for the Object Oriented code, that makes it much easier in the future than making changes to the manager code or the CSV logic I wrote previously.
 
-## Sheet Checks:
+## Worksheet Checks:
 For each sheet, the core classes will do the following:
 
 1. Clean up any extra columns from the spreadsheet, because of how gspread python package works (it pulls only the columns up to the last data it can find)
 2. Identify that the sheet has the columns that we are expecting
     a. if it does not, it will create them in the local data
 3. If there were changes, it will commit them to the google sheet - we track what changed on any methods that change data, so we only commit if legit changes were made
-
-To do:
-
-
-
-
 
 From there, we will be able to pull the data and do things with it as needed (such as update multiple Shopify sites, update Juniper wholesale system, etc)
 
@@ -163,8 +157,98 @@ Environment options are all explained in the comments of the `default` environme
 
 
 ## To Add:
-0. Validations
-    a. Add return data validation - use func annotations and see if the return is there, fail if return doesn't match in the validation decorator
+
+To do:
+1. - Modify Flat_Cache to:
+    - Sets an updated date field if the data in the cache was changed at all
+1. Test out creating a GoogleSheet source class and Google Sheet Destination class
+    a Does this make the code a little cleaner from a read vs write perspective?
+    a. If so, create migration classes for moving data from a source to a destination -- see Migration Classes below
+        a. Should we consider loading the destination data into the destination class before pulling the data from source and merging, so there can be some comparisons and skip-work?
+1. Simplify some defaults:
+    a. Spreadsheet classes: for both Source/Destination modify to pull in a default Worksheet class if one isn't written in the child-class's definition
+    a. Worksheet class: for both Source/Destination modify to pull in a default row class if one isn't written in the child-class's definition
+1. Create a Spreadsheet that keeps track of when the last Sarto Inventory check was done
+
+
+Initial Migration to new Data sources:
+1. Create a BDFS_Inventory source class to read the data from BDFS_Inventory
+1. Create a Sarto_Inventory destination class to cleanup the data to match what is on Sarto's website and put it in a new spreadseet with new worksheets
+1. Create a BDFS_Spreadsheet destination class that will create only the shopify data we need for BDFS from the sarto data
+    - Add in the columns we want and put them in the right order
+    - apply formulas and templates (see below)
+1. Kill BDFS_Inventory and refer to the Sarto sheets and Shopify Sheets (BDFS, DFS)
+
+
+Ongoing Data Migration/Modification:
+1. Where is Ali putting his scraped data?
+1. Order of operations:
+    a. Check when last run was in the audit log
+    a. Look at Ali's scraping data for anything that has been added since last run, update the Sarto Sheet
+    a. For each Sheet destination, get last audit log update, if older than most recent source update, update the destination sheets:
+        i. Shopify Sheets
+        ii. Juniper Sheet
+    a. If there are API destinations (Shopify stores):
+        a. Look at the last Sheet update and the audit log, if newer changes then push the changes to the API
+
+
+### Migration Classes:
+- Create a Temporal workflow that will handle the ongoing data migration/modification
+    - initially, run it to see it working
+    - eventually, schedule it to run daily
+- Create a class that takes a source and a Destination:
+    - Naming: e.g. Sarto_to_Bdfs
+    - Definition 
+        - Source Class - which wraps the sheetID
+        - Destination Class - which wraps the sheetID
+        - Rules for:
+            - what to pull, from which worksheets
+            - what discount to apply to the retail cost of the item
+        - Formulas: 
+            - price formula: whether shipping is included or it's just price
+            - shipping formula: which variables affect shipping costs and how much
+            - costs formula: the variables that go into costs
+        - Templates:
+            - Decription
+            - Title
+        - Mapping of source fields to Destination Fields
+            - `{"destination_field_name": [list,of,source,fields,to,pass]}`... e.g `list1 = {'Name': ['name'], 'Birthday': ['birthday'], 'Price': ["cost", "shipping", "fees"]}`
+                - if a string is passed, then we call the default mapping method
+                - if a list is passed create a dict of the source field name and values, then pass to the modifier method like so `self.destination_field_name_intake(**source_fields)`
+                - modifier methods should be named after the destination field `destination_field_name_intake(self, source_fields, icare, about)`
+
+    - On pull from source:
+        - loop through the destination fields dict and set everything up accordingly
+
+    - Output methods availble
+        - shipping() Calculates shipping for this item and it's variations, stores
+        - retail_price() Calculates display price and cost price, stores
+        - costs() Calculates our costs from the formula
+        - description() Description, following template
+        - title() title, following template, rules
+            - Needs a double check that there are not duplicate titles
+
+    - Commit:
+        - Writes to the destination sheet according to the destination class (See Sarto class, it pulls, cleans up, then pushes - maybe split this into source/destination?)
+            - Sarto_Inventory_Source->Sarto_Inventory_Destination could be the cleanup script - where source is read only and destination allows writing? Little extra setup to split them, but keeps things really clean on what the code itself does...
+
+Shopify Class, modified the destination class:
+    - Definition
+        - Tags Template (shopify only?)
+        - Shopify Handle
+    - on pull
+        - does the handle calculation and keeps track of whether this was different from what we already have - bc we may need to put in a redirect
+    - output methods
+        - tags() Tags, following template
+        - handle, following template and rules
+            - Needs a double check that there are not duplicate handles
+        - title() - restricts title to 75 chars, using rules to pick what gets left out
+    - on commit
+        - writes to the Shopify API according to the template
+
+- Test sheet processor and fix any broken functionality
+
+
 1. Parsing through the information in the sheet - in a Shopify generic (NOT DOOR SPECIFIC) way
     *DECIDE:* how do we want the information organized in the spreadsheet? Should it be organized by the categories that are in Shopify? Should there be a categorization mapping and a products table - referenced so that we can go back and forth? This needs to be figured out, as the structure can determine many things in the future. Right now, the spreadsheet is organized by door type.
     a. Throw errors when the data is incorrect or weird
@@ -173,9 +257,6 @@ Environment options are all explained in the comments of the `default` environme
     d. Template for the content
     e. Look for other calculations that are in the spreadsheet and program them in
     f. Add functionality that ALWAYS updates the "update_date" field in the spreadsheet and relies on this for doing updates to Shopify or third parties
-2. Configuration
-    a. Retail pricing percentage
-    b. Wholesale pricing percentage
 3. Class for Spreadsheet object
     a. Pass in a listing item's data and all variations
     b. Calculate display price based on our price (just like the spreadsheet, without using the spreadsheet calculations)
@@ -198,5 +279,4 @@ Environment options are all explained in the comments of the `default` environme
     b. Needs a way to go back and forth between versions
     c. Maybe a way to show the diffs?
     d. Possible to record the actions taken? remove empties, added columns, added rows, removed rows, updated data?
-8. Consider moving the validators to another class object with static methods, allowing them to be used elsewhere too?
 9. Hit the sarto inventory page to pull everything, update the main spreadsheet with inventory, and update the websites with inventory - so we can pull products up/down as inventory changes
