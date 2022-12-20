@@ -159,10 +159,6 @@ Environment options are all explained in the comments of the `default` environme
 ## To Add:
 
 To do:
-1. Test out creating a GoogleSheet source class and Google Sheet Destination class
-    a Does this make the code a little cleaner from a read vs write perspective?
-    a. If so, create migration classes for moving data from a source to a destination -- see Migration Classes below
-        a. Should we consider loading the destination data into the destination class before pulling the data from source and merging, so there can be some comparisons and skip-work?
 1. Simplify some defaults:
     a. Spreadsheet classes: for both Source/Destination modify to pull in a default Worksheet class if one isn't written in the child-class's definition
     a. Worksheet class: for both Source/Destination modify to pull in a default row class if one isn't written in the child-class's definition
