@@ -1,9 +1,9 @@
 
-from modules.worksheets.destination import Bdfs_Worksheet_Destination
+from modules.worksheets.source import Bdfs_Worksheet_Source
 from modules.logger import logger_name
-logger_name.name = "OriginalBdfs_Inventory_Worksheet_Destination"
+logger_name.name = "BdfdInventory_Worksheet_Source"
 
-class OriginalBdfs_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
+class BdfsInventory_Worksheet_Source(Bdfs_Worksheet_Source):
     
     cols_expected = ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 
                         'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 

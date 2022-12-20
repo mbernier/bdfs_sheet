@@ -4,12 +4,12 @@
 from modules.spreadsheets.source import Bdfs_Spreadsheet_Source
 from modules.logger import logger_name
 
-logger_name.name = "OriginalBdfs_Inventory_Spreadsheet_Source"
+logger_name.name = "BdfsInventory_Spreadsheet_Source"
 
-class OriginalBdfs_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
+class BdfsInventory_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
 
-    spreadsheetId = '1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8'
+    spreadsheetId = '18XKqjmJrWk1TVRfJtUm584wUaPU3vMzt7EoKTgA_Vmo'
 
     worksheetKeeperPattern = "inventory"
 
-    worksheet_class = "modules.worksheets.bdfs_inventory.sources.OriginalBdfs_Inventory_Worksheet_Source"
+    worksheet_class = "modules.worksheets.bdfs_inventory.sources.BdfsInventory_Worksheet_Source"
