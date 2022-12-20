@@ -72,16 +72,16 @@ class Bdfs_Worksheet(BaseClass):
 
     @Debugger
     def __checkSetup(self):
-        # if we don't know what cols are expected, we cannot check the sheet is setup properly
-        if [] == self.getExpectedColumns():
-            #fail if no one set the spreadsheetId on the wrapper class
-            Logger.critical("Cols expected was not set before instantiating Spreadsheet class")
+        pass #this functionality is moved to the Destination class
 
     # Register a change
     @Debugger
     @validate_arguments
     def changed(self, index:str, value:bool=True):
-        self.__modifiesData() # because this is called when data is modified
+
+        if True == value: #only throw a fit if the code is trying to change data
+            self.modifiesData() # because this is called when data is modified
+
         if index in self.data.changes.keys():
             self.data.changes[index] = value
         else:
@@ -106,7 +106,7 @@ class Bdfs_Worksheet(BaseClass):
     # get rid of any trailing columns that exist, we do this when we get ready to commit only
     @Debugger
     def gspread_worksheet_resize_to_data(self):
-        self.__modifiesData()
+        self.modifiesData()
         Logger.debug("Resizing the google worksheet to the current data size")
         #rezize the spreadsheet to the data - makes our lives easier later on
         self.data.gspread_worksheet.resize(cols=self.getColumnCounts()['data'])
@@ -138,7 +138,6 @@ class Bdfs_Worksheet(BaseClass):
     # always returns self.data.title
     @Debugger
     def getOriginalTitle(self): #tested
-        self.__modifiesData()
         return self.data.title
 
 
@@ -146,7 +145,7 @@ class Bdfs_Worksheet(BaseClass):
     @Debugger
     @validate_arguments
     def setTitle(self, title:str) -> str: #tested
-        self.__modifiesData()
+        self.modifiesData()
         # only do this if the data is diff, you know?
         if title != self.data.title:
             self.data.uncommitted_title = title
@@ -188,7 +187,7 @@ class Bdfs_Worksheet(BaseClass):
     #   does not give a fuck what is in the worksheet, it will clear it before writing
     @Debugger
     def commit(self):
-        self.__modifiesData()
+        self.modifiesData()
         # if the title is changed, push it
         if self.isChanged('title') == True:
             self.data.gspread_worksheet.update_title(self.getTitle())
@@ -268,7 +267,7 @@ class Bdfs_Worksheet(BaseClass):
 
     @Debugger
     def getExpectedColumns(self): #tested
-        self.__modifiesData() #not because it actually writes, but bc it's used when writing and not when reading
+        self.modifiesData() #not because it actually writes, but bc it's used when writing and not when reading
         return self.__mergeExpectedColumns()
 
 
@@ -276,7 +275,7 @@ class Bdfs_Worksheet(BaseClass):
     #   Get the columns that we care about and return them
     @Debugger
     def __mergeExpectedColumns(self):
-        self.__modifiesData() #not because it actually writes, but bc it's used when writing and not when reading
+        self.modifiesData() #not because it actually writes, but bc it's used when writing and not when reading
         expectedCols = self.cols_expected
         for index in self.cols_expected_extra:
             if index in self.getTitle():
@@ -307,7 +306,7 @@ class Bdfs_Worksheet(BaseClass):
     @Debugger
     @validate_arguments
     def addColumn(self, name:str, index:int=None):
-        self.__modifiesData()
+        self.modifiesData()
         self.getData()
         # will handle adding at the end or the index, depending on what's passed
         self.data.sheetData.addHeader(name=name, index=index)
@@ -318,7 +317,7 @@ class Bdfs_Worksheet(BaseClass):
     @Debugger
     @validate_arguments
     def removeColumns(self, column:int=None, start:int=None, stop:int=None):
-        self.__modifiesData()
+        self.modifiesData()
         self.getData()
         raise Bdfs_Worksheet_Exception("remove_columns is not built or tested yet")
 

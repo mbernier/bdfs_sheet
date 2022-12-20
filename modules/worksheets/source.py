@@ -13,5 +13,5 @@ class Bdfs_Worksheet_Source(Bdfs_Worksheet):
 
     # allows the class to barf if used incorrectly
     @Debugger
-    def __modifiesData(self):
+    def modifiesData(self):
         raise Bdfs_Worksheet_Source_Exception("Source Worksheets are not allowed to modify data")

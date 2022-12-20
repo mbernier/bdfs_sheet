@@ -32,5 +32,5 @@ class BaseClass():
     
     #placeholder method, allows Source/Destination subclasses to call this and raise protection exceptions
     @Debugger
-    def __modifiesData(self):
+    def modifiesData(self):
         pass
