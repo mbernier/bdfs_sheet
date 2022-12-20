@@ -1,17 +1,17 @@
 import sys
-from modules.spreadsheets.sources.bdfs_test import BdfsInventory_Test_Spreadsheet_Source
+from modules.spreadsheets.sources.simple_sheet import Simple_Spreadsheet_Source
 
-sheet = BdfsInventory_Test_Spreadsheet_Source()
+sheet = Simple_Spreadsheet_Source()
 
 def test_getWorksheetKeeperPattern():
     assert "test" == sheet.getWorksheetKeeperPattern()
 
 def test_getSpreadsheetId():
-    assert "1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8" == sheet.getSpreadsheetId()
+    assert "1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI" == sheet.getSpreadsheetId()
 
 
 def test_getWorksheetClassName():
-    assert "BdfsInventory_Test_Worksheet_Source" == sheet.getWorksheetClassName()
+    assert "Simple_Worksheet_Source" == sheet.getWorksheetClassName()
 
 
 def test_setupServiceAccount():

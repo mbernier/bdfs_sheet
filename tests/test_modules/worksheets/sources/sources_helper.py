@@ -1,10 +1,10 @@
 import gspread
-from modules.spreadsheets.sources.bdfs_test import BdfsInventory_Test_Spreadsheet_Source
+from modules.spreadsheets.sources.simple_sheet import Simple_Spreadsheet_Source
 
 def worksheet_helper(test_worksheet, worksheetName, copyFromWorksheetName, renameWorksheetName, method=None):
     if method == True or method.__name__ in ["test_commit", "test_commit_with_larger_data"]:
 
-        sheet = BdfsInventory_Test_Spreadsheet_Source()
+        sheet = Simple_Spreadsheet_Source()
         spreadsheet = sheet.setupSpreadsheet()
 
         # see if the sheetName 
@@ -36,6 +36,6 @@ def worksheet_helper(test_worksheet, worksheetName, copyFromWorksheetName, renam
         # Create a spreadsheet for the tests to run on
         #
         ####
-        sheet = BdfsInventory_Test_Spreadsheet_Source() 
+        sheet = Simple_Spreadsheet_Source() 
         test_worksheet = sheet.getWorksheet(worksheetName)
     return test_worksheet

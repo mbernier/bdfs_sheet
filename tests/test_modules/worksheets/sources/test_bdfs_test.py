@@ -1,5 +1,5 @@
 import gspread, pytest
-from modules.spreadsheets.sources.bdfs_test import BdfsInventory_Test_Spreadsheet_Source
+from modules.spreadsheets.sources.simple_sheet import Simple_Spreadsheet_Source
 from modules.worksheets.exception import Bdfs_Worksheet_Source_Exception
 from tests.test_modules.worksheets.sources.sources_helper import worksheet_helper
 

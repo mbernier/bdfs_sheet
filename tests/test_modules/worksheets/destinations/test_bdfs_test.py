@@ -1,5 +1,5 @@
 import gspread, pytest
-from modules.spreadsheets.destinations.bdfs_test import BdfsInventory_Test_Spreadsheet_Destination
+from modules.spreadsheets.destinations.simple_sheet import Simple_Spreadsheet_Destination
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from tests.test_modules.worksheets.destinations.destination_helper import worksheet_helper
 
@@ -96,7 +96,7 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_getExpectedColumns(self):
         cols = self.test_worksheet.getExpectedColumns()
-        assert cols == ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 'Color', 'UnitedPorte URL', 'Image 1 URL', 'Image 1 SEO', 'Image 2 URL', 'Image 2 SEO', 'Image 3 URL', 'Image 3 SEO', 'Image 4 URL', 'Image 4 SEO', 'Image 5 URL', 'Image 5 SEO', 'Description']
+        assert cols == ['Name', 'Birthday', 'Email']
 
 
     def test_getColumns(self):

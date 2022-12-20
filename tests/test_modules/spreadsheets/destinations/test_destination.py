@@ -1,18 +1,18 @@
 import sys
-from modules.spreadsheets.destinations.bdfs_test import BdfsInventory_Test_Spreadsheet_Destination
+from modules.spreadsheets.destinations.simple_sheet import Simple_Spreadsheet_Destination
 
-sheet = BdfsInventory_Test_Spreadsheet_Destination()
+sheet = Simple_Spreadsheet_Destination()
 
 
 def test_getWorksheetKeeperPattern():
     assert "test" == sheet.getWorksheetKeeperPattern()
 
 def test_getSpreadsheetId():
-    assert "1RyODmeydoIlMO75xa5wIxHRxqnZWRkDcxWZyp6fK-H8" == sheet.getSpreadsheetId()
+    assert "1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI" == sheet.getSpreadsheetId()
 
 
 def test_getWorksheetClassName():
-    assert "BdfsInventory_Test_Worksheet_Destination" == sheet.getWorksheetClassName()
+    assert "Simple_Worksheet_Destination" == sheet.getWorksheetClassName()
 
 
 def test_setupServiceAccount():
@@ -30,26 +30,3 @@ def test_setupWorksheets():
     worksheets2 = sheet.getWorksheets()
     assert worksheets == worksheets2
     assert 'test_DONTMOVE' in worksheets.keys()
-
-
-
-
-
-
-# def test_getWorksheets():
-#     assert ["test_DONTMOVE"] == sheet.getWorksheets()
-
-# def test_getWorksheet():
-
-#     worksheetClassName = sheet.getWorksheetClassName()
-#     assert "BdfsInventory_Test_Worksheet" == worksheetClassName
-
-#     worksheetclass = sheet.getWorksheetClass()
-#     assert worksheetclass.__name__ == "BdfsInventory_Test_Worksheet"
-
-#     worksheet = sheet.getWorksheet("test_DONTMOVE")
-#     assert worksheet.__class__.__name__ == "BdfsInventory_Test_Worksheet"
-
-
-
-
