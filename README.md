@@ -159,11 +159,7 @@ Environment options are all explained in the comments of the `default` environme
 ## To Add:
 
 To do:
-1. Simplify some defaults:
-    a. Spreadsheet classes: for both Source/Destination modify to pull in a default Worksheet class if one isn't written in the child-class's definition
-    a. Worksheet class: for both Source/Destination modify to pull in a default row class if one isn't written in the child-class's definition
 1. Create a Spreadsheet that keeps track of when the last Sarto Inventory check was done
-
 
 Initial Migration to new Data sources:
 1. Create a BDFS_Inventory source class to read the data from BDFS_Inventory
