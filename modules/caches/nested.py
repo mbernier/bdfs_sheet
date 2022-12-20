@@ -182,15 +182,15 @@ class Nested_Cache(BdfsCache):
     # uses the dict get() to return None or the value if the item exists
     @Debugger
     @validate_arguments # no need to test location exists, return None if the data doesn't exist at row or location
-    def select(self, row:Annotated[int, Field(gt=-1)]=None, position:Union[int,str] = None):
+    def select(self, row:Annotated[int, Field(gt=-1)]=None, position:Union[int,str] = None, updated_timestamp=False):
         self.validation_rowExists(row)
 
         if None == row:
             # select all
-            return self.getAsListOfDicts()
+            return self.getAsListOfDicts(updated_timestamp=updated_timestamp)
         
         # if position is None, will return the row, if it's set it will return the data at that position
-        data = self._storage[row].select(position=position)
+        data = self._storage[row].select(position=position, updated_timestamp=updated_timestamp)
         return data
 
 
@@ -243,25 +243,25 @@ class Nested_Cache(BdfsCache):
 
 
     @Debugger
-    def __str__(self) -> str:
+    def __str__(self,updated_timestamp=False) -> str:
         output = "Nested_Cache: \n"
-        return str(self.getAsListOfDicts())
+        return str(self.getAsListOfDicts(updated_timestamp=updated_timestamp))
 
 
     @Debugger
-    def getAsListOfLists(self) -> list:
+    def getAsListOfLists(self,updated_timestamp=False) -> list:
         output = []
         for rowindex, row in enumerate(self._storage):
-            rowAsList = row.getAsList()
+            rowAsList = row.getAsList(updated_timestamp=updated_timestamp)
             output.append(rowAsList)
         return output
 
 
     @Debugger
-    def getAsListOfDicts(self) -> list[dict]:
+    def getAsListOfDicts(self,updated_timestamp=False) -> list[dict]:
         output = []
         for index, row in enumerate(self._storage):
-            rowAsDict = row.getAsDict()
+            rowAsDict = row.getAsDict(updated_timestamp=updated_timestamp)
             output.append(rowAsDict)
         return output
 

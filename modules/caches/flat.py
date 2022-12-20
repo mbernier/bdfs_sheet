@@ -1,4 +1,4 @@
-import sys, pydantic
+import time
 from collections import OrderedDict
 from modules.cache import BdfsCache
 from modules.caches.exception import Flat_Cache_Exception
@@ -11,6 +11,7 @@ from typing import Union
 class Flat_Cache_Data(PydanticBaseModel):
     storage:dict = Field(default_factory=dict)
     size:int = Field(default_factory=int)
+    update_timestamp:float = Field(default_factory=float)
 
 logger_name.name = "Nested_Cache"
 
@@ -45,7 +46,7 @@ class Flat_Cache(BdfsCache):
             raise Flat_Cache_Exception("Locations are already loaded, to add new keys use insert_location(location)")
 
         for location in locations:
-            self.insert_location(position=location)
+            self.insert_location(position=location, skip_update_timestamp=True)
 
 
     @Debugger
@@ -53,7 +54,11 @@ class Flat_Cache(BdfsCache):
     def load(self, data:list=None):
         if None != data:
             for index,value in enumerate(data):
-                self.insert(index, value)
+                # let's treat updated date as special
+                if index == "update_timestamp":
+                    self.data.update_timestamp = value
+                else:
+                    self.insert(index, value, skip_update_timestamp=True)
 
     ####
     #
@@ -110,6 +115,22 @@ class Flat_Cache(BdfsCache):
 
     ####
     #
+    # Updated - whenever the data is changed, let's record and then hand this back on select
+    #
+    ####
+    
+    # This is added on __writeSpecial so that it is captured whenever data changes
+    # timestamp is output on getAs methods
+    @Debugger
+    def update_timestamp(self):
+        self.data.update_timestamp = time.time()
+
+    @Debugger
+    def getUpdateTimestamp(self):
+        return self.data.update_timestamp
+
+    ####
+    #
     # Insert Data
     #
     ####
@@ -117,11 +138,11 @@ class Flat_Cache(BdfsCache):
     # put data in a location if it doesn't have data, if it does, error out
     @Debugger
     @validate_arguments(config=dict(smart_union=True))
-    def insert(self, position: Union[int,str], data=None):
+    def insert(self, position: Union[int,str], data=None, skip_update_timestamp=False):
         self.fail_if_position_dne(position)
 
         if None == self.select(position): # is there data in the location?
-            self.__write(position=position, data=data)
+            self.__write(position=position, data=data, skip_update_timestamp=skip_update_timestamp)
         else:
             raise Flat_Cache_Exception("Flat_Cache has '{}' at location: {}. To update data in the cache, use update()".format(self.select(position), position))
 
@@ -138,7 +159,6 @@ class Flat_Cache(BdfsCache):
         self.fail_if_position_dne(position)
         self.__write(position=position, data=data)
 
-
     ####
     #
     # Select Data
@@ -148,9 +168,9 @@ class Flat_Cache(BdfsCache):
     # get the data at the location, or get everything from string keys as a dict
     @Debugger
     @validate_arguments
-    def select(self, position: Union[int,str] = None):
+    def select(self, position: Union[int,str] = None, updated_timestamp:bool=True):
         if None == position:
-            return self.getAsDict()
+            return self.getAsDict(updated_timestamp=updated_timestamp)
         else:
             self.fail_if_position_dne(position)
             return self.data.storage.get(position)['data']
@@ -178,14 +198,14 @@ class Flat_Cache(BdfsCache):
     # write whatever data we get to the cache location/index pair
     @Debugger
     @validate_arguments
-    def __write(self, position: Union[int,str], data=None):
+    def __write(self, position: Union[int,str], data=None, skip_update_timestamp=False):
         locationDict, indexDict = self.getBothDicts(position)
 
         # get the right positions from the opposite object
         index = locationDict['position']
         location = indexDict['position']
 
-        self.__writeSpecial(location=location, index=index, data=data)
+        self.__writeSpecial(location=location, index=index, data=data, skip_update_timestamp=skip_update_timestamp)
 
     # lets us write to whatever location/index combination we want
     #   normally, we would get the right pair and pass it here
@@ -193,7 +213,7 @@ class Flat_Cache(BdfsCache):
     #   items that may already exist
     @Debugger
     @validate_arguments
-    def __writeSpecial(self, location:str, index:int, data=None):
+    def __writeSpecial(self, location:str, index:int, data=None, skip_update_timestamp=False):
         locationDict, indexDict = self.createDataDicts(location=location, index=index, data=data)
         
         if None != data: # it's already set, why set it again?
@@ -204,6 +224,9 @@ class Flat_Cache(BdfsCache):
         # write the data to storage
         self.data.storage[location] = locationDict
         self.data.storage[index] = indexDict
+    
+        if False == skip_update_timestamp:
+            self.update_timestamp()
 
     ####
     #
@@ -214,7 +237,6 @@ class Flat_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def positionExists(self, position: Union[int,str]):
-        
         return (position in self.data.storage.keys()) # use the storage object here, to prevent excess looping through keys
 
 
@@ -256,7 +278,7 @@ class Flat_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def __shift_indexes(self, shiftFromIndex:int, shiftBy:int):
+    def __shift_indexes(self, shiftFromIndex:int, shiftBy:int, skip_update_timestamp=False):
         # we can go from the index to the end, bc we are shifting down
         # e.g. 3->2, 4->3, 5->4
         # assumes you don't care about what's in 2, so 3 can replace, then 3 is gone so 4 can replace
@@ -277,11 +299,13 @@ class Flat_Cache(BdfsCache):
             
             # allows us to migrate to a new index
             self.update_index(changeIndex, changeIndexTo)
-
+        
+        if False == skip_update_timestamp:
+            self.update_timestamp()
 
     @Debugger
     @validate_arguments
-    def insert_location(self, position:str, index:int=None):
+    def insert_location(self, position:str, index:int=None, skip_update_timestamp=False):
         
         if self.positionExists(position):
             raise Flat_Cache_Exception(f"Position '{position}' already exists, you cannot insert a new location to Flat_Cache that already exists")
@@ -295,10 +319,10 @@ class Flat_Cache(BdfsCache):
                 # this is a lot of extra work that is not needed right now
             raise Flat_Cache_Exception(f"index '{index}' is much greater than the current size of Flat_Cache: {self.size()}, try adding items in between {self.size()} and '{index}'")
         else:
-            self.__shift_indexes(index,1)
+            self.__shift_indexes(index,1, skip_update_timestamp=skip_update_timestamp)
 
         # we put the location in with None as the data
-        self.__writeSpecial(location=position, index=index, data=None)
+        self.__writeSpecial(location=position, index=index, data=None, skip_update_timestamp=skip_update_timestamp)
         self.increaseSize()
 
     @Debugger
@@ -360,7 +384,7 @@ class Flat_Cache(BdfsCache):
             if str is keyType or True == all:
                 # get the string keys in the correct order
                 output.append(self.data.storage[indexKey]['position'])
-        
+
         return output
 
     # self.data.size is managed through the places where we update locations, via increaseSize() and decreaseSize()
@@ -370,25 +394,37 @@ class Flat_Cache(BdfsCache):
 
 
     @Debugger
-    def __str__(self) -> str:
+    @validate_arguments
+    def __str__(self, updated_timestamp:bool=True) -> str:
         output = "Flat_Cache: \n"
+        timestamp = self.getUpdateTimestamp()
         for item in self.getKeys():
-            output += "\t{}: {}\n".format(item, self.select(item))
+            if item == "update_timestamp" and updated_timestamp == True:
+                data = self.getUpdateTimestamp()
+            else:
+                data = self.select(item)
+            output += "\t{}: {}\n".format(item, data)
         return output
 
 
     @Debugger
-    def getAsList(self):
+    @validate_arguments
+    def getAsList(self, updated_timestamp:bool=True):
         output = []
         for index in self.getKeys(keyType=int):
             output.insert(index, self.select(index))
+        if True == updated_timestamp:
+            output.insert(self.getUpdateTimestamp())
         return output
 
 
     @Debugger
-    def getAsDict(self):
+    @validate_arguments
+    def getAsDict(self, updated_timestamp:bool=True):
         output = OrderedDict()
         for index in self.getKeys(keyType=int): #it really doesn't matter which type you choose here
             position, index = self.getOtherPosition(index)
             output[position] = self.select(index)
+        if True == updated_timestamp:
+            output["update_timestamp"] = self.getUpdateTimestamp()
         return output

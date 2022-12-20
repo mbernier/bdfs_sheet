@@ -111,9 +111,9 @@ def test_update_exception2():
 
 def test_getAsDict():
     cache = Nested_Cache(['b','c','d'],[[3],[None, 4, None],[None, None, 5]])
-    assert cache.select(0) == {'b': 3, 'c': None, 'd': None}
-    assert cache.select(1) == {'b': None, 'c': 4, 'd': None}
-    assert cache.select(2) == {'b': None, 'c': None, 'd': 5}
+    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'c': None, 'd': None}
+    assert cache.select(1, updated_timestamp=False) == {'b': None, 'c': 4, 'd': None}
+    assert cache.select(2, updated_timestamp=False) == {'b': None, 'c': None, 'd': 5}
 
 
 def test_getLocationThatExists():
@@ -146,11 +146,11 @@ def test_getLocationThatDoesntExist2():
 
 def test_select():
     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
-    assert cache.select(2) == {'b': 5, 'c': None, 'd': None}
+    assert cache.select(2, updated_timestamp=False) == {'b': 5, 'c': None, 'd': None}
 
 def test_select2():
     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
-    assert cache.select(row=2) == {'b': 5, 'c': None, 'd': None}
+    assert cache.select(row=2, updated_timestamp=False) == {'b': 5, 'c': None, 'd': None}
 
 
 

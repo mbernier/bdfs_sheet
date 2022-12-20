@@ -13,7 +13,7 @@ copyFromWorksheetName = "demo_worksheet"
 #   new sheets
 #
 ####
-print("running setup")
+print(" Running setup") #for some reason pytest chops the first character of this statement...
 sheet = BdfsInventory_Test_Spreadsheet()
 spreadsheet = sheet.setupSpreadsheet()
 

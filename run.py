@@ -39,4 +39,3 @@ if __name__ == "__main__":
     # run.main(sys.argv[1:]) 
 
     list1 = {'Name': ['name'], 'Birthday': ['birthday'], 'Price': ["cost", "shipping", "fees"]}
-    list2 = {'Name','Birthday'}
