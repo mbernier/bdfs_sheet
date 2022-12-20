@@ -155,11 +155,37 @@ Environments:
 
 Environment options are all explained in the comments of the `default` environment
 
-
 ## To Add:
 
 To do:
-1. Create a Spreadsheet that keeps track of when the last Sarto Inventory check was done
+1. Create a test script with the Simple Sheet:
+    1. Setup: 
+        1. Delete any old destination worksheets (calculated and summary)
+        1. For missing worksheets:
+            a. Option1: In Spreadsheet class - add list of expected worksheets? add them if missing?
+            a. Option2: Update method for getWorksheet() to have "Add if not found"
+    1. Test1
+        1. Spin up the Source Sheet
+        1. Spin up the Destination Sheet
+        1. Setup the test sheet to include "hours worked" and "yearly salary"
+        1. Create some columns that should be there in the Destination
+            1. Hourly pay
+            2. Total Pay
+        1. Modify/Add some data in the Destination
+            1. Convert to all lower
+            1. Calculate Hourly pay = yearly salary / 2008
+            2. Calculate Total Pay = hourly pay * hours worked
+        1. Commit the changes
+        1. Test the changes were committed
+    1. Test2: Create a summary sheet from data in the calculated sheet
+        1. Setup Source Spreadsheet + source Worksheet from test1
+        1. Setup destination spreadsheet + summary worksheet
+        1. Data to put in Summary
+            1. Number of Employees
+            2. Total hours worked
+            3. Total pay sent
+            4. Average Hourly Pay
+
 
 Initial Migration to new Data sources:
 1. Create a BDFS_Inventory source class to read the data from BDFS_Inventory
