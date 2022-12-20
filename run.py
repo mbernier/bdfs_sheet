@@ -17,8 +17,8 @@ from modules.sheetProcessor import SheetProcessor
 from modules.sheetProcessors.bdfs_inventory import BdfsInventory_SheetProcessor
 # from modules.sheetProcessors.exception import SheetProcessorException
 # from modules.spreadsheet import Bdfs_Spreadsheet
-from modules.spreadsheets.bdfs_inventory import BdfsInventory_Spreadsheet
-from modules.spreadsheets.bdfs_test import BdfsInventory_Test_Spreadsheet
+from modules.spreadsheets.sources.bdfs_inventory import BdfsInventory_Spreadsheet_Source
+from modules.spreadsheets.destinations.bdfs_inventory import BdfsInventory_Spreadsheet_Destination
 # from modules.spreadsheets.exception import SpreadsheetException
 ### removing these?
 # from modules.validation import Validation

@@ -10,11 +10,12 @@ logger_name.name = "SheetProcessor"
 #   and then have this Sheet Processor extend that class and pass the configuration
 class SheetProcessor(BaseClass):
 
-    spreadsheet_class = "modules.spreadsheet.Spreadsheet"
+    #Set the default spreadsheet classes, which will do very little...
+    source_spreadsheet_class = "modules.spreadsheets.source.Bdfs_Spreadsheet_Source"
+    destination_spreadsheet_class = "modules.spreadsheets.destination.Bdfs_Spreadsheet_Destination"
 
     default_output = os.path.basename(__file__) + ' -h to see available commands and information'
     help_output = """
-
 
 To Use the SheetProcessor, pass in some commands:
 
@@ -38,7 +39,8 @@ To Use the SheetProcessor, pass in some commands:
     @Debugger
     def __init__(self):
         # set the default spreadsheet id from the constants or configuration
-        self.spreadsheet = None
+        self.source_spreadsheet = None
+        self.destination_spreadsheet = None
 
     @Debugger
     def main(self, argv):
@@ -64,8 +66,6 @@ To Use the SheetProcessor, pass in some commands:
             # Setup the spreadsheet Object now, so we don't need it if someone is just requesting help info
             #
             ####
-            self.__setUpSpreadsheet()
-
             if opt in ("-c", "--check-worksheet-cols"):
                 # check the column titles and see if they fit our preferences
                 Logger.debug("user selected -c option")
@@ -100,24 +100,43 @@ To Use the SheetProcessor, pass in some commands:
 
     # setup the sheet object if not setup, return it either way
     @Debugger
-    def __setUpSpreadsheet(self):
-        if None == self.spreadsheet:
+    def __setUpSourceSpreadsheet(self):
+        if None == self.source_spreadsheet:
             # self.spreadsheet = getattr(sys.modules[self.spreadsheet_class["module"]], self.spreadsheet_class["class"])
-            spreadsheetClass = self.importClass(self.spreadsheet_class) 
-            self.spreadsheet = spreadsheetClass()
-        return self.spreadsheet
+            spreadsheetClass = self.importClass(self.source_spreadsheet_class) 
+            self.source_spreadsheet = spreadsheetClass()
+        return self.source_spreadsheet
+
+    # setup the sheet object if not setup, return it either way
+    @Debugger
+    def __setUpDestinationSpreadsheet(self):
+        if None == self.destination_spreadsheet:
+            # self.spreadsheet = getattr(sys.modules[self.spreadsheet_class["module"]], self.spreadsheet_class["class"])
+            spreadsheetClass = self.importClass(self.destination_spreadsheet_class) 
+            self.destination_spreadsheet = spreadsheetClass()
+        return self.destination_spreadsheet
 
 
     # list all the worksheets in the spreadsheet. If use_cache is true, then return the stored object
     # if use_cached is false, go retrieve it again
     @Debugger
     def listWorksheets(self):
-        return self.spreadsheet.getWorksheets()
+        self.__setUpSourceSpreadsheet()
+        return self.source_spreadsheet.getWorksheets()
 
 
     # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
     #   to make sure that the spreadsheet is valid for what we want to do
     @Debugger
-    def checkWorksheetColumns(self, checkExtras = True, addMissingColumns = False):
-        self.spreadsheet.checkWorksheetColumns(checkExtras = checkExtras, addMissingColumns = addMissingColumns)
+    def checkWorksheetColumns(self, checkExtras = True):
+        self.__setUpSourceSpreadsheet()
+        self.source_spreadsheet.checkWorksheetColumns(checkExtras = checkExtras, addMissingColumns = False)
+        return
+
+    # call the spreadsheet checkWorksheet functionality, which checks the columns and other features of the spreadsheet
+    #   to make sure that the spreadsheet is valid for what we want to do
+    @Debugger
+    def fixWorksheetColumns(self, checkExtras = True):
+        self.__setUpDestinationSpreadsheet()
+        self.source_spreadsheet.checkWorksheetColumns(checkExtras = checkExtras, addMissingColumns = True)
         return
