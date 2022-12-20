@@ -3,8 +3,6 @@ from modules.logger import logger_name
 logger_name.name = "BdfsInventory_Test_Worksheet"
 
 class BdfsInventory_Test_Worksheet(Bdfs_Worksheet):
-
-    logger_name = "BdfsInventory_Test_Worksheet"
     
     cols_expected = ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 
                         'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 

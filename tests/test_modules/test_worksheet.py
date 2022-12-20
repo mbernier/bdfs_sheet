@@ -1,5 +1,6 @@
-import sys, gspread
+import gspread, pytest
 from modules.spreadsheets.bdfs_test import BdfsInventory_Test_Spreadsheet
+from modules.worksheets.exception import Bdfs_Worksheet_Exception
 
 worksheetName = "test_easy_data"
 renameWorksheetName = "test_easy_data_new_title"
@@ -51,6 +52,34 @@ del worksheet2
 sheet = BdfsInventory_Test_Spreadsheet() 
 test_worksheet = sheet.getWorksheet(worksheetName)
 
+####
+#
+# Not Implemented, raises Exceptions
+#
+####
+
+def test_removeColumns():
+    with pytest.raises(Bdfs_Worksheet_Exception) as excinfo:
+        test_worksheet.changed("whatever")
+    assert excinfo.value.message == f"there is no 'whatever' in data.changes keys, add it to __setup() to track it"
+
+####
+#
+# Implemented
+#
+####
+
+
+def test_changed_isChanged():
+    with pytest.raises(Bdfs_Worksheet_Exception) as excinfo:
+        test_worksheet.changed("whatever")
+    assert excinfo.value.message == f"there is no 'whatever' in data.changes keys, add it to __setup() to track it"
+    
+    test_worksheet.changed("data")
+    assert True == test_worksheet.isChanged("data")
+    
+    test_worksheet.changed("data", False)
+    assert False == test_worksheet.isChanged("data")
 
 def test_getTitle():
     title = test_worksheet.getTitle()
@@ -66,7 +95,7 @@ def test_setTitle_to_same_title():
 
     assert title == test_worksheet.getTitle()
     assert title == test_worksheet.getOriginalTitle()
-    assert test_worksheet.data.changes['title'] == False
+    assert test_worksheet.isChanged('title') == False
 
 
 def test_setTitle():
@@ -78,9 +107,7 @@ def test_setTitle():
 
     assert newTitle == test_worksheet.getTitle()
     assert title == test_worksheet.getOriginalTitle()
-    assert test_worksheet.data.changes['title'] == True
-
-
+    assert test_worksheet.isChanged('title') == True
 
 
 def test_getA1():
@@ -97,14 +124,10 @@ def test_getExpectedColumns():
     cols = test_worksheet.getExpectedColumns()
     assert cols == ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 'Color', 'UnitedPorte URL', 'Image 1 URL', 'Image 1 SEO', 'Image 2 URL', 'Image 2 SEO', 'Image 3 URL', 'Image 3 SEO', 'Image 4 URL', 'Image 4 SEO', 'Image 5 URL', 'Image 5 SEO', 'Description']
 
+
 def test_getColumns():
     cols = test_worksheet.getColumns()
     assert cols == ['Name', 'Birthday', 'Email']
-
-def test_gspread_worksheet_removeColumns():
-    counts = test_worksheet.getColumnCounts()
-    # assert counts['data'] == 3
-    gspread_worksheet_column_count = counts['gspread_worksheet']
   
 
 def test_getColumnCounts():
@@ -115,16 +138,18 @@ def test_getColumnCounts():
 
 
 def test_addColumns():
-    
     test_worksheet.addColumn("newColumn1")
     assert test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn1']
 
     test_worksheet.addColumn(name="newColumn3", index=3)
     assert test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'newColumn1']
     
+
 def test_commit():
     #pushes all the changes we have make to the sheet
     test_worksheet.commit()
+
+    print("\n\n\nNeed to add tests to verify that the data was setup correctly in the gspread sheet\n\n\n")
 
 def test_commit_with_larger_data():
     # the worksheet is only 5 columns wide right now, let's see what happens if we add a lot more data

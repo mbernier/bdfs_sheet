@@ -1,4 +1,3 @@
-import gspread, sys
 from dataclasses import dataclass, field as dc_field
 from collections import OrderedDict
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
@@ -33,7 +32,7 @@ from pydantic import validate_arguments
 # 'spreadsheet', 'tab_color', 'title', 'unhide_columns', 'unhide_rows', 'unmerge_cells', 'update', 'update_acell', 
 # 'update_cell', 'update_cells', 'update_index', 'update_note', 'update_tab_color', 'update_title', 'updated', 'url']
 
-logger_name.name = "Worksheet"
+logger_name.name = "Bdfs_Worksheet"
 
 @dataclass
 class Worksheet_DataClass():
@@ -76,19 +75,20 @@ class Bdfs_Worksheet(BaseClass):
         if [] == self.getExpectedColumns():
             #fail if no one set the spreadsheetId on the wrapper class
             Logger.critical("Cols expected was not set before instantiating Spreadsheet class")
+            raise Exception("cols_expected parameter is not set")
+
 
     # Register a change
     @Debugger
     @validate_arguments
     def changed(self, index:str, value:bool=True):
-        self.__modifiesData() # because this is called when data is modified
         if index in self.data.changes.keys():
             self.data.changes[index] = value
         else:
-            raise Bdfs_Worksheet_Exception(f"there is no '{index}' in data.changes keys, add it to __setup() to track it")
+            raise Bdfs_Worksheet_Exception(f"there is no {index} in data.changes, add it to __setup() to track it")
 
 
-    # Detect a change, does not have __modifiedData() bc this is a read-only method
+    # Detect a change
     @Debugger
     @validate_arguments
     def isChanged(self, index):
@@ -105,8 +105,7 @@ class Bdfs_Worksheet(BaseClass):
     ####
     # get rid of any trailing columns that exist, we do this when we get ready to commit only
     @Debugger
-    def gspread_worksheet_resize_to_data(self):
-        self.__modifiesData()
+    def gspread_worksheet_resize_to_data(self): 
         Logger.debug("Resizing the google worksheet to the current data size")
         #rezize the spreadsheet to the data - makes our lives easier later on
         self.data.gspread_worksheet.resize(cols=self.getColumnCounts()['data'])
@@ -138,7 +137,6 @@ class Bdfs_Worksheet(BaseClass):
     # always returns self.data.title
     @Debugger
     def getOriginalTitle(self): #tested
-        self.__modifiesData()
         return self.data.title
 
 
@@ -146,7 +144,6 @@ class Bdfs_Worksheet(BaseClass):
     @Debugger
     @validate_arguments
     def setTitle(self, title:str) -> str: #tested
-        self.__modifiesData()
         # only do this if the data is diff, you know?
         if title != self.data.title:
             self.data.uncommitted_title = title
@@ -188,7 +185,7 @@ class Bdfs_Worksheet(BaseClass):
     #   does not give a fuck what is in the worksheet, it will clear it before writing
     @Debugger
     def commit(self):
-        self.__modifiesData()
+        
         # if the title is changed, push it
         if self.isChanged('title') == True:
             self.data.gspread_worksheet.update_title(self.getTitle())
@@ -268,7 +265,6 @@ class Bdfs_Worksheet(BaseClass):
 
     @Debugger
     def getExpectedColumns(self): #tested
-        self.__modifiesData() #not because it actually writes, but bc it's used when writing and not when reading
         return self.__mergeExpectedColumns()
 
 
@@ -276,7 +272,6 @@ class Bdfs_Worksheet(BaseClass):
     #   Get the columns that we care about and return them
     @Debugger
     def __mergeExpectedColumns(self):
-        self.__modifiesData() #not because it actually writes, but bc it's used when writing and not when reading
         expectedCols = self.cols_expected
         for index in self.cols_expected_extra:
             if index in self.getTitle():
@@ -307,7 +302,6 @@ class Bdfs_Worksheet(BaseClass):
     @Debugger
     @validate_arguments
     def addColumn(self, name:str, index:int=None):
-        self.__modifiesData()
         self.getData()
         # will handle adding at the end or the index, depending on what's passed
         self.data.sheetData.addHeader(name=name, index=index)
@@ -318,9 +312,8 @@ class Bdfs_Worksheet(BaseClass):
     @Debugger
     @validate_arguments
     def removeColumns(self, column:int=None, start:int=None, stop:int=None):
-        self.__modifiesData()
         self.getData()
-        raise Bdfs_Worksheet_Exception("remove_columns is not built or tested yet")
+        raise Exception("remove_columns is not built or tested yet")
 
 
     ####

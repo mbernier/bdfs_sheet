@@ -1,11 +1,11 @@
 import sys
 from modules.base import BaseClass
-from modules.caches.exception import Cache_Exception
+from modules.logger import logger_name
 
+logger_name.name = "BdfsCache"
 
 class BdfsCache(BaseClass):
 
-    logger_name = "BdfsCache"
     _storage = {}
 
     def setData(self):

@@ -29,3 +29,8 @@ class BaseClass():
     @Debugger
     def className(self):
         return self.__class__.__name__
+    
+    #placeholder method, allows Source/Destination subclasses to call this and raise protection exceptions
+    @Debugger
+    def __modifiesData(self):
+        pass

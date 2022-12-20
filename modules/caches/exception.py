@@ -1,6 +1,6 @@
-from modules.exception import BdfsException
+from modules.exception import Bdfs_Exception
 
-class Cache_Exception(BdfsException):
+class Cache_Exception(Bdfs_Exception):
     def __init__(self, message="Cache Exception raised"):
         self.message = message
         super().__init__(self.message)    

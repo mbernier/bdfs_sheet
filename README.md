@@ -159,8 +159,6 @@ Environment options are all explained in the comments of the `default` environme
 ## To Add:
 
 To do:
-1. - Modify Flat_Cache to:
-    - Sets an updated date field if the data in the cache was changed at all
 1. Test out creating a GoogleSheet source class and Google Sheet Destination class
     a Does this make the code a little cleaner from a read vs write perspective?
     a. If so, create migration classes for moving data from a source to a destination -- see Migration Classes below

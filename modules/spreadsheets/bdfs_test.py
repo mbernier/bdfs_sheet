@@ -11,9 +11,5 @@ class BdfsInventory_Test_Spreadsheet(Bdfs_Spreadsheet):
 
     worksheetKeeperPattern = "test"
 
-    # from BaseClass - allows us to set sub loggers
-    logger_name = "BdfsInventory_Test_Spreadsheet"
-
-
     # worksheet_class = {"module": "modules.spreadsheets.bdfs_inventory", "class": "Bdfs_Spreadsheet"}
     worksheet_class = "modules.worksheets.bdfs_test.BdfsInventory_Test_Worksheet"

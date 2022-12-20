@@ -25,10 +25,8 @@ class LoggerName():
     name: str = "Logger"
 
 logger_name = LoggerName()
-print(logger_name.name)
 
 class Logger():
-    base_logger_name = "logs"
     logger_configured = False
     output_to_console = False
 

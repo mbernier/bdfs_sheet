@@ -3,7 +3,7 @@ from dataclasses import dataclass, field as dc_field
 from modules.base import BaseClass
 from modules.logger import Logger
 from modules.decorator import Debugger
-from modules.spreadsheets.exception import SpreadSheetException
+from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import worksheet, utils as gspread_utils
 from pprint import pprint
@@ -72,7 +72,7 @@ class Bdfs_Spreadsheet(BaseClass):
             if self.worksheet_class != None:
                 self.data.worksheetClassName = self.worksheet_class.split(".").pop()
             else:
-                raise SpreadSheetException("worksheetKeeperPattern is not set in child class")
+                raise Bdfs_Spreadsheet_Exception("worksheetKeeperPattern is not set in child class")
 
         return self.data.worksheetClassName
 
@@ -125,7 +125,7 @@ class Bdfs_Spreadsheet(BaseClass):
             if self.worksheetKeeperPattern != None:
                 self.data.worksheetKeeperPattern = self.worksheetKeeperPattern
             else:
-                raise SpreadSheetException("worksheetKeeperPattern is not set in child class")
+                raise Bdfs_Spreadsheet_Exception("worksheetKeeperPattern is not set in child class")
 
         return self.data.worksheetKeeperPattern
 
@@ -137,7 +137,7 @@ class Bdfs_Spreadsheet(BaseClass):
             if self.spreadsheetId != None:
                 self.data.spreadsheetId = self.spreadsheetId
             else:
-                raise SpreadSheetException("Spreadsheet ID is not set in child class")
+                raise Bdfs_Spreadsheet_Exception("Spreadsheet ID is not set in child class")
 
         return self.data.spreadsheetId
 
@@ -147,41 +147,3 @@ class Bdfs_Spreadsheet(BaseClass):
         if 0 == len(self.getWorksheets()):
             raise Exception("Worksheets were not added to the Spreadsheet properly.")
         return self.getWorksheets()[worksheetTitle]
-
-
-
-    # # only checks the columns, doesn't do anything to adjust or fix them
-    # # colsToCheck allows you to pass in something new to check against, rather than whatever is in cols_expected
-    # # checkExtras will allow you to bypass checking against the cols_expected_extra columns
-    # @Debugger
-    # @validate_arguments
-    # def checkWorksheetColumns(self, colsToCheck:list=None, checkExtras:bool=True, addMissingColumns:bool=False):
-    #     # if nothing was passed through, then use the default. Otherwise, use what was passed
-
-    #     for worksheetTitle in self.getWorksheets():
-    #         worksheet = self.getWorksheet(worksheetTitle)
-
-    #         worksheet.playground()
-
-    #         sys.exit()
-
-    #         #do this at the END of your processing, to make sure the data gets stored in the worksheet properly
-    #         # up to this point, everything is just done in the copy of the worksheet
-    #         # this helps keep the number of API calls to a minimum, so we don't get in trouble
-    #         worksheet.commit()
-
-    #         # Right now, this can get all the data and sets up the cache in the WorksheetData class wrapped around Nested_Cache
-    #         # We need to figure out how to do the functionality below within the cached sheetData
-    #         # - making sure to keep the headers, data, etc up to date as we go
-    #         # - once it's cleaned, organized, we need to commit the data to the google sheet
-
-    #         # decide what we need to keep from DataStore class and the X_ methods on worksheet, based on what we need to build below, as well
-
-
-    #             # 1. given a list of columns that we need, compare to the columns we have and return the diff:
-    #             #     a. Columns in the spreadsheet that are not in getExpectedColumns
-    #             #     b. Columns in expected that are not in the spreadsheet
-    #             # 2. Decide what to do with the extra columns in the sheet
-    #             #     - offer a flag to ignore columns in spreadsheet that are not in expected (keep them)
-    #             #     - if flag is not set to ignore, then throw an error
-    #             # 3. Add the missing expected columns to the spreadsheet
