@@ -73,7 +73,7 @@ class Bdfs_Spreadsheet(BaseClass):
             if self.worksheet_class != None:
                 self.data.worksheetClassName = self.worksheet_class.split(".").pop()
             else:
-                raise Bdfs_Spreadsheet_Exception("worksheetKeeperPattern is not set in child class")
+                raise Bdfs_Spreadsheet_Exception("worksheet_class is not set in child class")
 
         return self.data.worksheetClassName
 
@@ -139,7 +139,7 @@ class Bdfs_Spreadsheet(BaseClass):
             if self.worksheetKeeperPattern != None:
                 self.data.worksheetKeeperPattern = self.worksheetKeeperPattern
             else:
-                raise Bdfs_Spreadsheet_Exception("worksheetKeeperPattern is not set in child class")
+                raise Bdfs_Spreadsheet_Exception("worksheetKeeperPattern is set to None in child class, set to \"\" instead")
 
         return self.data.worksheetKeeperPattern
 
@@ -160,11 +160,13 @@ class Bdfs_Spreadsheet(BaseClass):
     def getWorksheet(self, worksheetTitle:str):
         self.setupWorksheets() #make sure they're setup before someone tries to get one
         if {} == self.getWorksheets():
-            raise Exception("Worksheets were not added to the Spreadsheet properly.")
+            raise Bdfs_Spreadsheet_Exception("Worksheets were not added to the Spreadsheet properly.")
         
         if worksheetTitle in self.getWorksheets():
             if None == self.getWorksheets()[worksheetTitle]:
                 worksheetClass = self.getWorksheetClass()
                 self.data.worksheets[worksheetTitle] = worksheetClass(self.data.gspread_worksheets[worksheetTitle])
-
-        return self.getWorksheets()[worksheetTitle]
+        
+            return self.getWorksheets()[worksheetTitle]
+        else:
+            raise Bdfs_Spreadsheet_Exception(f"The worksheet '{worksheetTitle}' was not found in the kept worksheets: {list(self.getWorksheets().keys())}")
