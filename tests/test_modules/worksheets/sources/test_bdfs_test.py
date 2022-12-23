@@ -7,7 +7,7 @@ from tests.test_modules.worksheets.sources.sources_helper import sources_helper
 class Test_Bdfs_Worksheet_Source:
     @classmethod
     def setup_class(self):
-        print("\tstarting class: {} execution".format(self.__name__))
+        print("\n\tstarting class: {} execution".format(self.__name__))
         self.worksheetName = "test_easy_data"
         self.renameWorksheetName = "test_easy_data_new_title"
         self.copyFromWorksheetName = "demo_worksheet"
@@ -100,7 +100,7 @@ class Test_Bdfs_Worksheet_Source:
 
     def test_getDataRange(self):
         dataRange = self.test_worksheet.getDataRange()
-        assert dataRange == "A1:C4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
+        assert dataRange == "A1:F4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
 
     def test_getExpectedColumns(self):
@@ -111,7 +111,7 @@ class Test_Bdfs_Worksheet_Source:
 
     def test_getColumns(self):
         cols = self.test_worksheet.getColumns()
-        assert cols == ['Name', 'Birthday', 'Email']
+        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake']
 
 
     def test_getColumnCounts(self):
@@ -126,13 +126,13 @@ class Test_Bdfs_Worksheet_Source:
             self.test_worksheet.addColumn("newColumn1")
         assert "object has no attribute 'addColumn'" in str(excinfo.value)
         
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake']
 
         with pytest.raises(AttributeError) as excinfo:
             self.test_worksheet.addColumn(name="newColumn3", index=3)
         assert "object has no attribute 'addColumn'" in str(excinfo.value)
 
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake']
         
 
     def test_commit(self):

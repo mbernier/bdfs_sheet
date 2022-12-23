@@ -3,8 +3,7 @@
 # Extends SheetProcessor to share that functionality
 
 from modules.sheetProcessor import SheetProcessor
-from modules.logger import logger_name
-logger_name.name = "BdfdInventory_SheetProcessor"
+
 
 class BdfsInventory_SheetProcessor(SheetProcessor):
 

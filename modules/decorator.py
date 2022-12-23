@@ -1,5 +1,5 @@
 import functools
-from modules.logger import Logger
+from modules.logger import Logger, logger_name
 
 def Debugger_prepArgs(*args, **kwargs):
     args_repr = [repr(a) for a in args]                      # 1
@@ -10,6 +10,9 @@ def Debugger_prepArgs(*args, **kwargs):
 def Debugger(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
+        if 0 < len(args):
+            print(f"Set logger name to {args[0].__class__.__name__}")
+            logger_name.name = args[0].__class__.__name__
         Logger.debug(f"{f}({Debugger_prepArgs(args,kwargs)})")
         return f(*args, **kwargs)
     return wrapper

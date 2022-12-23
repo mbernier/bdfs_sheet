@@ -204,3 +204,16 @@ def test_delete_columns_check_multi_rows():
 
     assert cache.select(0, updated_timestamp=False) == {'b': 3, 'f': 7}
     assert cache.select(1, updated_timestamp=False) == {'b': 1, 'f': 5}
+
+def test_updateRow():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]])
+    cache.updateRow(1, [10,20,30,40,50])
+
+    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
+    assert cache.select(1, updated_timestamp=False) == {'b': 10, 'c': 20,'d': 30,'e': 40,'f': 50}
+
+def test_reorderColumns():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]])
+    cache.reorderColumns(['f','b','d','c','e'])
+    assert cache.select(0, updated_timestamp=False) == {'f': 7, 'b': 3, 'd': 5, 'c': 4, 'e': 6}
+    assert cache.select(1, updated_timestamp=False) == {'f': 5, 'b': 1, 'd': 3, 'c': 2, 'e': 4}

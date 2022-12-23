@@ -3,7 +3,7 @@ from modules.cache import BdfsCache
 from modules.caches.flat import Flat_Cache
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
 from modules.decorator import Debugger
-from modules.logger import Logger, logger_name
+from modules.logger import Logger
 from typing import Union
 from pydantic import Field, validate_arguments, StrictStr,ConstrainedStr
 from pydantic.typing import Annotated
@@ -19,7 +19,6 @@ from pydantic.typing import Annotated
 #   flat cache data is: location: {position: , data: } // index can be inferred from the position in the Flat_Cache item
 #   locations flat cache is the same thing, it's the first row
 
-logger_name.name = "Nested_Cache"
 
 class Nested_Cache(BdfsCache):
     _height = 0
@@ -110,6 +109,13 @@ class Nested_Cache(BdfsCache):
         Logger.info("deleting Row: {}".format(row))
         self.__decreaseHeight()
 
+    # replace the current row with different data
+    @Debugger
+    @validate_arguments
+    def updateRow(self, row:Annotated[int, Field(gt=-1)], rowData:list):
+        self.validation_rowExists(row)
+        self._storage[row] = Flat_Cache(self.getLocations(), rowData)
+
     #### 
     #
     # Column Methods
@@ -168,6 +174,27 @@ class Nested_Cache(BdfsCache):
         positions.reverse() #cannot be chained in sort, bc sort returns nothing
         for position in positions:
             self.deleteColumn(position)
+    
+    # this will cause Flat Cache to adjust indexes to the order of the locations passed
+        # it does assume that the columns passed in the list already exist
+    @Debugger
+    @validate_arguments
+    def reorderColumns(self, newColumns:list[str]):
+        # we are going to override the current locations list
+        self._locations = newColumns
+
+        # get each row of data and recreate it, using the new location order
+        for row in range(0, self.height()):
+            rowData = self._storage[row] # get the old row, so we can fetch the data
+
+            newData = [] # temp storage for the old row's data
+
+            for column in newColumns:
+                # get the data from the old row and order it in the new list
+                newData.append(rowData.select(column))
+            
+            self.updateRow(row, newData)
+
 
     ####
     #

@@ -1,6 +1,5 @@
 from modules.worksheets.source import Bdfs_Worksheet_Source
-from modules.logger import logger_name
-logger_name.name = "Sarto_Inventory_Worksheet_Source"
+
 
 class Sarto_Inventory_Worksheet_Source(Bdfs_Worksheet_Source):
     

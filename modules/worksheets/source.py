@@ -1,9 +1,6 @@
 from modules.decorator import Debugger
-from modules.logger import logger_name
 from modules.worksheets.exception import Bdfs_Worksheet_Source_Exception
 from modules.worksheet import Bdfs_Worksheet
-
-logger_name.name = "Bdfs_Worksheet_Source"
 
 #
 # Rules; 

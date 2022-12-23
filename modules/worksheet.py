@@ -6,7 +6,6 @@ from gspread import utils as gspread_utils
 from gspread.worksheet import Worksheet
 from modules.base import BaseClass
 from modules.decorator import Debugger
-from modules.logger import Logger, logger_name
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
 from pydantic import validate_arguments
@@ -33,7 +32,6 @@ from pydantic import validate_arguments
 # 'spreadsheet', 'tab_color', 'title', 'unhide_columns', 'unhide_rows', 'unmerge_cells', 'update', 'update_acell', 
 # 'update_cell', 'update_cells', 'update_index', 'update_note', 'update_tab_color', 'update_title', 'updated', 'url']
 
-logger_name.name = "Worksheet"
 
 @dataclass
 class Worksheet_DataClass():

@@ -5,7 +5,7 @@ from gspread import utils as gspread_utils
 from gspread.worksheet import Worksheet
 from modules.base import BaseClass
 from modules.decorator import Debugger
-from modules.logger import Logger, logger_name
+from modules.logger import Logger
 from modules.worksheet import Bdfs_Worksheet
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
@@ -33,8 +33,6 @@ from pydantic import validate_arguments
 # 'spreadsheet', 'tab_color', 'title', 'unhide_columns', 'unhide_rows', 'unmerge_cells', 'update', 'update_acell', 
 # 'update_cell', 'update_cells', 'update_index', 'update_note', 'update_tab_color', 'update_title', 'updated', 'url']
 
-logger_name.name = "Bdfs_Worksheet_Destination"
-
 #
 # Rules; 
 #   pulls the worksheet data, does all the changes, only pushes changes when commit() is called.
@@ -49,6 +47,11 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
             #fail if no one set the spreadsheetId on the wrapper class
             Logger.critical("Cols expected was not set before instantiating Spreadsheet class")
 
+    ####
+    #
+    # Meta Data Methods
+    #
+    ####
 
     # allows the data to be modified and registers that it was modified
     # in source, this will throw an exception to prevent modification of data
@@ -56,6 +59,23 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     def modifiesData(self):
         self.getData()
 
+
+    # if a new title is set, store it until we commit the sheet
+    @Debugger
+    @validate_arguments
+    def setTitle(self, title:str) -> str: #tested
+        self.modifiesData()
+        # only do this if the data is diff, you know?
+        if title != self.data.title:
+            self.data.uncommitted_title = title
+            self.changed('title')
+        return self.getTitle()
+
+    ####
+    #
+    # Column Methods
+    #
+    ####
 
     @Debugger
     def getExpectedColumns(self): #tested
@@ -71,20 +91,8 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
             if index in self.getTitle():
                 expectedCols.extend(self.cols_expected_extra[index])
         return expectedCols
-
-
-    # if a new title is set, store it until we commit the sheet
-    @Debugger
-    @validate_arguments
-    def setTitle(self, title:str) -> str: #tested
-        self.modifiesData()
-        # only do this if the data is diff, you know?
-        if title != self.data.title:
-            self.data.uncommitted_title = title
-            self.changed('title')
-        return self.getTitle()
-
     
+
     # wrapper function to take care of some pre-work on removing columns
     @Debugger
     @validate_arguments
@@ -107,10 +115,46 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
         # will handle adding at the end or the index, depending on what's passed
         self.data.sheetData.addHeader(name=name, index=index)
         self.changed("data")
+    
+
+    # This will call a method that will cause the data set to:
+        # remove unwanted columns
+        # add new columns
+        # put the columns in the sorted order
+    @Debugger
+    @validate_arguments
+    def alignToColumns(self, columns:list[str]):
+        self.modifiesData()
+        self.data.sheetData.alignHeaders(columns)
+        self.changed("data")
+
 
     ####
     #
-    # gSpread worksheet accessor methods - all private
+    # Row Methods
+    #
+    ####
+
+    @Debugger
+    @validate_arguments
+    def getRow(self, row:int):
+        return self.data.sheetData.select(row)
+
+
+    ####
+    #
+    # Cell Methods
+    #
+    ####
+    @Debugger
+    @validate_arguments
+    def getCell(self, row:int, column:str):
+        return self.data.sheetData.select(row,column)
+
+
+    ####
+    #
+    # gSpread worksheet accessor methods
     #
     ####
     # get rid of any trailing columns that exist, we do this when we get ready to commit only

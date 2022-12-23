@@ -1,9 +1,7 @@
 import sys, getopt, os, gspread
 from modules.base import BaseClass
 from modules.decorator import Debugger
-from modules.logger import Logger, logger_name
-
-logger_name.name = "SheetProcessor"
+from modules.logger import Logger
 
 # @todo refactor to pull out the getops functionality from this script
 #   create a class that takes in getopt options and data

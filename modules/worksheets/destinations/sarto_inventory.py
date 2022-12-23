@@ -1,7 +1,6 @@
 
 from modules.worksheets.destination import Bdfs_Worksheet_Destination
-from modules.logger import logger_name
-logger_name.name = "Sarto_Inventory_Worksheet_Destination"
+
 
 class Sarto_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
     

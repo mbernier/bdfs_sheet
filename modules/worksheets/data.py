@@ -2,12 +2,12 @@
 import sys
 from modules.base import BaseClass
 from modules.caches.nested import Nested_Cache
-from modules.logger import Logger, logger_name
+from modules.logger import Logger
 from modules.worksheets.exception import Bdfs_Worksheet_Data_Exception
 from modules.decorator import Debugger
 from pydantic import validate_arguments
+from typing import Union
 
-logger_name.name = "WorksheetData"
 
 class Bdfs_Worksheet_Data(BaseClass):
 
@@ -76,6 +76,16 @@ class Bdfs_Worksheet_Data(BaseClass):
     def getHeaders(self):
         return self._headers
 
+
+    # add multiple headers to the data
+    @Debugger
+    @validate_arguments
+    def addHeaders(self, headers:list[str]):
+        for header in headers:
+            # add to the end of the data
+            self.dataStore.insert_location(location=header)
+
+
     @Debugger
     @validate_arguments
     def addHeader(self, name:str, index:int=None):
@@ -102,6 +112,42 @@ class Bdfs_Worksheet_Data(BaseClass):
         #   so when we deleteColumn() and remove from that list, we remove it here, too
         if header in self._headers:
             self._headers.remove(header)
+
+
+    # set the data headers order to the order in this list
+    @Debugger
+    @validate_arguments
+    def reorderHeaders(self, newHeaders:list[str]):
+        # Make sure the order is correct
+        self.dataStore.reorderColumns(newHeaders)
+
+        # make sure to update the list of locations in the correct order
+        self._headers = self.dataStore.getLocations()
+
+
+    @Debugger
+    @validate_arguments
+    def alignHeaders(self, newHeaders:list[str]):
+        currentHeaders = self.getHeaders()
+
+        # remove headers from the data that are not in the new Headers
+        extraHeaders = list(set(currentHeaders) - set(newHeaders))
+        self.removeHeaders(extraHeaders)
+
+        # add headers in newHeaders that are not in currentHeaders
+        missingHeaders = list(set(newHeaders) - set(currentHeaders))
+        self.addHeaders(missingHeaders)
+
+        # make sure the data is in the newHeaders order
+        self.reorderHeaders(newHeaders)
+
+    ####
+    #
+    # Row Methods
+    # 
+    ####
+    def select(self, row, column:Union[int,str]=None):
+        return self.dataStore.select(row=row, position=column)
 
     ####
     #

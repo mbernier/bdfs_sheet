@@ -2,9 +2,6 @@
 # allows us to sandbox the specifics that we need for this spreadsheet into one place
 
 from modules.spreadsheets.destination import Bdfs_Spreadsheet_Destination
-from modules.logger import logger_name
-
-logger_name.name = "OriginalBdfs_Inventory_Spreadsheet_Destination"
 
 class OriginalBdfs_Inventory_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
 

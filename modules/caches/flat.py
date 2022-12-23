@@ -3,7 +3,6 @@ from collections import OrderedDict
 from modules.cache import BdfsCache
 from modules.caches.exception import Flat_Cache_Exception
 from modules.decorator import Debugger
-from modules.logger import logger_name
 from pydantic import BaseModel as PydanticBaseModel, Field, validate_arguments
 from pydantic.dataclasses import dataclass
 from typing import Union
@@ -13,7 +12,6 @@ class Flat_Cache_Data(PydanticBaseModel):
     size:int = Field(default_factory=int)
     update_timestamp:float = Field(default_factory=float)
 
-logger_name.name = "Nested_Cache"
 
 class Flat_Cache(BdfsCache):
 
@@ -340,7 +338,7 @@ class Flat_Cache(BdfsCache):
 
         #create the item at the new positions
         self.__writeSpecial(location=indexDict['position'], index=newIndex, data=indexDict['data'])
-
+        
 
     ####
     #

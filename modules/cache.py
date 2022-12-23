@@ -1,8 +1,5 @@
 import sys
 from modules.base import BaseClass
-from modules.logger import logger_name
-
-logger_name.name = "BdfsCache"
 
 class BdfsCache(BaseClass):
 

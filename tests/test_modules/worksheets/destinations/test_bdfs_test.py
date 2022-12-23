@@ -1,5 +1,5 @@
 import gspread, pytest
-from modules.spreadsheets.destinations.simple_sheet import Simple_Spreadsheet_Destination
+from modules.caches.flat import Flat_Cache
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from tests.test_modules.worksheets.destinations.destination_helper import destination_helper
 
@@ -91,7 +91,7 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_getDataRange(self):
         dataRange = self.test_worksheet.getDataRange()
-        assert dataRange == "A1:C4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
+        assert dataRange == "A1:F4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
 
     def test_getExpectedColumns(self):
@@ -101,7 +101,7 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_getColumns(self):
         cols = self.test_worksheet.getColumns()
-        assert cols == ['Name', 'Birthday', 'Email']
+        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake']
     
 
     def test_getColumnCounts(self):
@@ -113,16 +113,41 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_addColumns(self):
         self.test_worksheet.addColumn("newColumn1")
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn1']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1']
 
         self.test_worksheet.addColumn(name="newColumn3", index=3)
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'newColumn1']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1']
+
+
+    def test_alignToColumns(self):
+        newColumns = ['Name', 'cake', 'giraffe', 'Birthday']
+        self.test_worksheet.alignToColumns(newColumns)
+        assert self.test_worksheet.getColumns() == newColumns
+
+
+    def test_getRow(self):
+        # we have tested flat cache up to this point, so let's use it
+        # also, of note - we are using the local version of the workshet, not the remote here
+        #   so the previous tests affect what's available
+        fcache = Flat_Cache(
+                    ['Name', 'cake', 'giraffe', 'Birthday'], 
+                    ['Matt', None, None, '1/1/2001']
+                )
+
+        assert self.test_worksheet.getRow(0) == fcache.select(updated_timestamp=False)
+
+
+    def test_getCell(self):
+        assert self.test_worksheet.getCell(0, "Name") == "Matt"
+        assert self.test_worksheet.getCell(0, "Birthday") == "1/1/2001"
+
 
     def test_commit(self):
         #pushes all the changes we have make to the sheet
         self.test_worksheet.commit()
 
         print("\n\n\nNeed to add tests to verify that the data was setup correctly in the gspread sheet\n\n\n")
+
 
     def test_commit_with_larger_data(self):
         # the worksheet is only 5 columns wide right now, let's see what happens if we add a lot more data

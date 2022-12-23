@@ -1,7 +1,6 @@
 
 from modules.worksheets.source import Bdfs_Worksheet_Source
-from modules.logger import logger_name
-logger_name.name = "OriginalBdfs_Inventory_Worksheet_Source"
+
 
 class OriginalBdfs_Inventory_Worksheet_Source(Bdfs_Worksheet_Source):
     
