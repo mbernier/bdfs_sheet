@@ -43,8 +43,117 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
     # This is only in the Destination class
     @Debugger
-    def __checkSetup(self):
+    def __checkSetup(self): #parent class __init__ runs this
         # if we don't know what cols are expected, we cannot check the sheet is setup properly
         if [] == self.getExpectedColumns():
             #fail if no one set the spreadsheetId on the wrapper class
             Logger.critical("Cols expected was not set before instantiating Spreadsheet class")
+
+
+    # allows the data to be modified and registers that it was modified
+    # in source, this will throw an exception to prevent modification of data
+    @Debugger
+    def modifiesData(self):
+        self.getData()
+
+
+    @Debugger
+    def getExpectedColumns(self): #tested
+        return self.__mergeExpectedColumns()
+
+
+    # since we have multiple options for how the columns should be setup
+    #   Get the columns that we care about and return them
+    @Debugger
+    def __mergeExpectedColumns(self):
+        expectedCols = self.cols_expected
+        for index in self.cols_expected_extra:
+            if index in self.getTitle():
+                expectedCols.extend(self.cols_expected_extra[index])
+        return expectedCols
+
+
+    # if a new title is set, store it until we commit the sheet
+    @Debugger
+    @validate_arguments
+    def setTitle(self, title:str) -> str: #tested
+        self.modifiesData()
+        # only do this if the data is diff, you know?
+        if title != self.data.title:
+            self.data.uncommitted_title = title
+            self.changed('title')
+        return self.getTitle()
+
+    
+    # wrapper function to take care of some pre-work on removing columns
+    @Debugger
+    @validate_arguments
+    def removeColumns(self, columns:list[str]):
+        self.modifiesData()
+        self.sheetData.removeHeaders(headers=columns)
+
+
+    @Debugger
+    @validate_arguments
+    def removeColumn(self, column:str):
+        self.modifiesData()
+        self.data.sheetData.removeHeader(header=column)
+
+
+    @Debugger
+    @validate_arguments
+    def addColumn(self, name:str, index:int=None):
+        self.modifiesData()
+        # will handle adding at the end or the index, depending on what's passed
+        self.data.sheetData.addHeader(name=name, index=index)
+        self.changed("data")
+
+    ####
+    #
+    # gSpread worksheet accessor methods - all private
+    #
+    ####
+    # get rid of any trailing columns that exist, we do this when we get ready to commit only
+    @Debugger
+    def gspread_worksheet_resize_to_data(self):
+        self.modifiesData()
+        Logger.debug("Resizing the google worksheet to the current data size")
+        #rezize the spreadsheet to the data - makes our lives easier later on
+        self.data.gspread_worksheet.resize(cols=self.getColumnCounts()['data'])
+
+
+    # overwrites whatever is in the sheet with the local storage data we have
+    #   does not give a fuck what is in the worksheet, it will clear it before writing
+    @Debugger
+    def commit(self):
+        self.modifiesData()
+        # if the title is changed, push it
+        if self.isChanged('title') == True:
+            self.data.gspread_worksheet.update_title(self.getTitle())
+            # reset the flag, in case we do other things
+            self.changed('title', False)
+        
+        # if the data has changed, then update the google sheet
+        if self.isChanged('data') == True:
+            # so we don't have to screw with empty rows or calculating anything, resize to the data available
+            self.gspread_worksheet_resize_to_data()
+
+            # get the meta about our new data to commit
+            dataRange = self.getDataRange()
+
+            headers = self.getColumns()
+            values = self.getDataAsListOfLists()
+
+            batch_update = [{
+                'range': dataRange,
+                'values': [headers]+values,
+            }]
+
+            # kill the data in the sheet, so that we are not writing into data that is differently sized than our current local data
+            self.data.gspread_worksheet.clear()
+
+            # do a batch update, because doing this one column at a time hit the rate limits super fast
+            # also, because we are sending in the data range of our local data, we can go outside the worksheet's data range!
+            self.data.gspread_worksheet.batch_update(batch_update)
+            # reset the flag, in case we do other things
+            self.changed('data', False)

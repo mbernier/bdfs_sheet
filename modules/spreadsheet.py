@@ -1,4 +1,4 @@
-import gspread,datetime,sys
+import gspread, time
 from dataclasses import dataclass, field as dc_field
 from modules.base import BaseClass
 from modules.logger import Logger
@@ -18,6 +18,7 @@ class Spreadsheet_Data():
     worksheetClassName:str = dc_field(default_factory=str)
     worksheetKeeperPattern:str = dc_field(default_factory=str)
     worksheets:dict = dc_field(default_factory=dict)
+    gspread_worksheets:dict = dc_field(default_factory=dict)
     spreadsheet = None
     # from BaseClass - allows us to set sub loggers
     logger_name:str = "Spreadsheet"
@@ -80,7 +81,7 @@ class Bdfs_Spreadsheet(BaseClass):
     # setup the service account if not setup, return it either way
     @Debugger
     def setupServiceAccount(self):
-        if None == self.data.service_account: 
+        if None == self.data.service_account:
             self.data.service_account = gspread.service_account()
         return self.data.service_account
 
@@ -89,7 +90,16 @@ class Bdfs_Spreadsheet(BaseClass):
     @Debugger
     def setupSpreadsheet(self, use_cache:bool = True):
         if None == self.data.spreadsheet or False == use_cache:
-            self.data.spreadsheet = self.data.service_account.open_by_key(self.data.spreadsheetId)
+            try:
+                self.data.spreadsheet = self.data.service_account.open_by_key(self.data.spreadsheetId)
+            except gspread.exceptions.APIError:
+                Logger.error("We got rate limited, going to sleep for 60 seconds and try again")
+                time.sleep(60)
+                try:
+                    self.data.spreadsheet = self.data.service_account.open_by_key(self.data.spreadsheetId)
+                except gspread.exceptions.APIError:
+                    # @todo - this would be a great place for Temporal to jump in and help
+                    Logger.critical("30 seconds of sleep was not long enough, we pissed Google off - consider more sleep time, or retry at a later date")
         return self.data.spreadsheet
 
 
@@ -97,21 +107,24 @@ class Bdfs_Spreadsheet(BaseClass):
     # pattern: sheets we care about include the keeperPattern in the title
     #   We store the local copy of theworksheet, bc it has a reference to the gspread worksheet
     @Debugger
-    def setupWorksheets(self) -> list:
-        if 0 == len(self.getWorksheets()):
+    def setupWorksheets(self, use_cache=True) -> list:
+        
+        if False == use_cache or {} == self.getWorksheets():
 
             # retrieve the worksheets from the gpsread spreadsheet obj
-            worksheetList = self.data.spreadsheet.worksheets()
+            gspread_worksheets = self.data.spreadsheet.worksheets()
 
             keeperPattern = self.getWorksheetKeeperPattern()
 
-            worksheetClass = self.getWorksheetClass()
-
             # clear out the worksheets we don't need
-            for sheet in worksheetList:
+            for sheet in gspread_worksheets:
+
                 # only restrict the worksheet list if there is a keeper pattern
                 if None == keeperPattern or keeperPattern in sheet.title:
-                    self.data.worksheets[sheet.title] = worksheetClass(sheet)
+                    # create the place for the worksheets, but don't actually grab them yet - reduces API calls
+                    self.data.worksheets[sheet.title] = None
+
+                self.data.gspread_worksheets[sheet.title] = sheet
 
         return self.getWorksheets()
 
@@ -121,7 +134,8 @@ class Bdfs_Spreadsheet(BaseClass):
 
     @Debugger
     def getWorksheetKeeperPattern(self):
-        if self.data.worksheetKeeperPattern == "":
+        if self.data.worksheetKeeperPattern == "": # this is the default in the data class
+            # get this from the subclass
             if self.worksheetKeeperPattern != None:
                 self.data.worksheetKeeperPattern = self.worksheetKeeperPattern
             else:
@@ -144,6 +158,13 @@ class Bdfs_Spreadsheet(BaseClass):
 
     @Debugger
     def getWorksheet(self, worksheetTitle:str):
-        if 0 == len(self.getWorksheets()):
+        self.setupWorksheets() #make sure they're setup before someone tries to get one
+        if {} == self.getWorksheets():
             raise Exception("Worksheets were not added to the Spreadsheet properly.")
+        
+        if worksheetTitle in self.getWorksheets():
+            if None == self.getWorksheets()[worksheetTitle]:
+                worksheetClass = self.getWorksheetClass()
+                self.data.worksheets[worksheetTitle] = worksheetClass(self.data.gspread_worksheets[worksheetTitle])
+
         return self.getWorksheets()[worksheetTitle]

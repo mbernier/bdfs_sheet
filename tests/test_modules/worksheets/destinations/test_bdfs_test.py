@@ -1,30 +1,30 @@
 import gspread, pytest
 from modules.spreadsheets.destinations.simple_sheet import Simple_Spreadsheet_Destination
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
-from tests.test_modules.worksheets.destinations.destination_helper import worksheet_helper
+from tests.test_modules.worksheets.destinations.destination_helper import destination_helper
 
 class Test_Bdfs_Worksheet_Destination:
     @classmethod
     def setup_class(self):
-        print("starting class: {} execution".format(self.__name__))
+        print("\n\tstarting class: {} execution".format(self.__name__))
         self.worksheetName = "test_easy_data"
         self.renameWorksheetName = "test_easy_data_new_title"
         self.copyFromWorksheetName = "demo_worksheet"
         self.class_setup = True
         # Do the setup of the objects for this test, done outside of the testing file to work around pytest oddities
-        self.test_worksheet = worksheet_helper(None, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, True)
+        self.test_worksheet = destination_helper(None, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, True)
         
     @classmethod
     def teardown_class(self):
-        print("starting class: {} execution".format(self.__name__))
+        print("\tstarting Test_Bdfs_Worksheet_Destination: {} execution".format(self.__name__))
 
     def setup_method(self, method):
         # This will cause the code to only run for the methods we care about that need this separately
         # as of now, this is test_commit and test_commit_with_larger_data
-        self.test_worksheet = worksheet_helper(self.test_worksheet, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, method)
+        self.test_worksheet = destination_helper(self.test_worksheet, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, method)
 
     def teardown_method(self, method):
-        print("starting execution of tc: {}".format(method.__name__))
+        print("\tstarting execution of Destination: {}".format(method.__name__))
 
     ####
     #
@@ -96,7 +96,7 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_getExpectedColumns(self):
         cols = self.test_worksheet.getExpectedColumns()
-        assert cols == ['Name', 'Birthday', 'Email']
+        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Hourly Pay', 'Total Pay']
 
 
     def test_getColumns(self):

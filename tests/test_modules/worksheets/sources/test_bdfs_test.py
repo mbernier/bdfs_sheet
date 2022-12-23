@@ -1,32 +1,32 @@
-import gspread, pytest
+import pytest, time
 from modules.spreadsheets.sources.simple_sheet import Simple_Spreadsheet_Source
 from modules.worksheets.exception import Bdfs_Worksheet_Source_Exception
-from tests.test_modules.worksheets.sources.sources_helper import worksheet_helper
+from tests.test_modules.worksheets.sources.sources_helper import sources_helper
 
 
 class Test_Bdfs_Worksheet_Source:
     @classmethod
     def setup_class(self):
-        print("starting class: {} execution".format(self.__name__))
+        print("\tstarting class: {} execution".format(self.__name__))
         self.worksheetName = "test_easy_data"
         self.renameWorksheetName = "test_easy_data_new_title"
         self.copyFromWorksheetName = "demo_worksheet"
         self.read_only_exception_msg = "Source Worksheets are not allowed to modify data"
 
         # Do the setup of the objects for this test, done outside of the testing file to work around pytest oddities
-        self.test_worksheet = worksheet_helper(None, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, True)
+        self.test_worksheet = sources_helper(None, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, True)
         
     @classmethod
-    def teardown_class(self):
-        print("starting class: {} execution".format(self.__name__))
+    def teardown_class(self): 
+        print("\tstarting Test_Bdfs_Worksheet_Source: {} execution".format(self.__name__))
 
     def setup_method(self, method):
         # This will cause the code to only run for the methods we care about that need this separately
         # as of now, this is test_commit and test_commit_with_larger_data
-        self.test_worksheet = worksheet_helper(self.test_worksheet, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, method)
+        self.test_worksheet = sources_helper(self.test_worksheet, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, method)
 
     def teardown_method(self, method):
-        print("starting execution of tc: {}".format(method.__name__))
+        print("\tstarting execution of Source: {}".format(method.__name__))
 
 
     ####
@@ -67,9 +67,9 @@ class Test_Bdfs_Worksheet_Source:
 
         newTitle = self.test_worksheet.getTitle()
 
-        with pytest.raises(Bdfs_Worksheet_Source_Exception) as excinfo:
+        with pytest.raises(AttributeError) as excinfo:
             self.test_worksheet.setTitle(newTitle)
-        assert excinfo.value.message == self.read_only_exception_msg
+        assert "has no attribute 'setTitle'" in str(excinfo.value)
 
         assert title == self.test_worksheet.getTitle()
         
@@ -83,9 +83,9 @@ class Test_Bdfs_Worksheet_Source:
 
         newTitle = "test_easy_data_new_title"
 
-        with pytest.raises(Bdfs_Worksheet_Source_Exception) as excinfo:
+        with pytest.raises(AttributeError) as excinfo:
             self.test_worksheet.setTitle(newTitle)
-        assert excinfo.value.message == self.read_only_exception_msg
+        assert "has no attribute 'setTitle'" in str(excinfo.value)
 
         assert newTitle != self.test_worksheet.getTitle()
         
@@ -104,9 +104,9 @@ class Test_Bdfs_Worksheet_Source:
 
 
     def test_getExpectedColumns(self):
-        with pytest.raises(Bdfs_Worksheet_Source_Exception) as excinfo:
+        with pytest.raises(AttributeError) as excinfo:
             cols = self.test_worksheet.getExpectedColumns()
-        assert excinfo.value.message == self.read_only_exception_msg
+        assert "object has no attribute 'getExpectedColumns'" in str(excinfo.value)
 
 
     def test_getColumns(self):
@@ -122,32 +122,32 @@ class Test_Bdfs_Worksheet_Source:
 
 
     def test_addColumns(self):
-        with pytest.raises(Bdfs_Worksheet_Source_Exception) as excinfo:
+        with pytest.raises(AttributeError) as excinfo:
             self.test_worksheet.addColumn("newColumn1")
-        assert excinfo.value.message == self.read_only_exception_msg
+        assert "object has no attribute 'addColumn'" in str(excinfo.value)
         
         assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email']
 
-        with pytest.raises(Bdfs_Worksheet_Source_Exception) as excinfo:
+        with pytest.raises(AttributeError) as excinfo:
             self.test_worksheet.addColumn(name="newColumn3", index=3)
-        assert excinfo.value.message == self.read_only_exception_msg
+        assert "object has no attribute 'addColumn'" in str(excinfo.value)
 
         assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email']
         
 
     def test_commit(self):
-        with pytest.raises(Bdfs_Worksheet_Source_Exception) as excinfo:
+        with pytest.raises(AttributeError) as excinfo:
             #pushes all the changes we have make to the sheet
             self.test_worksheet.commit()
-        assert excinfo.value.message == self.read_only_exception_msg
+        assert "object has no attribute 'commit'" in str(excinfo.value)
         
 
     def test_commit_with_larger_data(self):
         # the worksheet is only 5 columns wide right now, let's see what happens if we add a lot more data
-        with pytest.raises(Bdfs_Worksheet_Source_Exception) as excinfo:
+        with pytest.raises(AttributeError) as excinfo:
             self.test_worksheet.addColumn("newColumn4")
             self.test_worksheet.addColumn("newColumn5")
             self.test_worksheet.addColumn("newColumn6")
             self.test_worksheet.commit()
-        assert excinfo.value.message == self.read_only_exception_msg
+        assert "object has no attribute 'addColumn'" in str(excinfo.value)
         

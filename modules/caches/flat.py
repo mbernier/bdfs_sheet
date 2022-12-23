@@ -273,7 +273,7 @@ class Flat_Cache(BdfsCache):
         del self.data.storage[removeIndex]
 
         self.__shift_indexes(removeIndex+1, -1)
-        self.decreaseSize()
+        self.decreaseSize() 
 
 
     @Debugger

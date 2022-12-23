@@ -185,6 +185,26 @@ To do:
             2. Total hours worked
             3. Total pay sent
             4. Average Hourly Pay
+1. Source Classes:
+    1. Scrape_data
+    2. Homacer
+    3. Sarto_Export
+2. Destination Classes:
+    1. Shopify_DFS
+    1. Shopify_BDFS
+    1. Scrape Data? 
+
+Product Titles
+- rearrange titles: The items that get the most clicks Lucia 22 Matte Black Barn Door
+    - "single barn door", double barn door further up in the title
+    - "Matte Black Single Barn Door - Lucia 22"
+- attributes through type, categories, description - rich content
+
+
+Ads
+- Get a video ad created for BarnDoors.forsale
+- Get a google ads account linked to a YouTube Channel - video ad needs to be loaded in the YT channel, then it is added to pmax campaign as an asset
+- Danny will send a doc on best practices, their creative team can develop the ads - will send info over
 
 
 Initial Migration to new Data sources:

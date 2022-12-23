@@ -44,7 +44,7 @@ class Worksheet_DataClass():
     sheetData:Bdfs_Worksheet_Data = dc_field(default_factory=Bdfs_Worksheet_Data)         # source of truth for the data of the worksheet
     changes:dict[bool] = dc_field(default_factory=dict)     # {"title": False, "data": False}
     sheet_retrieved:bool = False
-
+    id: int = dc_field(default_factory=int)
 #
 # Rules; 
 #   pulls the worksheet data, does all the changes, only pushes changes when commit() is called.
@@ -58,6 +58,7 @@ class Bdfs_Worksheet(BaseClass):
         # store the gspread worksheet for use later
         self.data.gspread_worksheet = worksheet
         self.data.title = worksheet.title
+        self.data.id = worksheet.id
 
         # double check we have the required params from the extension class
         self.__checkSetup()
@@ -66,13 +67,21 @@ class Bdfs_Worksheet(BaseClass):
         self.data.changes = {"title": False, "data": False}
 
         # we have not retrieved the sheet yet
-        self.data.sheet_retrieved
+        self.data.sheet_retrieved = False
 
         self.getTitle()
+
 
     @Debugger
     def __checkSetup(self):
         pass #this functionality is moved to the Destination class
+
+    ####
+    #
+    # Record whether something has been changed, which lets testing validate that source/destination are used properly
+    #      Source should NEVER have anything changed
+    #
+    ####
 
     # Register a change
     @Debugger
@@ -97,19 +106,6 @@ class Bdfs_Worksheet(BaseClass):
         else:
             raise Bdfs_Worksheet_Exception(f"there is no {index} in data.changes, add it to __setup() to track it")
 
-
-    ####
-    #
-    # gSpread worksheet accessor methods - all private
-    #
-    ####
-    # get rid of any trailing columns that exist, we do this when we get ready to commit only
-    @Debugger
-    def gspread_worksheet_resize_to_data(self):
-        self.modifiesData()
-        Logger.debug("Resizing the google worksheet to the current data size")
-        #rezize the spreadsheet to the data - makes our lives easier later on
-        self.data.gspread_worksheet.resize(cols=self.getColumnCounts()['data'])
 
 
     ####
@@ -140,17 +136,10 @@ class Bdfs_Worksheet(BaseClass):
     def getOriginalTitle(self): #tested
         return self.data.title
 
-
-    # if a new title is set, store it until we commit the sheet
+    
     @Debugger
-    @validate_arguments
-    def setTitle(self, title:str) -> str: #tested
-        self.modifiesData()
-        # only do this if the data is diff, you know?
-        if title != self.data.title:
-            self.data.uncommitted_title = title
-            self.changed('title')
-        return self.getTitle()
+    def getId(self):
+        return self.data.id
 
     ####
     #
@@ -183,41 +172,6 @@ class Bdfs_Worksheet(BaseClass):
     # 'update_note', 
     # 'updated',   
 
-    # overwrites whatever is in the sheet with the local storage data we have
-    #   does not give a fuck what is in the worksheet, it will clear it before writing
-    @Debugger
-    def commit(self):
-        self.modifiesData()
-        # if the title is changed, push it
-        if self.isChanged('title') == True:
-            self.data.gspread_worksheet.update_title(self.getTitle())
-            # reset the flag, in case we do other things
-            self.changed('title', False)
-        
-        # if the data has changed, then update the google sheet
-        if self.isChanged('data') == True:
-            # so we don't have to screw with empty rows or calculating anything, resize to the data available
-            self.gspread_worksheet_resize_to_data()
-
-            # get the meta about our new data to commit
-            dataRange = self.getDataRange()
-
-            headers = self.getColumns()
-            values = self.getDataAsListOfLists()
-
-            batch_update = [{
-                'range': dataRange,
-                'values': [headers]+values,
-            }]
-
-            # kill the data in the sheet, so that we are not writing into data that is differently sized than our current local data
-            self.data.gspread_worksheet.clear()
-
-            # do a batch update, because doing this one column at a time hit the rate limits super fast
-            # also, because we are sending in the data range of our local data, we can go outside the worksheet's data range!
-            self.data.gspread_worksheet.batch_update(batch_update)
-            # reset the flag, in case we do other things
-            self.changed('data', False)
 
 
     ####
@@ -246,7 +200,6 @@ class Bdfs_Worksheet(BaseClass):
             # we got the data, set the flag
             self.data.sheet_retrieved = True
 
-
     #####
     #
     # Column Methods
@@ -265,22 +218,6 @@ class Bdfs_Worksheet(BaseClass):
     # 'columns_auto_resize', 
     # 'sort'
 
-    @Debugger
-    def getExpectedColumns(self): #tested
-        self.modifiesData() #not because it actually writes, but bc it's used when writing and not when reading
-        return self.__mergeExpectedColumns()
-
-
-    # since we have multiple options for how the columns should be setup
-    #   Get the columns that we care about and return them
-    @Debugger
-    def __mergeExpectedColumns(self):
-        self.modifiesData() #not because it actually writes, but bc it's used when writing and not when reading
-        expectedCols = self.cols_expected
-        for index in self.cols_expected_extra:
-            if index in self.getTitle():
-                expectedCols.extend(self.cols_expected_extra[index])
-        return expectedCols
 
 
     # The only place to retrieve the first row of data from the sheet
@@ -302,24 +239,6 @@ class Bdfs_Worksheet(BaseClass):
         }
         return obj
 
-
-    @Debugger
-    @validate_arguments
-    def addColumn(self, name:str, index:int=None):
-        self.modifiesData()
-        self.getData()
-        # will handle adding at the end or the index, depending on what's passed
-        self.data.sheetData.addHeader(name=name, index=index)
-        self.changed("data")
-
-
-    # wrapper function to take care of some pre-work on removing columns
-    @Debugger
-    @validate_arguments
-    def removeColumns(self, column:int=None, start:int=None, stop:int=None):
-        self.modifiesData()
-        self.getData()
-        raise Bdfs_Worksheet_Exception("remove_columns is not built or tested yet")
 
 
     ####

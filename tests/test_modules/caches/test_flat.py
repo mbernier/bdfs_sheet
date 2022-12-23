@@ -193,7 +193,7 @@ def test_delete2():
     assert None == cache.select(position="c")
     assert cache.select(updated_timestamp=False) == {'b': 3, 'c':None, 'd': 5}
 
-def test_remove_location():
+def test_delete_location():
     cache = Flat_Cache(['b','c','d'])
     cache.insert(position="b",data=3)
     cache.insert(position="c",data=4)
@@ -233,19 +233,16 @@ def test_insert_location_at_index():
     assert cache.select(updated_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3]}
 
     # effectively append, but with index at the same size as cache
-    print(f"insert 'f' at {cache.size()}")
     cache.insert_location(index=cache.size(), position='f')
     assert cache.select(updated_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3], 'f': None}
 
     #insert in a location that is greater than the current size
     new_size = cache.size() + 5
-    print(f"fail to insert 'g' at {new_size}")
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.insert_location(index=new_size, position='g')
     assert excinfo.value.message == f"index '{new_size}' is much greater than the current size of Flat_Cache: {cache.size()}, try adding items in between {cache.size()} and '{new_size}'"
 
     #insert in the middle somewhere
-    print(f"success insert 'g' at 4")
     cache.insert_location(index=4, position='g')
     assert cache.select(updated_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3], 'g':None, 'f': None}
 

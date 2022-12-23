@@ -32,12 +32,8 @@ class Bdfs_Worksheet_Data(BaseClass):
 
         headers, uniqueHeaders, duplicateHeaders, emptyHeaderIndexes = self.__prepHeaders(headers)
 
-        self.__setHeaders(headers)
-        self.__setUniqueHeaders(uniqueHeaders)
-        self.__setDuplicateHeaders(duplicateHeaders)
-        self.__setEmptyHeaderIndexes(emptyHeaderIndexes)
-
-        self.dataStore = Nested_Cache(headers, sheetData)
+        self._headers = headers
+        self.dataStore = Nested_Cache(self._headers, sheetData)
 
 
     # replaces empty headers with "NoHeaderFound_{index}"
@@ -50,15 +46,17 @@ class Bdfs_Worksheet_Data(BaseClass):
 
         for index, header in enumerate(headers):
             if "" == header:
-                header = "NoHeaderFound_{}".format(index)
                 #replace the header with a placeholder name
-                headers[index] = header
+                header = "NoHeaderFound_{}".format(index)
                 
                 #record the headers that are empty
                 emptyHeaderIndexes.append(index)
+            
+            # add the header to the list
+            headers[index] = header
 
             # check for duplication
-            if header not in self.__getUniqueHeaders():
+            if header not in uniqueHeaders:
                 uniqueHeaders.append(header)
             else:
                 duplicateHeaders.append(header)
@@ -70,68 +68,13 @@ class Bdfs_Worksheet_Data(BaseClass):
 
     ####
     #
-    # Header Methods
+    # Column Methods
     #
     ####
 
     @Debugger
     def getHeaders(self):
         return self._headers
-
-
-    @Debugger
-    @validate_arguments
-    def __setHeaders(self, headers):
-        self._headers = headers
-
-    @Debugger
-    def __getUniqueHeaders(self):
-        return self._uniqueHeaders
-
-    @Debugger
-    @validate_arguments
-    def __setUniqueHeaders(self, headers):
-        self._uniqueHeaders = headers
-
-    @Debugger
-    @validate_arguments
-    def __appendUniqueHeader(self, header):
-        self._uniqueHeaders.append(header)
-
-    @Debugger
-    def __getDuplicateHeaders(self):
-        return self._duplicateHeaders
-
-    @Debugger
-    @validate_arguments
-    def __setDuplicateHeaders(self, headers):
-        self._duplicateHeaders = headers
-
-    @Debugger
-    @validate_arguments
-    def __appendDuplicateeHeader(self, header):
-        self._uniqueHeaders.append(header)
-
-    @Debugger
-    def __getEmptyHeaderIndexes(self):
-        return self._emptyHeaderIndexes
-
-    @Debugger
-    @validate_arguments
-    def __setEmptyHeaderIndexes(self, headers):
-        self._emptyHeaderIndexes = headers
-
-    @Debugger
-    @validate_arguments
-    def __appendEmptyHeaderIndex(self, index):
-        self._emptyHeaderIndexes.append(index)
-
-
-    ####
-    #
-    # Column Methods
-    #
-    ####
 
     @Debugger
     @validate_arguments
@@ -144,82 +87,21 @@ class Bdfs_Worksheet_Data(BaseClass):
     # returns the number of headers removed
     @Debugger
     @validate_arguments
-    def removeHeaders(self, start, end):
-        currentWidth = self.width()
-
-        if start > self.width:
-            return 0
-
-        if end > self.width:
-            end = self.width()
-
-        if start == end:
-            self.removeHeader(start)
-            return 1
-
-        for index in range(start, end):
-            self.removeHeader(index)
-            return end-start
+    def removeHeaders(self, headers:list[str]):
+        # call directly to the multi-delete on Nested Cache
+        self.dataStore.deleteColumns(positions=headers)
+        self._headers = list(set(self._headers) - set(headers))
 
 
     @Debugger
     @validate_arguments
-    def removeHeader(self, index=None, header=None):
-
-        # causes lookup of the name from the index
-        if None != index:
-            # get the header name
-            header = self.__removeHeader_byIndex(index)
-        elif None != header:
-            self.__removeHeader_byName(header)
-        else:
-            raise Bdfs_Worksheet_Data_Exception("You must pass either an index or a header to removeHeader()")
-
-
-    # removed the header from the headers list
-    # @return the value from the headers list that was removed
-    @Debugger
-    @validate_arguments
-    def __removeHeader_byIndex(self, index):
-        header = self._headers.pop(index)
-
-        self.__removeHeader(index=index, header=header)
-        return header
-
-    @Debugger
-    @validate_arguments
-    def __removeHeader_byName(self, header):
-        index = self._headers.index(header)
-        self._headers.pop(index)
-
-        self.__removeHeader(index=index, header=header)
-        return header
-
-
-    @Debugger
-    @validate_arguments
-    def __removeHeader(self, index, header):
-
-        # remove the name from all the places
-        self.__removeHeaderFrom_uniqueHeaders_byName(header=header)
-        
-        # remove from duplicateHeaders
-        self.__removeHeaderFrom_duplicateHeaders_byName(header=header)
-
-        # remove from emptyHeaders
-        self.__removeHeaderFrom_emptyHeaders_byIndex(index=index)
-        
-        # store the removed name in the removedHeaders array
-        self.__appendRemovedHeader(header)
-
-        # make sure to clean up the location storage
-        self.__removeHeaderFrom_sheetData(index=index, name=header)
-
-    @Debugger
-    @validate_arguments
-    def __removeHeaderFrom_sheetData(self, index, name):
-        self._sheetData.deleteColumn(index=index, location=name)
-
+    def removeHeader(self, header:str=None):    
+        self.dataStore.deleteColumn(position=header)
+        # do a double check for whether this was removed by reference
+        #   it is possible that the headers list in NestedCache is referencing the headers list here
+        #   so when we deleteColumn() and remove from that list, we remove it here, too
+        if header in self._headers:
+            self._headers.remove(header)
 
     ####
     #

@@ -158,139 +158,49 @@ def test_select2():
 def test_width_fromAdds():
     cache = Nested_Cache(['b','c','d'],[[3]])
     assert 3 == cache.width()
+
     rowItem = cache.select(row=0, position='c')
-    print(f"RowItem: {rowItem}")
     assert None == rowItem
+    
     cache.update(row=0, position="c", data=4)
     assert 3 == cache.width()
+    
     cache.update(row=0, position="d", data=4)
     assert 3 == cache.width()
 
-
-# def test_unset():
-#     cache = Nested_Cache(['b'],[[3]])
-#     cache.unsetData(1, "b")
-#     assert None == cache.select(1, "b")
-
-# def test_unset2():
-#     cache = Nested_Cache(['b'],[[3]])
-#     cache.unsetData(row=1, location="b")
-#     assert None == cache.select(row=1, location="b")
-
-
-# def test_unset_fail():
-#     cache = Nested_Cache(['b'],[[3]])
-#     with pytest.raises(Nested_Cache_Exception) as excinfo:
-#         cache.unsetData(1, location="c")
-#     assert excinfo.value.message == "Location 'c' doesn't exist, to add it use addLocation(location)"
-
-
-#     assert 3 == cache.select(1, "b")
-
-# def test_unset_fail2():
-#     cache = Nested_Cache(['b'],[[3]])
-
-#     with pytest.raises(Nested_Cache_Exception) as excinfo:
-#         cache.unsetData(row=1, location="c")
-#     assert excinfo.value.message == "Location 'c' doesn't exist, to add it use addLocation(location)"
+def test_delete_column():
+    cache = Nested_Cache(['b','c','d'],[[3]])
     
-#     assert 3 == cache.select(row=1, location="b")
+    cache.deleteColumn('c')
+    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'd': None}
 
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
+        cache.deleteColumn(1)
+    assert "str type expected" in str(excinfo.value)
 
-# def test_unset_fail3():
-#     cache = Nested_Cache(['b'],[[3]])
-#     with pytest.raises(Nested_Cache_Exception) as excinfo:
-#         cache.unset(row=1, location="c")
-#     assert excinfo.value.message == "unset() is not valid for Nested_Cache, use either unsetRow() or unsetData()"
-
-# def test_unsetRow():
-#     cache = Nested_Cache(['b','c'],[[3],[4]])
-#     cache.unsetRow(2)
-#     assert cache.select(2) == [None, None]
-
-# def test_unsetRow2():
-#     cache = Nested_Cache(['b','c'],[[3],[4]])
-#     cache.unsetRow(row=2)
-#     assert cache.select(row=2) == [None, None]
-
-# def test_unsetRow_asDict():
-#     cache = Nested_Cache(['b','c'],[[3],[4]])
-#     cache.unsetRow(2)
-#     assert cache.select(2, asObj="dict") == {'b':None, 'c':None}
-
-# def test_unsetRow_asDict2():
-#     cache = Nested_Cache(['b','c'],[[3],[4]])
-#     cache.unsetRow(row=2)
-#     assert cache.select(row=2, asObj="dict") == {'b':None, 'c':None}
-
-
-# def test_height_fromDeletes():
-#     cache = Nested_Cache(['b','c','d'],[[3],[3,4],[5,1,5]])
-#     with pytest.raises(Nested_Cache_Exception) as excinfo:
-#         cache.set(row=3,location="d",data=4)
-#     assert excinfo.value.message == "There is already data at row:3 location:d/index:2, to change this data use update(row, location/index, data)"
+def test_delete_columns():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7]])
     
-#     cache.deleteRow(row=2)
-#     # print(cache.height())
-#     assert 2 == cache.height()
-#     cache.deleteRow(row=1)
-#     assert 1 == cache.height()
+    cache.deleteColumns(['c','d','e'])
+    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'f': 7}
 
 
-# def test_deleteRow():
-#     cache = Nested_Cache(['b','c','d'],[[3],[4],[4]])
-#     cache.deleteRow(2)
-#     assert cache.select(2) == [4, None, None]
+def test_delete_columns_check_first_row():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7]])
 
-# def test_deleteRow_getAsDict():
-#     cache = Nested_Cache(['b','c','d'],[[3],[4],[4]])
-#     cache.deleteRow(2)
-#     assert cache.select(2, asObj="dict") == {'b': 4, 'c': None, 'd': None}
-
-# def test_deleteColumn_noIndex():
-#     pass
-#     print("Nothing being tested in test_deleteColumn")
-
-# def test_deleteColumn_noLocation():
-#     pass
-#     print("Nothing being tested in test_deleteColumn_noLocation")
-
-# def test_deleteColumn_noMatchIndexLocation():
-#     pass
-#     print("Nothing being tested in test_deleteColumn_noMatchIndexLocation")
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
+        cache.deleteColumns([1,2,3])
+    assert "str type expected" in str(excinfo.value)
 
 
-# def test_deleteRow():
-#     pass
-#     print("Nothing being tested in test_deleteRow")
-    # try to delete row 0
-    # try to delete item from row 0
+def test_delete_columns_check_multi_rows():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]])
+    
+    with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
+        cache.deleteColumns([1,2,3])
+    assert "str type expected" in str(excinfo.value)
 
-# def test_clear():
-#     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
-#     cache.clear()
-#     assert cache._storage == []
+    cache.deleteColumns(['c','d','e'])
 
-
-# def test_clear2():
-#     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
-#     cache.clear()
-#     assert cache._storage == []
-
-
-# def test_delete():
-#     cache = Nested_Cache(['b','c','d'],[[3, 2, 1],[4, 3, 2],[5, 4, 3]])
-#     cache.delete(2, "c")
-#     assert None == cache.select(2, "c")
-#     assert cache.select(1) == [3, 2, 1] 
-#     assert cache.select(3) == [5, 4, 3]
-#     assert cache.select(2) == [4, None, 2]
-
-
-# def test_delete2():
-#     cache = Nested_Cache(['b','c','d'],[[3, 2, 1],[4, 3, 2],[5, 4, 3]])
-#     cache.delete(row=2, location="c")
-#     assert cache.select(row=1) == [3, 2, 1]
-#     assert cache.select(row=3) == [5, 4, 3]
-#     assert cache.select(row=2) == [4, None, 2]
-#     assert None == cache.select(row=2,location="c")
+    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'f': 7}
+    assert cache.select(1, updated_timestamp=False) == {'b': 1, 'f': 5}

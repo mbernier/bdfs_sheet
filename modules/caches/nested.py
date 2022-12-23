@@ -1,10 +1,11 @@
+import sys
 from modules.cache import BdfsCache
 from modules.caches.flat import Flat_Cache
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
 from modules.decorator import Debugger
 from modules.logger import Logger, logger_name
 from typing import Union
-from pydantic import Field, validate_arguments
+from pydantic import Field, validate_arguments, StrictStr,ConstrainedStr
 from pydantic.typing import Annotated
 
 
@@ -146,33 +147,27 @@ class Nested_Cache(BdfsCache):
             self._locations.insert(index, location)
 
 
-    # Delete the column, but first make sure we have all the correct data that we need in order to properly
-    #   remove the column from every row in the dataset
+    # ask Flat Cache to delete the column
     @Debugger
     @validate_arguments
-    def deleteColumn(self, position:Union[int,str]):
-        raise Exception("needs to be tested")
-
-        location, index = self.__getLocationIndex(position=position)
-
-        if not self.locationExists(position):
-            raise Nested_Cache_Exception("Location '{}' doesn't exist, to add it use addColumn(location={})".format(location, location))
-
-        #finally, delete the header from storage
-        self.__removeHeaderIndexes(position)
-
-
-    @Debugger
-    @validate_arguments
-    # remove both the index and location from all rows in the sheetData
-    def __removeHeaderIndexes(position:Union[int,str]):
-
-        raise Exception("needs to be tested")
-        
-        # delete the header from every single row in the storage
+    def deleteColumn(self, position:StrictStr):
         for row in range(0, self.height()):
-            self._storage[row].remove_position(position=position)
+            self._storage[row].delete_location(position)
+        
+        # remove it from the locations cache
+        self._locations.remove(position)
 
+
+    # ask Flat Cache to delete each column
+    @Debugger
+    @validate_arguments
+    def deleteColumns(self, positions:list[StrictStr]):
+        #this will make sure that if we have int values, we remove them in reverse order
+            #  taking the highest ones first
+        positions.sort()
+        positions.reverse() #cannot be chained in sort, bc sort returns nothing
+        for position in positions:
+            self.deleteColumn(position)
 
     ####
     #

@@ -1,33 +1,33 @@
-import gspread
+import gspread, time
 from modules.spreadsheets.destinations.simple_sheet import Simple_Spreadsheet_Destination
+from modules.spreadsheets.exception import Bdfs_Spreadsheet_Destination_Exception
 
-def worksheet_helper(test_worksheet, worksheetName, copyFromWorksheetName, renameWorksheetName, method=None):
+def destination_helper(test_worksheet, worksheetName, copyFromWorksheetName, renameWorksheetName, method=None):
     if method == True or method.__name__ in ["test_commit", "test_commit_with_larger_data"]:
-
+        #buy some favor from google sheets API
+        time.sleep(0.5)
+        
         sheet = Simple_Spreadsheet_Destination()
         spreadsheet = sheet.setupSpreadsheet()
 
         # see if the sheetName 
         try:
-            testWorksheetExists = spreadsheet.worksheet(worksheetName)
-            print(f"Worksheet: {worksheetName} found, deleting it")
-            spreadsheet.del_worksheet(testWorksheetExists)
-
-        except gspread.exceptions.WorksheetNotFound:
-            print(f"Worksheet: {worksheetName} isn't found, creating it")
+            sheet.deleteWorksheet(worksheetName)
+            print(f"\tWorksheet: {renameWorksheetName} found, it was deleted")
+        except Bdfs_Spreadsheet_Destination_Exception:
+            print(f"\tWorksheet: {worksheetName} isn't found, will create it")
 
         try:
-            testWorksheetExists = spreadsheet.worksheet(renameWorksheetName)
-            print(f"Worksheet: {renameWorksheetName} found, deleting it")
-            spreadsheet.del_worksheet(testWorksheetExists)
+            sheet.deleteWorksheet(renameWorksheetName)
+            print(f"\tWorksheet: {renameWorksheetName} found, it was deleted")
 
-        except gspread.exceptions.WorksheetNotFound:
-            print(f"Worksheet: {renameWorksheetName} wasn't found, isn't that nice!")
+        except Bdfs_Spreadsheet_Destination_Exception:
+            print(f"\tWorksheet: {renameWorksheetName} wasn't found, isn't that nice!")
 
+        print(f"\tCreating Worksheet: {worksheetName} from {copyFromWorksheetName}")
         worksheet1 = spreadsheet.worksheet(copyFromWorksheetName)
-        worksheet2 = worksheet1.duplicate(1, None, worksheetName)
+        worksheet2 = worksheet1.duplicate(1, None, worksheetName) 
 
-        del sheet
         del spreadsheet
         del worksheet1
         del worksheet2
@@ -36,6 +36,6 @@ def worksheet_helper(test_worksheet, worksheetName, copyFromWorksheetName, renam
         # Create a spreadsheet for the tests to run on
         #
         ####
-        sheet = Simple_Spreadsheet_Destination() 
+        sheet.setupWorksheets(use_cache=False)
         test_worksheet = sheet.getWorksheet(worksheetName)
     return test_worksheet

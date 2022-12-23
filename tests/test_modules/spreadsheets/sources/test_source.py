@@ -25,7 +25,7 @@ def test_setupSpreadsheet():
 def test_setupWorksheets():
     # can't compare, bc ID will change here
     # {'test_DONTMOVE': {'Worksheet': <Worksheet 'test_DONTMOVE' id:796438040>}}
-    worksheets = sheet.setupWorksheets()
+    worksheets = sheet.setupWorksheets(use_cache=False)
     worksheets2 = sheet.getWorksheets()
     assert worksheets == worksheets2
     assert 'test_DONTMOVE' in worksheets.keys()
