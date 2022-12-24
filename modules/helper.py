@@ -14,6 +14,14 @@ class Helper:
     # Dynamic calling functionality
     #
     ####
+    @staticmethod
+    def importClass(modulePath):
+        spltz = modulePath.split(".")
+        classname = spltz.pop()
+        path = ".".join(spltz)
+        mod = __import__(path, fromlist=[classname])
+        klass = getattr(mod, classname)
+        return klass
 
     @staticmethod
     def callMethod(*args, **kwargs):

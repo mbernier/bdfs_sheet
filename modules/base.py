@@ -18,12 +18,7 @@ class BaseClass():
 
     @Debugger
     def importClass(self, modulePath): 
-        spltz = modulePath.split(".")
-        classname = spltz.pop()
-        path = ".".join(spltz)
-        mod = __import__(path, fromlist=[classname])
-        klass = getattr(mod, classname)
-        return klass
+       return Helper.importClass(modulePath)
 
     # cheater method to make setting debug statements a little faster
     @Debugger
