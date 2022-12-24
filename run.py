@@ -1,7 +1,7 @@
 import sys, logging
 from modules.spreadsheets.sources.simple_sheet import Simple_Spreadsheet_Source
 from modules.spreadsheets.destinations.simple_sheet import Simple_Spreadsheet_Destination
-
+from modules.spreadsheets.exception import Bdfs_Spreadsheet_Destination_Exception
 
 if __name__ == "__main__":
 
@@ -16,64 +16,77 @@ if __name__ == "__main__":
     sourceSpreadsheet = Simple_Spreadsheet_Source()
     sourceWorksheet = sourceSpreadsheet.getWorksheet("demo_worksheet")
     
+    # The columns we have in the source
+    source_actualCols = sourceWorksheet.getColumns()
+
+    ####
+    #
+    # Setup the destination
+    #
+    ####
     newWorksheetName = "test_payroll"
     #     1. Spin up the Destination Sheet
     destinationSpreadsheet = Simple_Spreadsheet_Destination()
 
-    # # since this is a test script, delete the old one, so we can have a clean run here
-    # try:
-    #     destinationSpreadsheet.deleteWorksheet(newWorksheetName)
-    # except Bdfs_Spreadsheet_Destination_Exception as err:
-    #     pass #ignore, bc we were just cleaning this up just in case
+    # since this is a test script, delete the old one, so we can have a clean run here
+    try:
+        destinationSpreadsheet.deleteWorksheet(newWorksheetName)
+    except Bdfs_Spreadsheet_Destination_Exception as err:
+        pass #ignore, bc we were just cleaning this up just in case
 
-    # # create the new worksheet if it doesn't exist
-    # destinationWorksheet = destinationSpreadsheet.insertWorksheet(newWorksheetName)
+    # create the new worksheet if it doesn't exist
+    destinationWorksheet = destinationSpreadsheet.insertWorksheet(newWorksheetName)
 
-    # # The columns we have in the source
-    # source_actualCols = sourceWorksheet.getColumns()
+    # The columns we have in the destination
+    destination_actualCols = destinationWorksheet.getColumns()
 
-    # # The columns we have in the destination
-    # destination_actualCols = destinationWorksheet.getColumns()
+    # The columns we will write to the destination
+    destination_expectedCols = destinationWorksheet.getExpectedColumns()
 
-    # # The columns we will write to the destination
-    # destination_expectedCols = destinationWorksheet.getExpectedColumns()
-
-    # # Columns that we need to add to the destination
-    # missingFromActual = list(set(destination_expectedCols) - set(destination_actualCols))
+    # Columns that we need to add to the destination
+    missingFromActual = list(set(destination_expectedCols) - set(destination_actualCols))
     
-    # # Columns we will remove from the destination
-    # extraInDestination = list(set(destination_actualCols) - set(destination_expectedCols))
+    # Columns we will remove from the destination
+    extraInDestination = list(set(destination_actualCols) - set(destination_expectedCols))
 
-    # # Make sure the local data has what we need
-    # #     1. Create some columns that should be there in the Destination
-    # #         1. Hourly pay
-    # #         2. Total Pay
-    # destinationWorksheet.alignToColumns(destination_expectedCols)
+    # Make sure the local data has what we need
+    #     1. Create some columns that should be there in the Destination
+    #         1. Hourly pay
+    #         2. Total Pay
+    destinationWorksheet.alignToColumns(destination_expectedCols)
 
-    # # verify that what we expected to happen in the previous step, actually did
-    # assert destination_expectedCols == destinationWorksheet.getColumns()
+    # verify that what we expected to happen in the previous step, actually did
+    assert destination_expectedCols == destinationWorksheet.getColumns()
 
-    # #     1. Modify/Add some data in the Destination
-    # #         1. Calculate Hourly pay = yearly salary / 2008
-    # #         2. Calculate Total Pay = hourly pay * hours worked
-
-    # for row in destinationWorksheet.height():
-    #     salary = destinationWorksheet.select(row, "Yearly Salary")
+    #     1. Modify/Add some data in the Destination
+    #         1. Calculate Hourly pay = yearly salary / 2008
+    #         2. Calculate Total Pay = hourly pay * hours worked
+    print(f"before loop, height: {sourceWorksheet.height()}")
+    for row in range(0, sourceWorksheet.height()):
+        sourceData = sourceWorksheet.getRow(row)
         
-    #     hourly = salary / 2008
+        print(f"sourceData: {sourceData}")
 
-    #     destinationWorksheet.update(row, "Hourly Pay", hourly)
+        hourly = float(sourceData["Yearly Salary"]) / 2008
+        sourceData["Hourly Pay"] = round(hourly,2)
         
-    #     total_hours = destinationWorksheet.select(row, "Hours Worked")
+        total_pay = int(sourceData["Hours Worked"]) * hourly
+        sourceData["Total Pay"] = round(total_pay,2)
         
-    #     total_pay = total_hours * hourly
+        destinationData = []
 
-    #     destinationWorksheet.update(row, "Total Pay", total_pay)
+        for column in destination_expectedCols:
+            destinationData.append(sourceData[column])
+        
+        print(f"destinationData: {destinationData}")
 
-    # #     1. Commit the changes
-    # #     1. Test the changes were committed
+        destinationWorksheet.addRow(destinationData)
+    
 
-    # destinationWorksheet.commit()
+    #     1. Commit the changes
+    #     1. Test the changes were committed
+
+    destinationWorksheet.commit()
 
     # # 1. Test2: Create a summary sheet from data in the calculated sheet
     # #     1. Setup Source Spreadsheet + source Worksheet from test1

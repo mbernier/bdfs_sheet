@@ -190,8 +190,9 @@ class Bdfs_Worksheet(BaseClass):
     def getData(self): #tested
         # we can defer grabbing the data until we get here
         if False == self.data.sheet_retrieved:
-            
-            self.data.sheetData = Bdfs_Worksheet_Data(self.data.gspread_worksheet.get_all_values())
+            sheetData = self.data.gspread_worksheet.get_all_values()
+
+            self.data.sheetData = Bdfs_Worksheet_Data(sheetData)
 
             # we are now the same as the google worksheet, nothing to commit
             self.changed('data', False)
@@ -264,6 +265,17 @@ class Bdfs_Worksheet(BaseClass):
     def getRowCount(self):
         return self.height()
 
+    ####
+    #
+    # Row Methods
+    #
+    ####
+
+    @Debugger
+    @validate_arguments
+    def getRow(self, row:int):
+        return self.data.sheetData.select(row)
+
 
     ####
     #
@@ -275,6 +287,12 @@ class Bdfs_Worksheet(BaseClass):
     # 'get_all_cells', 
     # 'merge_cells', 
     # 'unmerge_cells',
+
+    @Debugger
+    @validate_arguments
+    def getCell(self, row:int, column:str):
+        return self.data.sheetData.select(row,column)
+
 
     # creates A1 notation for the row and column given
     @Debugger

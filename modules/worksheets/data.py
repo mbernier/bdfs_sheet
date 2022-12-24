@@ -20,19 +20,22 @@ class Bdfs_Worksheet_Data(BaseClass):
 
     @Debugger
     @validate_arguments
-    def __init__(self, sheetData = None):
-        if None != sheetData:
-            self.load(sheetData)
+    def __init__(self, sheetData:list=[]):
+        
+        self.load(sheetData)
 
     @Debugger
     @validate_arguments
-    def load(self, sheetData=None):
-        # store all the data in the data store
-        headers = sheetData.pop(0)
+    def load(self, sheetData:list=[]):
+        headers = []
+        if None != sheetData and [] != sheetData:
+            # store all the data in the data store
+            headers = sheetData.pop(0)
 
-        headers, uniqueHeaders, duplicateHeaders, emptyHeaderIndexes = self.__prepHeaders(headers)
+            headers, uniqueHeaders, duplicateHeaders, emptyHeaderIndexes = self.__prepHeaders(headers)
 
         self._headers = headers
+
         self.dataStore = Nested_Cache(self._headers, sheetData)
 
 
@@ -146,8 +149,15 @@ class Bdfs_Worksheet_Data(BaseClass):
     # Row Methods
     # 
     ####
+    @Debugger
+    @validate_arguments
     def select(self, row, column:Union[int,str]=None):
         return self.dataStore.select(row=row, position=column)
+
+    @Debugger
+    @validate_arguments
+    def insertRow(self, rowData:list=None):
+        self.dataStore.insert(rowData)
 
     ####
     #

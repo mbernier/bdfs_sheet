@@ -137,8 +137,9 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
     @Debugger
     @validate_arguments
-    def getRow(self, row:int):
-        return self.data.sheetData.select(row)
+    def addRow(self, rowData:list):
+        self.modifiesData()
+        self.data.sheetData.insertRow(rowData)
 
 
     ####
@@ -146,10 +147,8 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     # Cell Methods
     #
     ####
-    @Debugger
-    @validate_arguments
-    def getCell(self, row:int, column:str):
-        return self.data.sheetData.select(row,column)
+    
+
 
 
     ####

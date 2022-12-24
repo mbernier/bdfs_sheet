@@ -25,7 +25,7 @@ class Nested_Cache(BdfsCache):
 
     _storage: list = []
 
-    _locations:list = None
+    _locations:list = []
 
     # locations are the indexes for the Flat_Cache
     #   We will make sure that they are setup properly as the caches are built
@@ -33,7 +33,11 @@ class Nested_Cache(BdfsCache):
     def __init__(self, locations: list = [], data:list = []):        
         self._storage = []
         self._locations = locations
-        self.__setup(locations, data)
+        if 0 == len(locations):
+            if 0 < len(data): # we have data, but we don't have headers
+                raise Nested_Cache_Exception(f"Data {data} was sent with no headers")
+        else:
+            self.__setup(locations, data)
 
 
     ####

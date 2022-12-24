@@ -18,12 +18,18 @@ class Bdfs_Spreadsheet_Destination(Bdfs_Spreadsheet): #Passthrough to Bdfs_Sprea
         # will fail if the worksheet doesn't exist
         self.data.spreadsheet.del_worksheet(self.data.spreadsheet.worksheet(worksheetName))
 
-        # remove from the local cache of worksheets, preventing us from having to go retrieve from the destination worksheet as well
+        # deregister the worksheet
         del self.data.worksheets[worksheetName]
+        del self.data.gspread_worksheets[worksheetName]
+
 
     @Debugger
     @validate_arguments
     def insertWorksheet(self, worksheetName:str, rows:int=5, cols:int=5, index:int=None):
         # create and store the new worksheet
-        self.data.worksheets[worksheetName] = self.data.spreadsheet.add_worksheet(title=worksheetName, rows=rows, cols=cols, index=index)
-        return self.data.worksheets[worksheetName]
+        worksheet = self.data.spreadsheet.add_worksheet(title=worksheetName, rows=rows, cols=cols, index=index)
+        
+        # make sure the local storage knows about the worksheet
+        self.registerWorksheet(worksheet)
+
+        return self.getWorksheet(worksheetName)

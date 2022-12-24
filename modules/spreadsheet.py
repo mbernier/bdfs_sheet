@@ -5,8 +5,8 @@ from modules.logger import Logger
 from modules.decorator import Debugger
 from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
-from gspread import worksheet, utils as gspread_utils
-from pprint import pprint
+from gspread import Worksheet, utils as gspread_utils
+from pydantic import validate_arguments
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -88,6 +88,7 @@ class Bdfs_Spreadsheet(BaseClass):
 
     # setup the sheet object if not setup, return it either way
     @Debugger
+    @validate_arguments
     def setupSpreadsheet(self, use_cache:bool = True):
         if None == self.data.spreadsheet or False == use_cache:
             try:
@@ -107,6 +108,7 @@ class Bdfs_Spreadsheet(BaseClass):
     # pattern: sheets we care about include the keeperPattern in the title
     #   We store the local copy of theworksheet, bc it has a reference to the gspread worksheet
     @Debugger
+    @validate_arguments
     def setupWorksheets(self, use_cache=True) -> list:
         
         if False == use_cache or {} == self.getWorksheets():
@@ -119,14 +121,24 @@ class Bdfs_Spreadsheet(BaseClass):
             # clear out the worksheets we don't need
             for sheet in gspread_worksheets:
 
-                # only restrict the worksheet list if there is a keeper pattern
-                if None == keeperPattern or keeperPattern in sheet.title:
-                    # create the place for the worksheets, but don't actually grab them yet - reduces API calls
-                    self.data.worksheets[sheet.title] = None
-
-                self.data.gspread_worksheets[sheet.title] = sheet
+                self.registerWorksheet(sheet)
 
         return self.getWorksheets()
+
+
+    @Debugger
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def registerWorksheet(self, worksheet: Worksheet):
+        keeperPattern = self.getWorksheetKeeperPattern()
+        title = worksheet.title
+
+        # only restrict the worksheet list if there is a keeper pattern
+        if None == keeperPattern or keeperPattern in title:
+            # create the place for the worksheets, but don't actually grab them yet - reduces API calls
+            self.data.worksheets[title] = None
+
+        self.data.gspread_worksheets[title] = worksheet
+
 
     @Debugger
     def getWorksheets(self):
@@ -157,6 +169,7 @@ class Bdfs_Spreadsheet(BaseClass):
 
 
     @Debugger
+    @validate_arguments
     def getWorksheet(self, worksheetTitle:str):
         self.setupWorksheets() #make sure they're setup before someone tries to get one
         if {} == self.getWorksheets():
@@ -166,7 +179,6 @@ class Bdfs_Spreadsheet(BaseClass):
             if None == self.getWorksheets()[worksheetTitle]:
                 worksheetClass = self.getWorksheetClass()
                 self.data.worksheets[worksheetTitle] = worksheetClass(self.data.gspread_worksheets[worksheetTitle])
-        
             return self.getWorksheets()[worksheetTitle]
         else:
             raise Bdfs_Spreadsheet_Exception(f"The worksheet '{worksheetTitle}' was not found in the kept worksheets: {list(self.getWorksheets().keys())}")
