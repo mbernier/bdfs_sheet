@@ -39,8 +39,6 @@ class Bdfs_Spreadsheet(BaseClass):
         #if we don't have the spreadsheetId we cannot connect to it
         if None == self.getSpreadsheetId():
             Logger.critical("SpreadsheetId was not set before instantiating Spreadsheet class")
-            #fail if no one set the spreadsheetId on the wrapper class
-            raise Exception("class Spreadsheet cannot implement __init__ on it's own. Extend and pass a Spreadsheet Id")
 
         # we don't NEED the keeperPattern, but if we want to reduce the work and prevent errors later it's a good idea
         if None == self.getWorksheetKeeperPattern():
@@ -115,9 +113,7 @@ class Bdfs_Spreadsheet(BaseClass):
 
             # retrieve the worksheets from the gpsread spreadsheet obj
             gspread_worksheets = self.data.spreadsheet.worksheets()
-
-            keeperPattern = self.getWorksheetKeeperPattern()
-
+            print(gspread_worksheets)
             # clear out the worksheets we don't need
             for sheet in gspread_worksheets:
 
@@ -133,7 +129,7 @@ class Bdfs_Spreadsheet(BaseClass):
         title = worksheet.title
 
         # only restrict the worksheet list if there is a keeper pattern
-        if None == keeperPattern or keeperPattern in title:
+        if "" == keeperPattern or keeperPattern in title:
             # create the place for the worksheets, but don't actually grab them yet - reduces API calls
             self.data.worksheets[title] = None
 
@@ -172,7 +168,7 @@ class Bdfs_Spreadsheet(BaseClass):
     @validate_arguments
     def getWorksheet(self, worksheetTitle:str):
         self.setupWorksheets() #make sure they're setup before someone tries to get one
-        if {} == self.getWorksheets():
+        if {} == self.getWorksheets() and 0 == len(self.data.gspread_worksheets.keys()):
             raise Bdfs_Spreadsheet_Exception("Worksheets were not added to the Spreadsheet properly.")
         
         if worksheetTitle in self.getWorksheets():

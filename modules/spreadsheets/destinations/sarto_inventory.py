@@ -7,6 +7,6 @@ class Sarto_Inventory_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
 
     spreadsheetId = '16gp8awjSaawEdBvV6bLDUQoA5Ha-j1NB82O2Zifhmns'
 
-    worksheetKeeperPattern = "inventory"
+    worksheetKeeperPattern = ""
 
     worksheet_class = "modules.worksheets.destinations.sarto_inventory.Sarto_Inventory_Worksheet_Destination"

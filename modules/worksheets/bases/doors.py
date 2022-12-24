@@ -16,7 +16,7 @@ class Doors_Base():
         
         self.cols_expected_extra['single'] = single
 
-        if self.hasDoubles:
+        if True == self.hasDoubles:
             double_sizes = []
             for width in self.widths:
                 for height in heights_inches:

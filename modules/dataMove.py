@@ -1,5 +1,6 @@
 from pydantic import validate_arguments
 from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
+from modules.dataMoves.exception import DataMove_Exception
 from modules.decorator import Debugger
 from modules.helper import Helper
 from modules.logger import Logger, logger_name
@@ -41,7 +42,7 @@ class DataMove():
             if True == self.destinationWorksheetCreateIfNotFound:
                 self.destinationWorksheet = self.destinationSpreadsheet.insertWorksheet(worksheetName=self.destinationWorksheetName)
             else:
-                raise Bdfs_Spreadsheet_Exception(err.message)
+                raise DataMove_Exception(err.message)
 
         self.run_hook('init_post_worksheets')
 
@@ -100,14 +101,17 @@ class DataMove():
             modifiedData = self.mapFields(sourceData)
 
             destinationData = []
-            for column in self.destination_expectedCols:
-                destinationData.append(modifiedData[column])
+            if modifiedData.keys() == self.destination_expectedCols:
+                for column in self.destination_expectedCols:
+                    destinationData.append(modifiedData[column])
 
-            # write the destination data to the destination
-            self.destinationWorksheet.addRow(destinationData)
+                # write the destination data to the destination
+                self.destinationWorksheet.addRow(destinationData)
+            else:
+                raise DataMove_Exception(f"There are columns missing from modified data. Received {modifiedData.keys()} Expected {self.destination_expectedCols}")
 
         self.run_hook('post_map')
-            
+
 
     @Debugger
     @validate_arguments
