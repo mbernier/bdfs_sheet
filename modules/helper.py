@@ -169,11 +169,6 @@ class Helper:
         return isinstance(item, Nested_Cache)
 
     @staticmethod
-    def is_Nested_Cache_Rows_Location(item):
-        from modules.caches.nested_cache.rows.location import Nested_Cache_Rows_Location
-        return isinstance(item, Nested_Cache_Rows_Location)
-
-    @staticmethod
     def is_Flat_Cache(item):
         from modules.caches.flat import Flat_Cache
         return isinstance(item, Flat_Cache)
