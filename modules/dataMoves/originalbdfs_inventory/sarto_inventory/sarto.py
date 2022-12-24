@@ -7,17 +7,40 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     sourceClassPath = "originalbdfs_inventory.OriginalBdfs_Spreadsheet_Source"
     sourceWorksheetName = "sarto_barn_single_inventory"
 
-    destinationClassPath = "originalbdfs_inventory.OriginalBdfs_Spreadsheet_Destination"
+    destinationClassPath = "sarto_inventory.Sarto_Inventory_Spreadsheet_Destination"
     destinationWorksheetName = "barndoor_single"
 
     @Debugger
     @validate_arguments
     def mapFields(self, sourceData:dict):
+        outputData = {}
 
-        # hourly = float(sourceData["Yearly Salary"]) / 2008
-        # sourceData["Hourly Pay"] = round(hourly,2)
+        # URL
+        outputData['Url'] = sourceData['UnitedPorte URL']
+        # Title
+        outputData['Title'] = sourceData['Title']
+        # Door Count
+        outputData['Door Count'] = sourceData['Type']
+        # Type
+        outputData['Type'] = 'Barn Door'
+        # Glass
+        outputData['Glass'] = sourceData['Glass']
+        # Lites
+        outputData['Lites'] = sourceData['Glass Lites'].replace("lites","").strip()
+        # Color
+        outputData['Color'] = sourceData['Color']
+        # Hardware
+        outputData['Hardware'] = sourceData['Hardware']
+        # SKU
+        outputData['SKU'] = sourceData['SKU']
+
+        # image URLs, up to 10 of them
+        for counter in range(1,11):
+            imageKey = f"Image {counter} URL"
+            if imageKey in sourceData:
+                outputData[imageKey] = sourceData[imageKey]
+
+        # Description
+        outputData['Description'] = sourceData['Description']
         
-        # total_pay = int(sourceData["Hours Worked"]) * hourly
-        # sourceData["Total Pay"] = round(total_pay,2)
-        
-        return sourceData
+        return outputData

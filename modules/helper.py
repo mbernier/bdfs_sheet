@@ -193,3 +193,9 @@ class Helper:
         
         return args_repr, kwargs_repr
 
+    @staticmethod
+    def mapCols(list1, list2, joinStr= ""):
+        output = []
+        for mapcol in list1:
+            output += [f"{mapcol}{joinStr}{item}" for item in list2]
+        return output

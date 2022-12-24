@@ -9,4 +9,4 @@ class Sarto_Inventory_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
 
     worksheetKeeperPattern = "inventory"
 
-    worksheet_class = "modules.worksheets.bdfs_inventory.sources.Sarto_Inventory_Worksheet_Source"
+    worksheet_class = "modules.worksheets.sources.sarto_inventory.Sarto_Inventory_Worksheet_Source"

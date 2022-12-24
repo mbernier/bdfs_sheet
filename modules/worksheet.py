@@ -58,6 +58,9 @@ class Bdfs_Worksheet(BaseClass):
         self.data.title = worksheet.title
         self.data.id = worksheet.id
 
+        # a hook to allow setting up params
+        self.setupParams()
+
         # double check we have the required params from the extension class
         self.__checkSetup()
 
@@ -73,6 +76,11 @@ class Bdfs_Worksheet(BaseClass):
     @Debugger
     def __checkSetup(self):
         pass #this functionality is moved to the Destination class
+
+
+    @Debugger
+    def setupParams(self):
+        pass # do nothing here, let sub classes do this
 
     ####
     #

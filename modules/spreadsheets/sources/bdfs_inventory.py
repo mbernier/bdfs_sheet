@@ -9,4 +9,4 @@ class BdfsInventory_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
 
     worksheetKeeperPattern = "inventory"
 
-    worksheet_class = "modules.worksheets.bdfs_inventory.sources.BdfsInventory_Worksheet_Source"
+    worksheet_class = "modules.worksheets.sources.bdfs_inventory.BdfsInventory_Worksheet_Source"

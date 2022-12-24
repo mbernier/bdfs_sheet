@@ -11,4 +11,4 @@ class BdfsInventory_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
     worksheetKeeperPattern = "inventory"
 
     # worksheet_class = {"module": "modules.spreadsheets.bdfs_inventory", "class": "Bdfs_Spreadsheet"}
-    worksheet_class = "modules.worksheets.bdfs_inventory.destinations.BdfsInventory_Worksheet_Destination"
+    worksheet_class = "modules.worksheets.destinations.bdfs_inventory.BdfsInventory_Worksheet_Destination"
