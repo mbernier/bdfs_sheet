@@ -5,7 +5,7 @@ from pydantic import validate_arguments
 
 class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     sourceClassPath = "originalbdfs_inventory.OriginalBdfs_Spreadsheet_Source"
-    sourceWorksheetName = "sarto_barn_single_inventory"
+    sourceWorksheetName = "test_sarto_single_inventory"
 
     destinationClassPath = "sarto_inventory.Sarto_Inventory_Spreadsheet_Destination"
     destinationWorksheetName = "barndoor_single"

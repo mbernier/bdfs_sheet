@@ -101,7 +101,7 @@ class DataMove():
             modifiedData = self.mapFields(sourceData)
 
             destinationData = []
-            if modifiedData.keys() == self.destination_expectedCols:
+            if list(modifiedData.keys()) == self.destination_expectedCols:
                 for column in self.destination_expectedCols:
                     destinationData.append(modifiedData[column])
 
@@ -111,7 +111,6 @@ class DataMove():
                 raise DataMove_Exception(f"There are columns missing from modified data. Received {modifiedData.keys()} Expected {self.destination_expectedCols}")
 
         self.run_hook('post_map')
-
 
     @Debugger
     @validate_arguments
