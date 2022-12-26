@@ -38,11 +38,13 @@ class Worksheet_DataClass():
     title:str  = dc_field(default_factory=str)              # The Sheet title
     gspread_worksheet:Worksheet = None                      # The worksheet object itself, allows us to run gspread functions
     expectedColumns:list = dc_field(default_factory=list)   # A list of columns we expect to have in the sheet
+    expectedColumns_extra:list = dc_field(default_factory=list)
     uncommitted_title: str = dc_field(default_factory=str)  # temp storage if we change the title of the worksheet, until commit
     sheetData:Bdfs_Worksheet_Data = dc_field(default_factory=Bdfs_Worksheet_Data)         # source of truth for the data of the worksheet
     changes:dict[bool] = dc_field(default_factory=dict)     # {"title": False, "data": False}
     sheet_retrieved:bool = False
     id: int = dc_field(default_factory=int)
+    uniqueField: str = dc_field(default_factory=str)
 #
 # Rules; 
 #   pulls the worksheet data, does all the changes, only pushes changes when commit() is called.
@@ -57,6 +59,7 @@ class Bdfs_Worksheet(BaseClass):
         self.data.gspread_worksheet = worksheet
         self.data.title = worksheet.title
         self.data.id = worksheet.id
+        self.data.uniqueField = None
 
         # a hook to allow setting up params
         self.setupParams()
@@ -199,8 +202,13 @@ class Bdfs_Worksheet(BaseClass):
         # we can defer grabbing the data until we get here
         if False == self.data.sheet_retrieved:
             sheetData = self.data.gspread_worksheet.get_all_values()
+            
+            # doing this to make dataclass happy and pass a bool, instead of str
+            uniqueField = None
+            if self.data.uniqueField != "" and None != self.data.uniqueField: 
+                uniqueField = self.data.uniqueField
 
-            self.data.sheetData = Bdfs_Worksheet_Data(sheetData)
+            self.data.sheetData = Bdfs_Worksheet_Data(sheetData, uniqueField = uniqueField)
 
             # we are now the same as the google worksheet, nothing to commit
             self.changed('data', False)

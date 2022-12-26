@@ -17,7 +17,7 @@ class Bdfs_Worksheet_Data(BaseClass):
     _duplicateHeaders = [] 
     _headers = []
     _removedHeaders = []
-    uniqueField = ""
+    uniqueField = None
     uniques = []
 
     @Debugger
@@ -27,6 +27,7 @@ class Bdfs_Worksheet_Data(BaseClass):
         # allow identifying which field is a way to identify the row
         if None != uniqueField:
             self.uniqueField = uniqueField
+        print(f"unique: {uniqueField}")
 
         self.load(sheetData)
 
@@ -42,9 +43,7 @@ class Bdfs_Worksheet_Data(BaseClass):
 
         self._headers = headers
 
-        self.dataStore = Nested_Cache(self._headers, sheetData, self.uniqueField)
-
-        self.uniques = self.dataStore.getUniques()
+        self.dataStore = Nested_Cache(locations=self._headers, data=sheetData, uniqueField=self.uniqueField)
 
 
     # replaces empty headers with "NoHeaderFound_{index}"
@@ -109,8 +108,6 @@ class Bdfs_Worksheet_Data(BaseClass):
     @Debugger
     @validate_arguments
     def removeHeaders(self, headers:list[str]):
-        if self.uniqueField in headers:
-            raise Bdfs_Worksheet_Data_Exception(f"You cannot remove the unique header: '{self.uniqueField}'")
 
         # call directly to the multi-delete on Nested Cache
         self.dataStore.deleteColumns(positions=headers)
@@ -120,9 +117,7 @@ class Bdfs_Worksheet_Data(BaseClass):
     @Debugger
     @validate_arguments
     def removeHeader(self, header:str=None):
-        if self.uniqueField == header:
-            raise Bdfs_Worksheet_Data_Exception(f"You cannot remove the unique header: '{self.uniqueField}'")
-
+        
         self.dataStore.deleteColumn(position=header)
         # do a double check for whether this was removed by reference
         #   it is possible that the headers list in NestedCache is referencing the headers list here
@@ -165,9 +160,18 @@ class Bdfs_Worksheet_Data(BaseClass):
     ####
     @Debugger
     @validate_arguments
-    def select(self, row, column:Union[int,str]=None):
+    def select(self, row:int, column:Union[int,str]=None):
         return self.dataStore.select(row=row, position=column)
 
+
+    #given some data, identify if we need to update or insert the data
+    @Debugger
+    @validate_arguments
+    def putRow(self, rowData:list):
+        self.dataStore.putRow(rowData=rowData)
+
+
+    # add a new row to storage
     @Debugger
     @validate_arguments
     def insertRow(self, rowData:list=None):

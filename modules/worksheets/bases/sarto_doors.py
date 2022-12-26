@@ -14,4 +14,4 @@ class Sarto_Inventory_Base(Doors_Base):
         heights = [80, 84, 96]
         hasDoubles = True
 
-        uniqueKey = 'url_key'
+        uniqueField = 'URL_key'

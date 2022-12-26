@@ -86,10 +86,10 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     #   Get the columns that we care about and return them
     @Debugger
     def __mergeExpectedColumns(self):
-        expectedCols = self.cols_expected
-        for index in self.cols_expected_extra:
+        expectedCols = self.data.expectedColumns
+        for index in self.data.expectedColumns_extra:
             if index in self.getTitle():
-                expectedCols.extend(self.cols_expected_extra[index])
+                expectedCols.extend(self.data.expectedColumns_extra[index])
         return expectedCols
     
 
@@ -143,14 +143,11 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
     @Debugger
     @validate_arguments
-    def updateRow(self, rowData:dict, where:dict):
+    def putRow(self, rowData:list):
         self.modifiesData()
 
-        # identify which row has the data we're looking for
-        row = self.data.sheetData.identifyRow(where)
-
-        # do the update
-        self.data.sheetData.updateRow(row, rowData)
+        # do the update or insert, based on the data that was passed
+        self.data.sheetData.putRow(rowData)
 
 
     ####

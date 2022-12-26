@@ -107,12 +107,9 @@ class DataMove():
                 for column in self.destination_expectedCols:
                     destinationData.append(modifiedData[column])
 
-                if self.destinationStartHeight == 0:
-                    # write the destination data to the destination
-                    self.destinationWorksheet.addRow(destinationData)
-                else:
-                    self.destinationWorksheet
-                    self.destinationWorksheet.updateRow(destinationData)
+                # putRow will determine, based on uniqueKeys, whether this should be an insert or update
+                self.destinationWorksheet.putRow(destinationData)
+                
             else:
                 raise DataMove_Exception(f"There are columns missing from modified data. Received {modifiedData.keys()} Expected {self.destination_expectedCols}")
 

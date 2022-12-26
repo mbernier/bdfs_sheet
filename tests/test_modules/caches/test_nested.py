@@ -288,9 +288,26 @@ def test_unique_updateRow_diff_unique_not_unique():
         cache.update(row=0, position='b', data=1)
     assert "'1' for position 'b' violates uniqueness" in str(excinfo.value)
 
-# try to delete the unique column, using deleteColumns
 # try a select with row and unique
+def test_unique_unique_select_row_and_unique():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        row = cache.select(row=0,unique=3)
+    assert "Passing row and unique together is poor form, pick one" in str(excinfo.value)
+    
 # try a select with unique only
-# try update where unique is the same - should work
-# try update where unique is different and is unique - should work
-# try update where unique is different and is not unique - should fail
+def test_unique_select_by_unique():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    row = cache.select(unique=3)
+    assert row == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
+
+# test an update/insert based on data that exists
+def test_unique_select_by_unique():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    # will cause an update, so uniques will stay the same
+    row = cache.putRow([3,6,7,8,9])
+    assert cache.getUniques() == [3,1]
+    
+    # will cause an insert, so uniques will change
+    row = cache.putRow([4,99,100,101,102])
+    assert cache.getUniques() == [3,1,4]

@@ -51,12 +51,17 @@ class Flat_Cache(BdfsCache):
     @validate_arguments
     def load(self, data:list=None):
         if None != data:
+            foundTimestamp = False
             for index,value in enumerate(data):
                 # let's treat updated date as special
                 if index == "update_timestamp":
                     self.data.update_timestamp = value
+                    foundTimestamp = True
                 else:
                     self.insert(index, value, skip_update_timestamp=True)
+
+            if False == foundTimestamp:
+                self.update_timestamp()
 
     ####
     #
@@ -121,6 +126,7 @@ class Flat_Cache(BdfsCache):
     # timestamp is output on getAs methods
     @Debugger
     def update_timestamp(self):
+        print(time.time())
         self.data.update_timestamp = time.time()
 
     @Debugger
@@ -412,7 +418,7 @@ class Flat_Cache(BdfsCache):
         for index in self.getKeys(keyType=int):
             output.insert(index, self.select(index))
         if True == updated_timestamp:
-            output.insert(self.getUpdateTimestamp())
+            output.append(self.getUpdateTimestamp())
         return output
 
 

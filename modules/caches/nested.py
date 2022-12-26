@@ -45,8 +45,9 @@ class Nested_Cache(BdfsCache):
         else:
             # verify the unique field is in the locations list
             if None != uniqueField:
+                print(f"uniqueField: {uniqueField}")
                 self.uniqueFieldIndex = locations.index(uniqueField)
-
+            
             self.__setup(locations, data)
 
 
@@ -94,12 +95,12 @@ class Nested_Cache(BdfsCache):
     # uses the dict get() to return None or the value if the item exists
     @Debugger
     @validate_arguments # no need to test location exists, return None if the data doesn't exist at row or location
-    def select(self, row:Annotated[int, Field(gt=-1)]=None, position:Union[int,str] = None, unique = None, updated_timestamp=False):
+    def select(self, row:Annotated[int,Field(gt=-1)]=None, position:Union[int,str]=None, unique=None, updated_timestamp=False):
         if None != unique:
             if None != row:
                 raise Nested_Cache_Exception("Passing row and unique together is poor form, pick one")
             # we want the row based on the unique value
-            row = self.__getRowByUnique(self, unique)
+            row = self.__getRowByUnique(uniqueData=unique)
             data = self._storage[row].select(position=position, updated_timestamp=updated_timestamp)
         else: 
             # we want the datat some other way
@@ -135,11 +136,28 @@ class Nested_Cache(BdfsCache):
     @validate_arguments
     def insert(self, rowData:list=None):
         newRow = Flat_Cache(self.getLocations(), rowData)
-        newData = newRow.select(position=self.uniqueField)
-        self.__updateUniques(newRow.select(position=self.uniqueField))
-        self._storage.append(newRow)
-        Logger.info("Height: {}".format(self.height()))
-        self.__increaseHeight()
+        rowVal = "".join(newRow.getAsList(updated_timestamp=False))
+        if len(rowVal) == 0 and None != self.uniqueField:
+            Logger.info("found empty Row, skipping")
+        else:
+            self.__updateUniques(newRow.select(position=self.uniqueField))
+            self._storage.append(newRow)
+            Logger.info("Height: {}".format(self.height()))
+            self.__increaseHeight()
+    
+
+    # given some data, identify whether it should be inserted or updated, based on the uniqueField
+    @Debugger
+    @validate_arguments
+    def putRow(self, rowData):
+        uniqueData = rowData[self.uniqueFieldIndex]
+        if self.isUnique(uniqueData):
+            # insert
+            self.insert(rowData)
+        else:
+            row = self.__getRowByUnique(uniqueData)
+            # update
+            self.updateRow(row=row,rowData=rowData)
 
 
     @Debugger
