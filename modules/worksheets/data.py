@@ -27,9 +27,9 @@ class Bdfs_Worksheet_Data(BaseClass):
         # allow identifying which field is a way to identify the row
         if None != uniqueField:
             self.uniqueField = uniqueField
-        print(f"unique: {uniqueField}")
 
-        self.load(sheetData)
+        self.load(sheetData) 
+
 
     @Debugger
     @validate_arguments
@@ -42,7 +42,8 @@ class Bdfs_Worksheet_Data(BaseClass):
             headers, uniqueHeaders, duplicateHeaders, emptyHeaderIndexes = self.__prepHeaders(headers)
 
         self._headers = headers
-
+        print(f"Nested_cache: {self.uniqueField}")
+        print(f"NC Headers: {self._headers}")
         self.dataStore = Nested_Cache(locations=self._headers, data=sheetData, uniqueField=self.uniqueField)
 
 
@@ -144,10 +145,11 @@ class Bdfs_Worksheet_Data(BaseClass):
 
         # remove headers from the data that are not in the new Headers
         extraHeaders = list(set(currentHeaders) - set(newHeaders))
+
         self.removeHeaders(extraHeaders)
 
         # add headers in newHeaders that are not in currentHeaders
-        missingHeaders = list(set(newHeaders) - set(currentHeaders))
+        missingHeaders = list(set(newHeaders) - set(currentHeaders)) 
         self.addHeaders(missingHeaders)
 
         # make sure the data is in the newHeaders order
@@ -160,8 +162,8 @@ class Bdfs_Worksheet_Data(BaseClass):
     ####
     @Debugger
     @validate_arguments
-    def select(self, row:int, column:Union[int,str]=None):
-        return self.dataStore.select(row=row, position=column)
+    def select(self, row:int, column:Union[int,str]=None, updated_timestamp=True):
+        return self.dataStore.select(row=row, position=column, updated_timestamp=updated_timestamp)
 
 
     #given some data, identify if we need to update or insert the data
@@ -184,17 +186,19 @@ class Bdfs_Worksheet_Data(BaseClass):
     ####
 
     @Debugger
-    def width(self):
+    def width(self) -> int:
         return len(self.getHeaders())
 
     @Debugger
-    def height(self):
+    def height(self) -> int:
         return self.dataStore.height()
 
     @Debugger
-    def getAsListOfLists(self):
-        return self.dataStore.getAsListOfLists()
+    @validate_arguments
+    def getAsListOfLists(self, updated_timestamp:bool=False) -> list[list]:
+        return self.dataStore.getAsListOfLists(updated_timestamp=updated_timestamp)
     
     @Debugger
-    def getAsListOfDicts(self):
-        return self.dataStore.getAsListOfDicts()
+    @validate_arguments
+    def getAsListOfDicts(self, updated_timestamp:bool=False) -> list[dict]:
+        return self.dataStore.getAsListOfDicts(updated_timestamp=updated_timestamp)

@@ -13,9 +13,10 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     @Debugger
     @validate_arguments
     def mapFields(self, sourceData:dict):
+        print(f"sourceData: {sourceData}")
         outputData = {}
         expectedCols = self.destination_expectedCols
-        
+        print(f"expCols: {expectedCols}")
         # Redundant items: Title, Glass, Color, SKU
         
         # URL
@@ -73,4 +74,5 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
             
             outputData[outputKey] = sourceData[sourceKey]
         
+        print(f"outputData: {outputData}")
         return outputData

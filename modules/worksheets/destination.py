@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass, field as dc_field
 from collections import OrderedDict
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
@@ -46,6 +47,11 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
         if [] == self.getExpectedColumns():
             #fail if no one set the spreadsheetId on the wrapper class
             Logger.critical("Cols expected was not set before instantiating Spreadsheet class")
+        
+    @Debugger
+    def setupData(self, sheetData=None):
+        if [] == sheetData:
+            return [self.getExpectedColumns()]
 
     ####
     #
@@ -138,7 +144,7 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     @Debugger
     @validate_arguments
     def addRow(self, rowData:list):
-        self.modifiesData()
+        self.modifiesData() 
         self.data.sheetData.insertRow(rowData)
 
     @Debugger
@@ -190,10 +196,10 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
             self.gspread_worksheet_resize_to_data()
 
             # get the meta about our new data to commit
-            dataRange = self.getDataRange()
+            dataRange = self.getDataRange(updated_timestamp=True)
 
             headers = self.getColumns()
-            values = self.getDataAsListOfLists()
+            values = self.getDataAsListOfLists(updated_timestamp=True)
 
             batch_update = [{
                 'range': dataRange,

@@ -5,6 +5,7 @@ from collections import OrderedDict
 from gspread import utils as gspread_utils
 from gspread.worksheet import Worksheet
 from modules.base import BaseClass
+from modules.caches.flat import Flat_Cache
 from modules.decorator import Debugger
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
@@ -50,7 +51,9 @@ class Worksheet_DataClass():
 #   pulls the worksheet data, does all the changes, only pushes changes when commit() is called.
 #
 class Bdfs_Worksheet(BaseClass):
-
+    cols_expected = None
+    cols_expected_extra = None
+    
     @Debugger
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def __init__(self, worksheet:Worksheet):
@@ -59,7 +62,7 @@ class Bdfs_Worksheet(BaseClass):
         self.data.gspread_worksheet = worksheet
         self.data.title = worksheet.title
         self.data.id = worksheet.id
-        self.data.uniqueField = None
+        self.data.uniqueField = None 
 
         # a hook to allow setting up params
         self.setupParams()
@@ -80,10 +83,19 @@ class Bdfs_Worksheet(BaseClass):
     def __checkSetup(self):
         pass #this functionality is moved to the Destination class
 
+    @Debugger
+    def setupData(self, sheetData=None):
+        return sheetData # do nothing by default
 
     @Debugger
     def setupParams(self):
-        pass # do nothing here, let sub classes do this
+        print(f"Worksheet: setupParams()")
+        print(f"uniqueField: {self.data.uniqueField}")
+        if None != self.cols_expected: 
+            self.data.expectedColumns = self.cols_expected
+
+        if None != self.cols_expected_extra: 
+            self.data.expectedColumns_extra = self.cols_expected_extra
 
     ####
     #
@@ -109,7 +121,7 @@ class Bdfs_Worksheet(BaseClass):
     # Detect a change, does not have __modifiedData() bc this is a read-only method
     @Debugger
     @validate_arguments
-    def isChanged(self, index):
+    def isChanged(self, index:str) -> bool:
         if index in self.data.changes.keys():
             return self.data.changes[index]
         else:
@@ -134,7 +146,7 @@ class Bdfs_Worksheet(BaseClass):
 
     # if we have a new title passed, return that, otherwise return the original title
     @Debugger
-    def getTitle(self): #tested
+    def getTitle(self) -> str:
         if "" == self.data.uncommitted_title:
             return self.getOriginalTitle()
         return self.data.uncommitted_title
@@ -142,7 +154,7 @@ class Bdfs_Worksheet(BaseClass):
 
     # always returns self.data.title
     @Debugger
-    def getOriginalTitle(self): #tested
+    def getOriginalTitle(self) -> str:
         return self.data.title
 
     
@@ -163,8 +175,13 @@ class Bdfs_Worksheet(BaseClass):
 
     #will return something like -- "A1:CT356"
     @Debugger
-    def getDataRange(self) -> str: #tested
-        dataRange = f"{self.getA1(1,1)}:{self.getA1(self.height()+1, self.width())}"
+    @validate_arguments
+    def getDataRange(self, updated_timestamp=True) -> str: #tested
+        height = self.height()+1
+        width = self.width()
+        if True == updated_timestamp:
+            width += 1
+        dataRange = f"{self.getA1(1,1)}:{self.getA1(height, width)}"
         return dataRange
 
 
@@ -198,16 +215,20 @@ class Bdfs_Worksheet(BaseClass):
     ####
 
     @Debugger
-    def getData(self): #tested
+    def getData(self):
         # we can defer grabbing the data until we get here
         if False == self.data.sheet_retrieved:
             sheetData = self.data.gspread_worksheet.get_all_values()
+            
+            # allows modifying the data before it is passed to Worksheet_Data if needed
+            sheetData = self.setupData(sheetData)
             
             # doing this to make dataclass happy and pass a bool, instead of str
             uniqueField = None
             if self.data.uniqueField != "" and None != self.data.uniqueField: 
                 uniqueField = self.data.uniqueField
-
+            
+            print(f"WORKSHEET_DATA: {uniqueField}")
             self.data.sheetData = Bdfs_Worksheet_Data(sheetData, uniqueField = uniqueField)
 
             # we are now the same as the google worksheet, nothing to commit
@@ -240,14 +261,14 @@ class Bdfs_Worksheet(BaseClass):
     #   if there are empty columns at the end, the row_values() method will not get them, it will get everything from
     #       the first column to the last value in the row
     @Debugger
-    def getColumns(self): #tested
+    def getColumns(self) -> list:
         self.getData()
         return self.data.sheetData.getHeaders()
 
 
     # return the number of columns in the worksheet
     @Debugger
-    def getColumnCounts(self): 
+    def getColumnCounts(self) -> dict: 
         obj = {
             'data': self.width(),
             'gspread_worksheet': len(self.data.gspread_worksheet.row_values(1))
@@ -289,8 +310,8 @@ class Bdfs_Worksheet(BaseClass):
 
     @Debugger
     @validate_arguments
-    def getRow(self, row:int):
-        return self.data.sheetData.select(row)
+    def getRow(self, row:int, updated_timestamp=True) -> Flat_Cache:
+        return self.data.sheetData.select(row, updated_timestamp=updated_timestamp)
 
 
     ####
@@ -313,7 +334,7 @@ class Bdfs_Worksheet(BaseClass):
     # creates A1 notation for the row and column given
     @Debugger
     @validate_arguments
-    def getA1(self, row, column):
+    def getA1(self, row, column) -> str:
         return gspread_utils.rowcol_to_a1(row, column)
 
 
@@ -402,19 +423,25 @@ class Bdfs_Worksheet(BaseClass):
     #
     ####
 
-    def width(self):
+    @Debugger
+    def width(self) -> int:
         self.getData()
         return self.data.sheetData.width()
 
-    def height(self):
+    @Debugger
+    def height(self) -> int:
         self.getData()
         return self.data.sheetData.height()
 
-    def getDataAsListOfLists(self):
+    @Debugger
+    @validate_arguments
+    def getDataAsListOfLists(self, updated_timestamp:bool=False) -> list[list]:
         self.getData()
-        return self.data.sheetData.getAsListOfLists()
+        return self.data.sheetData.getAsListOfLists(updated_timestamp=updated_timestamp)
    
-    def getDataAsListOfDicts(self):
+    @Debugger
+    @validate_arguments
+    def getDataAsListOfDicts(self, updated_timestamp:bool=False) -> list[dict]:
         self.getData()
         return self.data.sheetData.getAsListOfDicts()
    

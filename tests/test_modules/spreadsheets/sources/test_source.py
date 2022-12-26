@@ -4,7 +4,7 @@ from modules.spreadsheets.sources.simple_sheet import Simple_Spreadsheet_Source
 sheet = Simple_Spreadsheet_Source()
 
 def test_getWorksheetKeeperPattern():
-    assert "test" == sheet.getWorksheetKeeperPattern()
+    assert "" == sheet.getWorksheetKeeperPattern() # we set this to nothing
 
 def test_getSpreadsheetId():
     assert "1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI" == sheet.getSpreadsheetId()

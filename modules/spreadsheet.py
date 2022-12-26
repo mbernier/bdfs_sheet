@@ -93,12 +93,12 @@ class Bdfs_Spreadsheet(BaseClass):
                 self.data.spreadsheet = self.data.service_account.open_by_key(self.data.spreadsheetId)
             except gspread.exceptions.APIError:
                 Logger.error("We got rate limited, going to sleep for 60 seconds and try again")
-                time.sleep(60)
+                time.sleep(65)
                 try:
                     self.data.spreadsheet = self.data.service_account.open_by_key(self.data.spreadsheetId)
                 except gspread.exceptions.APIError:
                     # @todo - this would be a great place for Temporal to jump in and help
-                    Logger.critical("30 seconds of sleep was not long enough, we pissed Google off - consider more sleep time, or retry at a later date")
+                    Logger.critical("65 seconds of sleep was not long enough, we pissed Google off - consider more sleep time, or retry at a later date")
         return self.data.spreadsheet
 
 
@@ -113,7 +113,7 @@ class Bdfs_Spreadsheet(BaseClass):
 
             # retrieve the worksheets from the gpsread spreadsheet obj
             gspread_worksheets = self.data.spreadsheet.worksheets()
-            print(gspread_worksheets)
+            
             # clear out the worksheets we don't need
             for sheet in gspread_worksheets:
 

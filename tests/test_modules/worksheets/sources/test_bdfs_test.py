@@ -100,8 +100,10 @@ class Test_Bdfs_Worksheet_Source:
 
     def test_getDataRange(self):
         dataRange = self.test_worksheet.getDataRange()
-        assert dataRange == "A1:F4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
+        assert dataRange == "A1:G4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
+        dataRange = self.test_worksheet.getDataRange(updated_timestamp=False)
+        assert dataRange == "A1:F4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
     def test_getExpectedColumns(self):
         with pytest.raises(AttributeError) as excinfo:
