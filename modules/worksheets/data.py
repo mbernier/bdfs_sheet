@@ -17,11 +17,17 @@ class Bdfs_Worksheet_Data(BaseClass):
     _duplicateHeaders = [] 
     _headers = []
     _removedHeaders = []
+    uniqueField = ""
+    uniques = []
 
     @Debugger
     @validate_arguments
-    def __init__(self, sheetData:list=[]):
+    def __init__(self, sheetData:list=[], uniqueField = None):
         
+        # allow identifying which field is a way to identify the row
+        if None != uniqueField:
+            self.uniqueField = uniqueField
+
         self.load(sheetData)
 
     @Debugger
@@ -36,7 +42,9 @@ class Bdfs_Worksheet_Data(BaseClass):
 
         self._headers = headers
 
-        self.dataStore = Nested_Cache(self._headers, sheetData)
+        self.dataStore = Nested_Cache(self._headers, sheetData, self.uniqueField)
+
+        self.uniques = self.dataStore.getUniques()
 
 
     # replaces empty headers with "NoHeaderFound_{index}"
@@ -101,6 +109,9 @@ class Bdfs_Worksheet_Data(BaseClass):
     @Debugger
     @validate_arguments
     def removeHeaders(self, headers:list[str]):
+        if self.uniqueField in headers:
+            raise Bdfs_Worksheet_Data_Exception(f"You cannot remove the unique header: '{self.uniqueField}'")
+
         # call directly to the multi-delete on Nested Cache
         self.dataStore.deleteColumns(positions=headers)
         self._headers = list(set(self._headers) - set(headers))
@@ -108,7 +119,10 @@ class Bdfs_Worksheet_Data(BaseClass):
 
     @Debugger
     @validate_arguments
-    def removeHeader(self, header:str=None):    
+    def removeHeader(self, header:str=None):
+        if self.uniqueField == header:
+            raise Bdfs_Worksheet_Data_Exception(f"You cannot remove the unique header: '{self.uniqueField}'")
+
         self.dataStore.deleteColumn(position=header)
         # do a double check for whether this was removed by reference
         #   it is possible that the headers list in NestedCache is referencing the headers list here

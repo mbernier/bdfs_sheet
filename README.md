@@ -158,41 +158,9 @@ Environment options are all explained in the comments of the `default` environme
 ## To Add:
 
 To do:
-1. Create a test script with the Simple Sheet:
-    1. Setup: 
-        1. Delete any old destination worksheets (calculated and summary)
-        1. For missing worksheets:
-            a. Option1: In Spreadsheet class - add list of expected worksheets? add them if missing?
-            a. Option2: Update method for getWorksheet() to have "Add if not found"
-    1. Test1
-        1. Spin up the Source Sheet
-        1. Spin up the Destination Sheet
-        1. Setup the test sheet to include "hours worked" and "yearly salary"
-        1. Create some columns that should be there in the Destination
-            1. Hourly pay
-            2. Total Pay
-        1. Modify/Add some data in the Destination
-            1. Convert to all lower
-            1. Calculate Hourly pay = yearly salary / 2008
-            2. Calculate Total Pay = hourly pay * hours worked
-        1. Commit the changes
-        1. Test the changes were committed
-    1. Test2: Create a summary sheet from data in the calculated sheet
-        1. Setup Source Spreadsheet + source Worksheet from test1
-        1. Setup destination spreadsheet + summary worksheet
-        1. Data to put in Summary
-            1. Number of Employees
-            2. Total hours worked
-            3. Total pay sent
-            4. Average Hourly Pay
-1. Source Classes:
-    1. Scrape_data
-    2. Homacer
-    3. Sarto_Export
-2. Destination Classes:
-    1. Shopify_DFS
-    1. Shopify_BDFS
-    1. Scrape Data? 
+
+stop it from appending
+- needs to find and replace the items in the destination, rather than replace all or append
 
 Product Titles
 - rearrange titles: The items that get the most clicks Lucia 22 Matte Black Barn Door

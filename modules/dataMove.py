@@ -44,6 +44,8 @@ class DataMove():
             else:
                 raise DataMove_Exception(err.message)
 
+        self.destinationStartHeight = self.destinationWorksheet.height()
+
         self.run_hook('init_post_worksheets')
 
         self.setupDestination()
@@ -105,8 +107,12 @@ class DataMove():
                 for column in self.destination_expectedCols:
                     destinationData.append(modifiedData[column])
 
-                # write the destination data to the destination
-                self.destinationWorksheet.addRow(destinationData)
+                if self.destinationStartHeight == 0:
+                    # write the destination data to the destination
+                    self.destinationWorksheet.addRow(destinationData)
+                else:
+                    self.destinationWorksheet
+                    self.destinationWorksheet.updateRow(destinationData)
             else:
                 raise DataMove_Exception(f"There are columns missing from modified data. Received {modifiedData.keys()} Expected {self.destination_expectedCols}")
 

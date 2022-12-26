@@ -141,6 +141,17 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
         self.modifiesData()
         self.data.sheetData.insertRow(rowData)
 
+    @Debugger
+    @validate_arguments
+    def updateRow(self, rowData:dict, where:dict):
+        self.modifiesData()
+
+        # identify which row has the data we're looking for
+        row = self.data.sheetData.identifyRow(where)
+
+        # do the update
+        self.data.sheetData.updateRow(row, rowData)
+
 
     ####
     #

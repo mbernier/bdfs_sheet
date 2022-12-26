@@ -1,7 +1,7 @@
 from modules.decorator import Debugger
 from modules.dataMove import DataMove
 from pydantic import validate_arguments
-
+from modules.dataMoves.exception import DataMove_Exception
 
 class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     sourceClassPath = "originalbdfs_inventory.OriginalBdfs_Spreadsheet_Source"
@@ -15,24 +15,26 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     def mapFields(self, sourceData:dict):
         outputData = {}
         expectedCols = self.destination_expectedCols
+        
+        # Redundant items: Title, Glass, Color, SKU
+        
         # URL
         sourceData['URL'] = sourceData['UnitedPorte URL']
-        # Title
-        sourceData['Title'] = sourceData['Title']
+        #sarto URL Key
+        sourceData['URL_key'] = sourceData['UnitedPorte URL'].replace("https://unitedporte.us/","")
+        
         # Door Count
         sourceData['Door Count'] = sourceData['Type']
+        
         # Type
         sourceData['Type'] = 'Barn Door'
-        # Glass
-        sourceData['Glass'] = sourceData['Glass']
+                
         # Lites
-        sourceData['Lites'] = sourceData['Glass Lites'].replace("lites","").strip()
-        # Color
-        sourceData['Color'] = sourceData['Color']
-        # Hardware
-        sourceData['Hardware'] = sourceData['Hardware']
-        # SKU
-        sourceData['SKU'] = sourceData['SKU']
+        sourceData['Lites'] = sourceData['Glass Lites'].replace("lites","").replace("Lites", "").strip()
+        
+        # Parse out the model name and number
+        splitTitle = sourceData['Title'].split(" ")
+        sourceData['Model'] = f"{splitTitle[0]} {splitTitle[1]}"
 
         # image URLs, up to 10 of them
         for counter in range(1,11):
@@ -53,7 +55,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         for key in expectedCols:
             sourceKey = key
             outputKey = key
-
+            
             # original sheet has shitty keys, this is easier than fixing spreadsheet
             if "Cost:" in key:
                 sourceKey = key.replace("Cost: ", "Cost:")
@@ -65,7 +67,10 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
             # fix another key issue            
             if "\"x" in sourceKey:
                 sourceKey = sourceKey.replace("\"x","\" x ")
-
+            
+            if not sourceKey in sourceData.keys():
+                raise DataMove_Exception(f" '{sourceKey} was not found in sources, does it need to be mapped?")
+            
             outputData[outputKey] = sourceData[sourceKey]
         
         return outputData

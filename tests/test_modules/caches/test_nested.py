@@ -217,3 +217,80 @@ def test_reorderColumns():
     cache.reorderColumns(['f','b','d','c','e'])
     assert cache.select(0, updated_timestamp=False) == {'f': 7, 'b': 3, 'd': 5, 'c': 4, 'e': 6}
     assert cache.select(1, updated_timestamp=False) == {'f': 5, 'b': 1, 'd': 3, 'c': 2, 'e': 4}
+
+####
+#
+# Test for uniqueness
+#
+####
+
+# verify that unique gets setup
+def test_unique_load():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    print(cache.getUniques())
+    assert cache.getUniques() == [3, 1]
+
+# do an initial load with 2 of the same item in the unique field
+def test_unique_load_fail():    
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[3,2,3,4,5]], 'b')
+    assert "'3' for position 'b' violates uniqueness" in str(excinfo.value)
+
+# add a unique that isn't in the locations
+def test_unique_insert():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    cache.insert([2,3,4,5,6])
+    assert cache.getUniques() == [3, 1, 2]
+
+# add a unique that is already set up
+def test_unique_insert_fail():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        cache.insert([3,3,4,5,6])
+    assert "'3' for position 'b' violates uniqueness" in str(excinfo.value)
+    
+# try to remove the unique column from the data
+def test_unique_deleteColumn():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        cache.deleteColumn('b')
+    assert "You cannot delete the unique column 'b'" in str(excinfo.value)
+    
+# try to replace a row that has the same unique value
+def test_unique_updateRow_same_unique():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    cache.updateRow(row=0, rowData=[3,4,5,6,7])
+    assert cache.getUniques() == [3, 1]
+
+# try to replace a row that doesn't have the same unique value
+def test_unique_updateRow_diff_unique():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    cache.updateRow(row=0, rowData=[2,4,5,6,7])
+    assert cache.getUniques() == [2, 1]
+
+
+# try to unset the value of the unique columns from the data
+def test_unique_updateRow_same_unique():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    cache.update(row=0, position='b', data=3)
+    assert cache.getUniques() == [3,1]
+
+# try to unset the value of the unique columns from the data
+def test_unique_updateRow_diff_unique_is_unique():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    cache.update(row=0, position='b', data=5)
+    assert cache.getUniques() == [5,1]
+
+# try to unset the value of the unique columns from the data
+def test_unique_updateRow_diff_unique_not_unique():
+    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]], 'b')
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        cache.update(row=0, position='b', data=1)
+    assert "'1' for position 'b' violates uniqueness" in str(excinfo.value)
+
+# try to delete the unique column, using deleteColumns
+# try a select with row and unique
+# try a select with unique only
+# try update where unique is the same - should work
+# try update where unique is different and is unique - should work
+# try update where unique is different and is not unique - should fail
