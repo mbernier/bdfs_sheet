@@ -193,6 +193,23 @@ class Bdfs_Worksheet_Data(BaseClass):
 
     ####
     #
+    # All Data
+    #
+    ###
+
+    @Debugger
+    @validate_arguments
+    def deleteAllData(self):
+        self.dataStore.deleteAllData()
+        Logger.info("All data in Worksheet_Data has been deleted")
+    
+    @Debugger
+    @validate_arguments
+    def deleteRowWhere(self, column:str, value):
+        self.dataStore.deleteRowWhere(column=column, value=value)
+
+    ####
+    #
     # Meta Methods
     #
     ####

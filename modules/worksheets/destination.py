@@ -7,8 +7,8 @@ from gspread.worksheet import Worksheet
 from modules.base import BaseClass
 from modules.decorator import Debugger
 from modules.logger import Logger
-from modules.worksheet import Bdfs_Worksheet
-from modules.worksheets.exception import Bdfs_Worksheet_Exception
+from modules.worksheet import Bdfs_Worksheet,Worksheet_DataClass
+from modules.worksheets.exception import Bdfs_Worksheet_Destination_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
 from pydantic import validate_arguments
 
@@ -33,6 +33,9 @@ from pydantic import validate_arguments
 # 'merge_cells', 'range', 'resize', 'row_count', 'row_values', 'rows_auto_resize', 'set_basic_filter', 'show', 'sort', 
 # 'spreadsheet', 'tab_color', 'title', 'unhide_columns', 'unhide_rows', 'unmerge_cells', 'update', 'update_acell', 
 # 'update_cell', 'update_cells', 'update_index', 'update_note', 'update_tab_color', 'update_title', 'updated', 'url']
+
+class Worksheet_DataClass_Destination(Worksheet_DataClass):
+    discount:float = dc_field(default_factory=float)
 
 #
 # Rules; 
@@ -162,7 +165,29 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     ####
     
 
+    ####
+    #
+    # All Data
+    #
+    ####
+    @Debugger
+    def deleteAllData(self):
+        self.modifiesData() # get the data that we will delete, if we haven't, this is not ideal - we could find a way around this but it isn't a big deal today... sorry if you find this later
 
+        self.data.sheetData.deleteAllData()
+        
+        self.changed('data') # technically we did change the data, or we will if we commit...
+
+        Logger.info("All local sheet data as been deleted")
+
+    @Debugger
+    @validate_arguments
+    def deleteRowWhere(self, key:str, value):
+        self.modifiesData()
+        
+        self.data.sheetData.deleteRowWhere(column=key, value=value)
+        
+        self.changed('data')
 
     ####
     #
@@ -173,9 +198,12 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     @Debugger
     def gspread_worksheet_resize_to_data(self):
         self.modifiesData()
+        
         Logger.debug("Resizing the google worksheet to the current data size")
         #rezize the spreadsheet to the data - makes our lives easier later on
         self.data.gspread_worksheet.resize(cols=self.getColumnCounts()['data'])
+        
+        self.changed('data')
 
 
     # overwrites whatever is in the sheet with the local storage data we have

@@ -11,4 +11,5 @@ class Sarto_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
         self.data.expectedColumns = base.cols_expected
         self.data.expectedColumns_extra = base.cols_expected_extra
         self.data.uniqueField = base.uniqueField
+        self.data.discount = base.discount
         print(f"self.data.uniqueField: {self.data.uniqueField}")

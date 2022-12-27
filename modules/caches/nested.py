@@ -148,7 +148,6 @@ class Nested_Cache(BdfsCache):
             if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
                 self.__updateUniques(newRow.select(position=self.uniqueField))
             self._storage.append(newRow)
-            Logger.info("Height: {}".format(self.height()))
             self.__increaseHeight()
     
 
@@ -179,6 +178,14 @@ class Nested_Cache(BdfsCache):
 
         self.__removeUnique(row.select(self.uniqueField))        
         self.__decreaseHeight()
+    
+
+    @Debugger
+    @validate_arguments
+    def deleteRowWhere(self, column:str, value):
+        for row in reversed(range(0, self.height())):
+            if value == self._storage[row].select(position=column):
+                self.deleteRow(row)
 
 
     # replace the current row with different data
@@ -309,6 +316,13 @@ class Nested_Cache(BdfsCache):
         for row in range(0, self.height()):
             self._storage[row].clear_all()
         self.uniques = [] # no data, no uniques
+    
+    # reset all the data to nothing
+    @Debugger
+    def deleteAllData(self):
+        self._storage = []
+        self._height = 0
+        Logger.info("All data in Nested_Cache has been deleted")
 
 
     @Debugger

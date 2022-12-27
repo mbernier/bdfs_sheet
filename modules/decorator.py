@@ -1,5 +1,8 @@
 import functools
 from modules.logger import Logger, logger_name
+from modules.config import config
+
+configObj = config()
 
 def Debugger_prepArgs(*args, **kwargs):
     args_repr = [repr(a) for a in args]                      # 1
@@ -10,8 +13,15 @@ def Debugger_prepArgs(*args, **kwargs):
 def Debugger(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
+        writeDebug = True
         if 0 < len(args):
             logger_name.name = args[0].__class__.__name__
-        Logger.debug(f"{f}({Debugger_prepArgs(args,kwargs)})")
+            debug_name = logger_name.name.lower() + "_debug"
+            # if we turned off debugging for this object, then don't debug it
+            if debug_name in configObj and False == config(debug_name):
+                writeDebug = False
+        if True == writeDebug:
+            Logger.debug(f"{f}({Debugger_prepArgs(args,kwargs)})")
+
         return f(*args, **kwargs)
     return wrapper
