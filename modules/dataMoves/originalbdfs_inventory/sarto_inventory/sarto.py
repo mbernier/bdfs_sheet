@@ -67,12 +67,14 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
 
             # fix another key issue            
             if "\"x" in sourceKey:
-                sourceKey = sourceKey.replace("\"x","\" x ")
+                sourceKey = sourceKey.replace("\"x","\" x ").replace("  ", " ")
             
-            if not sourceKey in sourceData.keys():
-                raise DataMove_Exception(f" '{sourceKey} was not found in sources, does it need to be mapped?")
-            
-            outputData[outputKey] = sourceData[sourceKey]
+            if sourceKey != "update_timestamp":
+                if not sourceKey in sourceData.keys():
+                    raise DataMove_Exception(f" '{sourceKey} was not found in sources, does it need to be mapped?")
+                
+                outputData[outputKey] = sourceData[sourceKey]
+                
         
         print(f"outputData: {outputData}")
         return outputData

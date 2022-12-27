@@ -90,10 +90,10 @@ class Test_Bdfs_Worksheet_Destination:
 
 
     def test_getDataRange(self):
-        dataRange = self.test_worksheet.getDataRange(updated_timestamp=False)
+        dataRange = self.test_worksheet.getDataRange(update_timestamp=False)
         assert dataRange == "A1:F4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
-        dataRange = self.test_worksheet.getDataRange(updated_timestamp=True)
+        dataRange = self.test_worksheet.getDataRange(update_timestamp=True)
         assert dataRange == "A1:G4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
     def test_getExpectedColumns(self):
@@ -136,7 +136,7 @@ class Test_Bdfs_Worksheet_Destination:
                     ['Matt', None, None, '1/1/2001']
                 )
 
-        assert self.test_worksheet.getRow(0, updated_timestamp=False) == fcache.select(updated_timestamp=False)
+        assert self.test_worksheet.getRow(0, update_timestamp=False) == fcache.select(update_timestamp=False)
 
 
     def test_getCell(self):

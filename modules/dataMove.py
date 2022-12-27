@@ -45,6 +45,7 @@ class DataMove():
             else:
                 raise DataMove_Exception(err.message)
 
+        # easy way to make destination fetch the data
         self.destinationStartHeight = self.destinationWorksheet.height()
 
         self.run_hook('init_post_worksheets')
@@ -87,8 +88,7 @@ class DataMove():
     def setupDestination(self):
 
         # The columns we will write to the destination
-        self.destination_expectedCols = self.destinationWorksheet.getExpectedColumns() 
-        print(f"dm:Expcols: {self.destination_expectedCols}")
+        self.destination_expectedCols = self.destinationWorksheet.getExpectedColumns()
 
         # Make sure the columns we need at the destination are setup
         self.destinationWorksheet.alignToColumns(self.destination_expectedCols)
@@ -99,20 +99,21 @@ class DataMove():
         self.run_hook('pre_map')
         for row in range(0, self.sourceWorksheet.height()):
             # get the data we will start with
-            sourceData = self.sourceWorksheet.getRow(row, updated_timestamp=False)
+            sourceData = self.sourceWorksheet.getRow(row, update_timestamp=False)
             
             # map the source Data to Destination Data
             modifiedData = self.mapFields(sourceData)
-            print(f"modData: {modifiedData}")
             destinationData = []
+
             if list(modifiedData.keys()) == self.destination_expectedCols:
                 for column in self.destination_expectedCols:
                     destinationData.append(modifiedData[column])
-                print(f"destData: {destinationData}")
                 # putRow will determine, based on uniqueKeys, whether this should be an insert or update
                 self.destinationWorksheet.putRow(destinationData)
             else:
-                raise DataMove_Exception(f"There are columns missing from modified data. Received {modifiedData.keys()} Expected {self.destination_expectedCols}")
+                print(f"\nLeft: {[x for x in modifiedData if x not in set(self.destination_expectedCols)]}\n")
+                print(f"\nRight: {[x for x in self.destination_expectedCols if x not in set(modifiedData)]}\n")
+                raise DataMove_Exception(f"There are columns missing from modified data. Received {list(modifiedData.keys())} Expected {self.destination_expectedCols}")
 
         self.run_hook('post_map')
 

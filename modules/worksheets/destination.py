@@ -49,9 +49,10 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
             Logger.critical("Cols expected was not set before instantiating Spreadsheet class")
         
     @Debugger
-    def setupData(self, sheetData=None):
+    def setupData(self, sheetData:list=None)->list:
         if [] == sheetData:
             return [self.getExpectedColumns()]
+        return sheetData
 
     ####
     #
@@ -84,18 +85,16 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     ####
 
     @Debugger
-    def getExpectedColumns(self): #tested
-        return self.__mergeExpectedColumns()
-
-
-    # since we have multiple options for how the columns should be setup
-    #   Get the columns that we care about and return them
-    @Debugger
-    def __mergeExpectedColumns(self):
+    def getExpectedColumns(self) -> list: #tested
         expectedCols = self.data.expectedColumns
+        # check the indexes of extra columns (e.g. single, double)
         for index in self.data.expectedColumns_extra:
+            # if the index is in the worksheet title, add them
             if index in self.getTitle():
-                expectedCols.extend(self.data.expectedColumns_extra[index])
+                # if the columns are already in the expectedCols, don't add them
+                for column in self.data.expectedColumns_extra[index]:
+                    if column not in expectedCols:
+                        expectedCols.append(column)
         return expectedCols
     
 
@@ -196,10 +195,14 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
             self.gspread_worksheet_resize_to_data()
 
             # get the meta about our new data to commit
-            dataRange = self.getDataRange(updated_timestamp=True)
+            dataRange = self.getDataRange(update_timestamp=True)
 
             headers = self.getColumns()
-            values = self.getDataAsListOfLists(updated_timestamp=True)
+
+            # we are adding this every time, it will be in the data
+            headers.append("update_timestamp")
+
+            values = self.getDataAsListOfLists(update_timestamp=True)
 
             batch_update = [{
                 'range': dataRange,

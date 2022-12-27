@@ -133,7 +133,7 @@ def test_select_all():
     cache = Flat_Cache(['b','c'], [1,2])
     keys = cache.getKeys()
     assert keys == ['b', 'c']
-    allvalues = cache.select(updated_timestamp=False)
+    allvalues = cache.select(update_timestamp=False)
     assert allvalues == {'b': 1, 'c': 2}
 
 def test_delete():
@@ -156,11 +156,11 @@ def test_clear_all():
     cache.insert("c",4)
     cache.insert("d",5)
 
-    assert cache.select(updated_timestamp=False) == {'b': 3, 'c': 4, 'd': 5}
+    assert cache.select(update_timestamp=False) == {'b': 3, 'c': 4, 'd': 5}
 
     cache.clear_all()
 
-    assert cache.select(updated_timestamp=False) == {'b': None, 'c': None, 'd': None}
+    assert cache.select(update_timestamp=False) == {'b': None, 'c': None, 'd': None}
 
 
 def test_delete():
@@ -169,14 +169,14 @@ def test_delete():
     cache.insert("c",4)
     cache.insert("d",5)
 
-    assert cache.select(updated_timestamp=False) == {'b': 3, 'c': 4, 'd': 5}
+    assert cache.select(update_timestamp=False) == {'b': 3, 'c': 4, 'd': 5}
 
     cache.delete("c")
 
     assert 3 == cache.select("b")
     assert 5 == cache.select("d")
     assert None == cache.select("c")
-    assert cache.select(updated_timestamp=False) == {'b': 3, 'c': None, 'd': 5}
+    assert cache.select(update_timestamp=False) == {'b': 3, 'c': None, 'd': 5}
 
 def test_delete2():
     cache = Flat_Cache(['b','c','d'])
@@ -184,14 +184,14 @@ def test_delete2():
     cache.insert(position="c",data=4)
     cache.insert(position="d",data=5)
 
-    assert cache.select(updated_timestamp=False) == {'b': 3, 'c': 4, 'd': 5}
+    assert cache.select(update_timestamp=False) == {'b': 3, 'c': 4, 'd': 5}
 
     cache.delete(position="c")
 
     assert 3 == cache.select(position="b")
     assert 5 == cache.select(position="d")
     assert None == cache.select(position="c")
-    assert cache.select(updated_timestamp=False) == {'b': 3, 'c':None, 'd': 5}
+    assert cache.select(update_timestamp=False) == {'b': 3, 'c':None, 'd': 5}
 
 def test_delete_location():
     cache = Flat_Cache(['b','c','d'])
@@ -203,7 +203,7 @@ def test_delete_location():
 
     cache.delete_location('c')
 
-    assert cache.select(updated_timestamp=False) == {'b': 3, 'd': 5}    
+    assert cache.select(update_timestamp=False) == {'b': 3, 'd': 5}    
 
     assert cache.data.storage == {'b': {'position': 0, 'data': 3}, 0: {'position': 'b', 'data': 3}, 'd': {'position': 1, 'data': 5}, 1: {'position': 'd', 'data': 5}}
 
@@ -228,13 +228,13 @@ def test_insert_location_at_index():
     
     # effectively append
     cache.insert_location(position='e')
-    assert cache.select(updated_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': None}
+    assert cache.select(update_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': None}
     cache.insert(position="e", data=[1,2,3])
-    assert cache.select(updated_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3]}
+    assert cache.select(update_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3]}
 
     # effectively append, but with index at the same size as cache
     cache.insert_location(index=cache.size(), position='f')
-    assert cache.select(updated_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3], 'f': None}
+    assert cache.select(update_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3], 'f': None}
 
     #insert in a location that is greater than the current size
     new_size = cache.size() + 5
@@ -244,11 +244,11 @@ def test_insert_location_at_index():
 
     #insert in the middle somewhere
     cache.insert_location(index=4, position='g')
-    assert cache.select(updated_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3], 'g':None, 'f': None}
+    assert cache.select(update_timestamp=False) == {'b': None, 'c':None, 'd': None, 'e': [1,2,3], 'g':None, 'f': None}
 
     #insert at the beginning
     cache.insert_location(index=0, position='a')
-    data = cache.select(updated_timestamp=False)
+    data = cache.select(update_timestamp=False)
     assert data == {'a':None, 'b': None, 'c':None, 'd': None, 'e': [1,2,3], 'g':None, 'f':None}
 
 def test_timestamp():

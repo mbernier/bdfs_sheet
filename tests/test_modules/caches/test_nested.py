@@ -111,9 +111,9 @@ def test_update_exception2():
 
 def test_getAsDict():
     cache = Nested_Cache(['b','c','d'],[[3],[None, 4, None],[None, None, 5]])
-    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'c': None, 'd': None}
-    assert cache.select(1, updated_timestamp=False) == {'b': None, 'c': 4, 'd': None}
-    assert cache.select(2, updated_timestamp=False) == {'b': None, 'c': None, 'd': 5}
+    assert cache.select(0, update_timestamp=False) == {'b': 3, 'c': None, 'd': None}
+    assert cache.select(1, update_timestamp=False) == {'b': None, 'c': 4, 'd': None}
+    assert cache.select(2, update_timestamp=False) == {'b': None, 'c': None, 'd': 5}
 
 
 def test_getLocationThatExists():
@@ -146,11 +146,11 @@ def test_getLocationThatDoesntExist2():
 
 def test_select():
     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
-    assert cache.select(2, updated_timestamp=False) == {'b': 5, 'c': None, 'd': None}
+    assert cache.select(2, update_timestamp=False) == {'b': 5, 'c': None, 'd': None}
 
 def test_select2():
     cache = Nested_Cache(['b','c','d'],[[3],[4],[5]])
-    assert cache.select(row=2, updated_timestamp=False) == {'b': 5, 'c': None, 'd': None}
+    assert cache.select(row=2, update_timestamp=False) == {'b': 5, 'c': None, 'd': None}
 
 
 
@@ -172,7 +172,7 @@ def test_delete_column():
     cache = Nested_Cache(['b','c','d'],[[3]])
     
     cache.deleteColumn('c')
-    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'd': None}
+    assert cache.select(0, update_timestamp=False) == {'b': 3, 'd': None}
 
     with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.deleteColumn(1)
@@ -182,7 +182,7 @@ def test_delete_columns():
     cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7]])
     
     cache.deleteColumns(['c','d','e'])
-    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'f': 7}
+    assert cache.select(0, update_timestamp=False) == {'b': 3, 'f': 7}
 
 
 def test_delete_columns_check_first_row():
@@ -202,21 +202,21 @@ def test_delete_columns_check_multi_rows():
 
     cache.deleteColumns(['c','d','e'])
 
-    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'f': 7}
-    assert cache.select(1, updated_timestamp=False) == {'b': 1, 'f': 5}
+    assert cache.select(0, update_timestamp=False) == {'b': 3, 'f': 7}
+    assert cache.select(1, update_timestamp=False) == {'b': 1, 'f': 5}
 
 def test_updateRow():
     cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]])
     cache.updateRow(1, [10,20,30,40,50])
 
-    assert cache.select(0, updated_timestamp=False) == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
-    assert cache.select(1, updated_timestamp=False) == {'b': 10, 'c': 20,'d': 30,'e': 40,'f': 50}
+    assert cache.select(0, update_timestamp=False) == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
+    assert cache.select(1, update_timestamp=False) == {'b': 10, 'c': 20,'d': 30,'e': 40,'f': 50}
 
 def test_reorderColumns():
     cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]])
     cache.reorderColumns(['f','b','d','c','e'])
-    assert cache.select(0, updated_timestamp=False) == {'f': 7, 'b': 3, 'd': 5, 'c': 4, 'e': 6}
-    assert cache.select(1, updated_timestamp=False) == {'f': 5, 'b': 1, 'd': 3, 'c': 2, 'e': 4}
+    assert cache.select(0, update_timestamp=False) == {'f': 7, 'b': 3, 'd': 5, 'c': 4, 'e': 6}
+    assert cache.select(1, update_timestamp=False) == {'f': 5, 'b': 1, 'd': 3, 'c': 2, 'e': 4}
 
 ####
 #

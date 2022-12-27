@@ -38,10 +38,10 @@ from pydantic import validate_arguments
 class Worksheet_DataClass():
     title:str  = dc_field(default_factory=str)              # The Sheet title
     gspread_worksheet:Worksheet = None                      # The worksheet object itself, allows us to run gspread functions
+    sheetData:Bdfs_Worksheet_Data = None                    # source of truth for the data of the worksheet, DO NOT call factory here
     expectedColumns:list = dc_field(default_factory=list)   # A list of columns we expect to have in the sheet
     expectedColumns_extra:list = dc_field(default_factory=list)
     uncommitted_title: str = dc_field(default_factory=str)  # temp storage if we change the title of the worksheet, until commit
-    sheetData:Bdfs_Worksheet_Data = dc_field(default_factory=Bdfs_Worksheet_Data)         # source of truth for the data of the worksheet
     changes:dict[bool] = dc_field(default_factory=dict)     # {"title": False, "data": False}
     sheet_retrieved:bool = False
     id: int = dc_field(default_factory=int)
@@ -89,8 +89,6 @@ class Bdfs_Worksheet(BaseClass):
 
     @Debugger
     def setupParams(self):
-        print(f"Worksheet: setupParams()")
-        print(f"uniqueField: {self.data.uniqueField}")
         if None != self.cols_expected: 
             self.data.expectedColumns = self.cols_expected
 
@@ -176,10 +174,10 @@ class Bdfs_Worksheet(BaseClass):
     #will return something like -- "A1:CT356"
     @Debugger
     @validate_arguments
-    def getDataRange(self, updated_timestamp=True) -> str: #tested
+    def getDataRange(self, update_timestamp=True) -> str: #tested
         height = self.height()+1
         width = self.width()
-        if True == updated_timestamp:
+        if True == update_timestamp:
             width += 1
         dataRange = f"{self.getA1(1,1)}:{self.getA1(height, width)}"
         return dataRange
@@ -228,7 +226,6 @@ class Bdfs_Worksheet(BaseClass):
             if self.data.uniqueField != "" and None != self.data.uniqueField: 
                 uniqueField = self.data.uniqueField
             
-            print(f"WORKSHEET_DATA: {uniqueField}")
             self.data.sheetData = Bdfs_Worksheet_Data(sheetData, uniqueField = uniqueField)
 
             # we are now the same as the google worksheet, nothing to commit
@@ -310,8 +307,8 @@ class Bdfs_Worksheet(BaseClass):
 
     @Debugger
     @validate_arguments
-    def getRow(self, row:int, updated_timestamp=True) -> Flat_Cache:
-        return self.data.sheetData.select(row, updated_timestamp=updated_timestamp)
+    def getRow(self, row:int, update_timestamp=True) -> Flat_Cache:
+        return self.data.sheetData.select(row, update_timestamp=update_timestamp)
 
 
     ####
@@ -435,13 +432,13 @@ class Bdfs_Worksheet(BaseClass):
 
     @Debugger
     @validate_arguments
-    def getDataAsListOfLists(self, updated_timestamp:bool=False) -> list[list]:
+    def getDataAsListOfLists(self, update_timestamp:bool=False) -> list[list]:
         self.getData()
-        return self.data.sheetData.getAsListOfLists(updated_timestamp=updated_timestamp)
+        return self.data.sheetData.getAsListOfLists(update_timestamp=update_timestamp)
    
     @Debugger
     @validate_arguments
-    def getDataAsListOfDicts(self, updated_timestamp:bool=False) -> list[dict]:
+    def getDataAsListOfDicts(self, update_timestamp:bool=False) -> list[dict]:
         self.getData()
         return self.data.sheetData.getAsListOfDicts()
    

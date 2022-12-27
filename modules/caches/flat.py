@@ -27,10 +27,23 @@ class Flat_Cache(BdfsCache):
         
         self.data = Flat_Cache_Data()
         
-        if None != locations: # locations are set    
-            self.load_locations(locations=locations)
+        if None != locations: # locations are set
+            # if we get a timestamp with the data, we need to remove it from locations and data
+            if "update_timestamp" in locations:
+                ts_index = locations.index("update_timestamp")
+                del locations[ts_index] #remove from locations
 
-            if None != data: # initdata is set
+                # only do this if the timestamp is actually in the data
+                if ts_index < len(data):
+                    ts = data[ts_index]
+                    del data[ts_index] # remove from data
+                    self.setUpdateTimestamp(ts) #set the value
+
+            # add locations to the object
+            self.load_locations(locations=locations)
+            
+            # add the data to the object
+            if None != data: 
                 self.load(data=data)
         
         elif None != data: # locations are not set and initdata is set
@@ -131,6 +144,11 @@ class Flat_Cache(BdfsCache):
     #@Debugger
     def getUpdateTimestamp(self):
         return self.data.update_timestamp
+    
+    #this is for when we get a timestamp from the data, we can update it later
+    #@Debugger
+    def setUpdateTimestamp(self, timestamp):
+        self.data.update_timestamp = timestamp
 
     ####
     #
@@ -171,9 +189,9 @@ class Flat_Cache(BdfsCache):
     # get the data at the location, or get everything from string keys as a dict
     #@Debugger
     @validate_arguments
-    def select(self, position: Union[int,str] = None, updated_timestamp:bool=True):
+    def select(self, position: Union[int,str] = None, update_timestamp:bool=True):
         if None == position:
-            return self.getAsDict(updated_timestamp=updated_timestamp)
+            return self.getAsDict(update_timestamp=update_timestamp)
         else:
             self.fail_if_position_dne(position)
             return self.data.storage.get(position)['data']
@@ -264,8 +282,8 @@ class Flat_Cache(BdfsCache):
     #@Debugger
     @validate_arguments
     def delete_location(self, position: Union[int,str]):
-        # you can't delete the updated_timestamp
-        if position == "updated_timestamp":
+        # you can't delete the update_timestamp
+        if position == "update_timestamp":
             return
 
         self.fail_if_position_dne(position)
@@ -314,8 +332,8 @@ class Flat_Cache(BdfsCache):
     #@Debugger
     @validate_arguments
     def insert_location(self, position:str, index:int=None, skip_update_timestamp=False):
-        # you can't insert the updated_timestamp
-        if position == "updated_timestamp":
+        # you can't insert the update_timestamp
+        if position == "update_timestamp":
             return
 
         if self.positionExists(position):
@@ -408,11 +426,11 @@ class Flat_Cache(BdfsCache):
 
     #@Debugger
     @validate_arguments
-    def __str__(self, updated_timestamp:bool=True) -> str:
+    def __str__(self, update_timestamp:bool=True) -> str:
         output = "Flat_Cache: \n"
         timestamp = self.getUpdateTimestamp()
         for item in self.getKeys():
-            if item == "update_timestamp" and updated_timestamp == True:
+            if item == "update_timestamp" and update_timestamp == True:
                 data = self.getUpdateTimestamp()
             else:
                 data = self.select(item)
@@ -422,22 +440,22 @@ class Flat_Cache(BdfsCache):
 
     #@Debugger
     @validate_arguments
-    def getAsList(self, updated_timestamp:bool=True) -> list:
+    def getAsList(self, update_timestamp:bool=True) -> list:
         output = []
         for index in self.getKeys(keyType=int):
             output.insert(index, self.select(index))
-        if True == updated_timestamp:
+        if True == update_timestamp:
             output.append(self.getUpdateTimestamp())
         return output
 
 
     #@Debugger
     @validate_arguments
-    def getAsDict(self, updated_timestamp:bool=True) -> dict:
+    def getAsDict(self, update_timestamp:bool=True) -> dict:
         output = OrderedDict()
         for index in self.getKeys(keyType=int): #it really doesn't matter which type you choose here
             position, index = self.getOtherPosition(index)
             output[position] = self.select(index)
-        if True == updated_timestamp:
+        if True == update_timestamp:
             output["update_timestamp"] = self.getUpdateTimestamp()
         return output

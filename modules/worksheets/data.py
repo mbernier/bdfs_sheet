@@ -23,7 +23,15 @@ class Bdfs_Worksheet_Data(BaseClass):
     @Debugger
     @validate_arguments
     def __init__(self, sheetData:list=[], uniqueField = None):
-        
+        self.dataStore:Nested_Cache = None
+        self._emptyHeaderIndexes = []
+        self._uniqueHeaders = []
+        self._duplicateHeaders = [] 
+        self._headers = []
+        self._removedHeaders = []
+        self.uniqueField = None
+        self.uniques = []
+
         # allow identifying which field is a way to identify the row
         if None != uniqueField:
             self.uniqueField = uniqueField
@@ -35,22 +43,18 @@ class Bdfs_Worksheet_Data(BaseClass):
     @validate_arguments
     def load(self, sheetData:list=[]):
         headers = []
-        if None != sheetData and [] != sheetData:
+        if [] != sheetData:
             # store all the data in the data store
             headers = sheetData.pop(0)
+            self._headers, self._uniqueHeaders, self._duplicateHeaders, self._emptyHeaderIndexes = self.__prepHeaders(headers)
 
-            headers, uniqueHeaders, duplicateHeaders, emptyHeaderIndexes = self.__prepHeaders(headers)
-
-        self._headers = headers
-        print(f"Nested_cache: {self.uniqueField}")
-        print(f"NC Headers: {self._headers}")
         self.dataStore = Nested_Cache(locations=self._headers, data=sheetData, uniqueField=self.uniqueField)
 
 
     # replaces empty headers with "NoHeaderFound_{index}"
     @Debugger
     @validate_arguments
-    def __prepHeaders(self, headers):
+    def __prepHeaders(self, headers:list)->tuple[list]:
         uniqueHeaders = []
         duplicateHeaders = []
         emptyHeaderIndexes = []
@@ -72,10 +76,17 @@ class Bdfs_Worksheet_Data(BaseClass):
             else:
                 duplicateHeaders.append(header)
 
+        # support update_timestamp
+        if not "update_timestamp" in headers:
+            headers.append("update_timestamp")
+
+            if not "update_timestamp" in uniqueHeaders:
+                uniqueHeaders.append("update_timestamp")
+
         if 0 < len(duplicateHeaders):
             Logger.critical("There are duplicate headers in your spreadsheet with these names: {}".format(duplicateHeaders))
 
-        return headers, uniqueHeaders, duplicateHeaders, emptyHeaderIndexes
+        return headers.copy(), uniqueHeaders, duplicateHeaders, emptyHeaderIndexes
 
     ####
     #
@@ -84,8 +95,8 @@ class Bdfs_Worksheet_Data(BaseClass):
     ####
 
     @Debugger
-    def getHeaders(self):
-        return self._headers
+    def getHeaders(self)->list:
+        return self._headers.copy()
 
 
     # add multiple headers to the data
@@ -141,6 +152,7 @@ class Bdfs_Worksheet_Data(BaseClass):
     @Debugger
     @validate_arguments
     def alignHeaders(self, newHeaders:list[str]):
+
         currentHeaders = self.getHeaders()
 
         # remove headers from the data that are not in the new Headers
@@ -162,8 +174,8 @@ class Bdfs_Worksheet_Data(BaseClass):
     ####
     @Debugger
     @validate_arguments
-    def select(self, row:int, column:Union[int,str]=None, updated_timestamp=True):
-        return self.dataStore.select(row=row, position=column, updated_timestamp=updated_timestamp)
+    def select(self, row:int, column:Union[int,str]=None, update_timestamp=True):
+        return self.dataStore.select(row=row, position=column, update_timestamp=update_timestamp)
 
 
     #given some data, identify if we need to update or insert the data
@@ -195,10 +207,10 @@ class Bdfs_Worksheet_Data(BaseClass):
 
     @Debugger
     @validate_arguments
-    def getAsListOfLists(self, updated_timestamp:bool=False) -> list[list]:
-        return self.dataStore.getAsListOfLists(updated_timestamp=updated_timestamp)
+    def getAsListOfLists(self, update_timestamp:bool=False) -> list[list]:
+        return self.dataStore.getAsListOfLists(update_timestamp=update_timestamp)
     
     @Debugger
     @validate_arguments
-    def getAsListOfDicts(self, updated_timestamp:bool=False) -> list[dict]:
-        return self.dataStore.getAsListOfDicts(updated_timestamp=updated_timestamp)
+    def getAsListOfDicts(self, update_timestamp:bool=False) -> list[dict]:
+        return self.dataStore.getAsListOfDicts(update_timestamp=update_timestamp)

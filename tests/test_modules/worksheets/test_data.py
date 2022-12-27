@@ -78,7 +78,7 @@ class Test_Worksheet_Data:
         fcache = Flat_Cache(setupData()[0],setupData()[1])
 
         # prove that the data we are expecting matches what Flat Cache would give us, minus the timestamp
-        assert self.worksheet.select(0, updated_timestamp=False) == fcache.getAsDict(updated_timestamp=False)
+        assert self.worksheet.select(0, update_timestamp=False) == fcache.getAsDict(update_timestamp=False)
     
 
     def test_validateData_afterAlignHeaders(self):
@@ -95,4 +95,4 @@ class Test_Worksheet_Data:
         self.worksheet.alignHeaders(newHeaderOrder)
 
         # let's make sure the data is as expected after the realignment
-        assert self.worksheet.select(0, updated_timestamp=False) == fcache.getAsDict(updated_timestamp=False)
+        assert self.worksheet.select(0, update_timestamp=False) == fcache.getAsDict(update_timestamp=False)
