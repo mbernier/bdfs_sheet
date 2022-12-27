@@ -2,7 +2,7 @@
 from modules.worksheets.destination import Bdfs_Worksheet_Destination
 
 
-class BdfsInventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
+class Bdfs_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
     
     cols_expected = ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 
                         'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 

@@ -2,7 +2,7 @@
 from modules.worksheets.source import Bdfs_Worksheet_Source
 
 
-class BdfsInventory_Worksheet_Source(Bdfs_Worksheet_Source):
+class Bdfs_Inventory_Worksheet_Source(Bdfs_Worksheet_Source):
     
     cols_expected = ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 
                         'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 

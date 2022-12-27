@@ -5,8 +5,8 @@
 from modules.sheetProcessor import SheetProcessor
 
 
-class BdfsInventory_SheetProcessor(SheetProcessor):
+class Bdfs_Inventory_SheetProcessor(SheetProcessor):
 
     # spreadsheet_class = {"module": "modules.spreadsheets.bdfs_inventory", "class": "Bdfs_Spreadsheet"}
-    source_spreadsheet_class = "modules.spreadsheets.sources.bdfs_inventory.BdfsInventory_Spreadsheet_Source" 
-    destination_spreadsheet_class = "modules.spreadsheets.destinations.bdfs_inventory.BdfsInventory_Spreadsheet_Destination" 
+    source_spreadsheet_class = "modules.spreadsheets.sources.bdfs_inventory.Bdfs_Inventory_Spreadsheet_Source" 
+    destination_spreadsheet_class = "modules.spreadsheets.destinations.bdfs_inventory.Bdfs_Inventory_Spreadsheet_Destination" 

@@ -3,10 +3,10 @@
 
 from modules.spreadsheets.source import Bdfs_Spreadsheet_Source
 
-class BdfsInventory_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
+class Bdfs_Inventory_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
 
     spreadsheetId = '18XKqjmJrWk1TVRfJtUm584wUaPU3vMzt7EoKTgA_Vmo'
 
     worksheetKeeperPattern = "inventory"
 
-    worksheet_class = "modules.worksheets.sources.bdfs_inventory.BdfsInventory_Worksheet_Source"
+    worksheet_class = "modules.worksheets.sources.bdfs_inventory.Bdfs_Inventory_Worksheet_Source"

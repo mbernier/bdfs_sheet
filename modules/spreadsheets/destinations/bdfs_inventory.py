@@ -4,11 +4,11 @@
 from modules.spreadsheets.destination import Bdfs_Spreadsheet_Destination
 
 
-class BdfsInventory_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
+class Bdfs_Inventory_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
 
     spreadsheetId = '18XKqjmJrWk1TVRfJtUm584wUaPU3vMzt7EoKTgA_Vmo'
 
     worksheetKeeperPattern = "inventory"
 
     # worksheet_class = {"module": "modules.spreadsheets.bdfs_inventory", "class": "Bdfs_Spreadsheet"}
-    worksheet_class = "modules.worksheets.destinations.bdfs_inventory.BdfsInventory_Worksheet_Destination"
+    worksheet_class = "modules.worksheets.destinations.bdfs_inventory.Bdfs_Inventory_Worksheet_Destination"
