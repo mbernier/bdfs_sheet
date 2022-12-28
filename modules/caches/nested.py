@@ -35,21 +35,21 @@ class Nested_Cache(BdfsCache):
     @Debugger
     def __init__(self, locations: list = [], data:list = [], uniqueField:str=None):        
         self._storage = []
-        self._locations = []
         self.uniques = []
         self.uniqueField = None
         self.uniqueFieldIndex = None
 
-        self._locations = locations
         self.uniqueField = uniqueField
 
         if 0 == len(locations):
             if 0 < len(data): # we have data, but we don't have headers
                 raise Nested_Cache_Exception(f"Data {data} was sent with no headers")
         else:
+            # set up the initial data
+            self.__setup(locations, data)
+            
             # verify the unique field is in the locations list
             self.__setupUniqueIndex()
-            self.__setup(data)
         
 
     ####
@@ -58,14 +58,17 @@ class Nested_Cache(BdfsCache):
     #
     ####
     @Debugger
-    def __setup(self, data:list):
+    def __setup(self, locations:list, data:list):
         for rowData in data:
-            self.insert(rowData)
+            if self.height() > 0: 
+                locations = None # stop sending locations after the first row
+
+            self.insert(rowData=rowData, locations=locations)
 
     @Debugger
     def __setupUniqueIndex(self):
-        if None != self.uniqueField and 0 < len(self._locations):
-            self.uniqueFieldIndex = self._locations.index(self.uniqueField)
+        if None != self.uniqueField and 0 < len(self.getLocations()):
+            self.uniqueFieldIndex = self.getLocations().index(self.uniqueField)
 
     ####
     #
@@ -101,7 +104,7 @@ class Nested_Cache(BdfsCache):
     # uses the dict get() to return None or the value if the item exists
     @Debugger
     @validate_arguments # no need to test location exists, return None if the data doesn't exist at row or location
-    def select(self, row:Annotated[int,Field(gt=-1)]=None, position:Union[int,str]=None, unique=None, update_timestamp=False):
+    def select(self, row:Annotated[int,Field(gt=-1)]=None, position:Union[int,str]=None, unique=None, update_timestamp=True):
         if None != unique:
             if None != row:
                 raise Nested_Cache_Exception("Passing row and unique together is poor form, pick one")
@@ -138,9 +141,16 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def insert(self, rowData:list=None):
+    def insert(self, rowData:list=None, locations:list=None):
         
-        newRow = Flat_Cache(self.getLocations(), rowData)
+        if None != locations and self.height() > 0: # this should only ever happen on the first insert
+            raise Nested_Cache_Exception("locations were passed to insert after the first row was inserted, that's a no-no")
+        elif None == locations and self.height() > 0:
+            # only do this after the first row is set up, bc first row will have locations passed
+            locations = self.getLocations()
+
+        newRow = Flat_Cache(locations, rowData)
+
         rowVal = "".join(map(str, newRow.getAsList(update_timestamp=False)))
         if len(rowVal) == 0 and None != self.uniqueField:
             Logger.info("found empty Row, skipping")
@@ -216,36 +226,27 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     def getLocations(self) -> list:
-        return self._locations.copy()
+        # all of the methods keep the Flat_Cache storages aligned, so this will be the same for all of them
+        return self._storage[0].getKeys()
 
 
     # do we know about this location?
     @Debugger
     @validate_arguments
-    def locationExists(self, position: Union[int,str])->Union[int,str]:
-        return position in self._locations
+    def locationExists(self, position: Union[int,str]) -> bool:
+        return (position in self.getLocations())
 
 
     @Debugger
     @validate_arguments
     def insert_location(self, location:str, index:int=None):
-        if self.locationExists(location):
-            raise Nested_Cache_Exception(f"Column Name: '{location}' already exists")
 
         if self.height() > 0:
             for row in range(0, self.height()):
                 self._storage[row].insert_location(position=location, index=index)
-
-        # Update the _locations list
-        if None == index:
-            #put it at the end
-            self._locations.append(location)
-        else:
-            #put it at the right location
-            self._locations.insert(index, location)
         
-        if location == self.uniqueField:
-            self.__setupUniqueIndex()
+        # things might have moved around, go get the index of the unique field just in case
+        self.__setupUniqueIndex()
 
 
     # ask Flat Cache to delete the column
@@ -258,9 +259,6 @@ class Nested_Cache(BdfsCache):
 
         for row in range(0, self.height()):
             self._storage[row].delete_location(position)
-        
-        # remove it from the locations cache
-        self._locations.remove(position)
 
 
     # ask Flat Cache to delete each column
@@ -284,8 +282,6 @@ class Nested_Cache(BdfsCache):
     @Debugger
     @validate_arguments
     def reorderColumns(self, newColumns:list[str]):
-        # we are going to override the current locations list
-        self._locations = newColumns
 
         # get each row of data and recreate it, using the new location order
         for row in range(0, self.height()):
@@ -393,7 +389,7 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def __str__(self, update_timestamp:bool=False) -> str:
+    def __str__(self, update_timestamp:bool=True) -> str:
         output = "Nested_Cache: \n"
         return str(self.getAsListOfDicts(update_timestamp=update_timestamp))
 
@@ -403,7 +399,7 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def getAsListOfLists(self,update_timestamp:bool=False) -> list[list]:
+    def getAsListOfLists(self,update_timestamp:bool=True) -> list[list]:
         output = []
         for rowindex, row in enumerate(self._storage):
             rowAsList = row.getAsList(update_timestamp=update_timestamp) 
@@ -413,7 +409,7 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def getAsListOfDicts(self,update_timestamp:bool=False) -> list[dict]:
+    def getAsListOfDicts(self,update_timestamp:bool=True) -> list[dict]:
         output = []
         for index, row in enumerate(self._storage):
             rowAsDict = row.getAsDict(update_timestamp=update_timestamp)

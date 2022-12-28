@@ -20,6 +20,8 @@ class DataMove():
 
     destinationWorksheetCreateIfNotFound = True
     problemsIdentified = {}
+    
+    problemsWorksheetName = "problems"
 
     hooks:dict = {}
     
@@ -120,8 +122,19 @@ class DataMove():
             # reset to false for the next item
             self.skipItem = False # allows mapFields() to identify a row to skip
 
-            # map the source Data to Destination Data
-            modifiedData = self.mapFields(sourceData)
+            # merge the source and Destination data, based on whatever rules you need
+            sourceData = self.mapFields(sourceData)
+
+            # map the keys that we want to keep
+            modifiedData = {}
+            for key in self.destination_expectedCols:
+                
+                if key != "update_timestamp" and False == self.skipItem:
+                    if not key in sourceData.keys():
+                        raise DataMove_Exception(f" '{key} was not found in sources, does it need to be mapped?")
+                    
+                    modifiedData[key] = sourceData[key]
+
 
             if False == self.skipItem: # we are not skipping this item
                 destinationData = []

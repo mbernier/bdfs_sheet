@@ -3,12 +3,18 @@ from modules.worksheets.destination import Bdfs_Worksheet_Destination
 
 
 class Bdfs_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
-    
-    cols_expected = ['Updated Date', 'Title', 'Hardware', 'Published', 'Type', 'On BDFS?', 'Vendor', 
-                        'Handle', 'Type', 'Glass', 'SKU', 'SEO Title', 'Tags', 'Sarto SKU', 
-                        'Color', 'UnitedPorte URL', 'Image 1 URL', 'Image 1 SEO', 'Image 2 URL', 
-                        'Image 2 SEO', 'Image 3 URL', 'Image 3 SEO', 'Image 4 URL', 'Image 4 SEO',
-                        'Image 5 URL', 'Image 5 SEO', 'Description']
+
+    cols_expected = ['Title', 'Type', 'SEO Title', 'Description', 
+                        'Image 1 URL', 'Image 1 SEO', 'Image 2 URL', 'Image 2 SEO', 
+                        'Image 3 URL', 'Image 3 SEO', 'Image 4 URL', 'Image 4 SEO', 
+                        'Image 5 URL', 'Image 5 SEO', 'Image 6 URL', 'Image 6 SEO', 
+                        'Image 7 URL', 'Image 7 SEO', 'Image 8 URL', 'Image 8 SEO', 
+                        'Image 9 URL', 'Image 9 SEO', 'Image 10 URL', 'Image 10 SEO',
+                        'Vendor', 'Vendor SKU', 'Vendor Model Name',
+                        'Shopify URL', 'Shopify Handle', 'Category', 'Tags', 
+                        'Publish To Store', 'Publish To Google',
+                        'Publish to Pinterest', 'Publish To Facebook & Instagram', 
+                        'Publish to Microsoft', 'Publish to Shop']
     
     single_door_cols = ['Cost:18" x 80"', 'Cost:24" x 80"', 'Cost:28" x 80"', 'Cost:30" x 80"', 
                         'Cost:32" x 80"', 'Cost:36" x 80"', 'Cost:42" x 80"', 'Cost:18" x 84"', 'Cost:24" x 84"', 

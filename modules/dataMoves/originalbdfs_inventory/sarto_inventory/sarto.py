@@ -10,8 +10,6 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     destinationClassPath = "sarto_inventory.Sarto_Inventory_Spreadsheet_Destination"
     destinationWorksheetName = "barndoor_single"
 
-    problemsWorksheetName = "problems"
-
     @Debugger
     @validate_arguments
     def mapFields(self, sourceData:dict):
@@ -38,7 +36,11 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
                 
         # Lites
         sourceData['Lites'] = sourceData['Glass Lites'].replace("lites","").replace("Lites", "").strip()
-        
+
+        # Hardware Color
+        sourceData['Hardware Color'] = sourceData['Hardware']
+        sourceData['Hardware'] = "Rail with predrilled holes, Hangers with wheels, Door stops, Floor guide, Mounting screws"
+
         # Parse out the model name and number
         if "" != sourceData['Title']:
             splitTitle = sourceData['Title'].split(" ")

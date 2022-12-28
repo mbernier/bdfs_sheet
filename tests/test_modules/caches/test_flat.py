@@ -1,4 +1,4 @@
-import pytest
+import pytest, time
 
 from modules.caches.flat import Flat_Cache
 from modules.caches.exception import Flat_Cache_Exception
@@ -259,7 +259,48 @@ def test_timestamp():
     cache.insert(position="e", data=[1,2,3])
     data = cache.select()
     assert "update_timestamp" in data.keys()
+    assert "b_update_timestamp" in data.keys()
+    assert "c_update_timestamp" in data.keys()
+    assert "d_update_timestamp" in data.keys()
+    assert "e_update_timestamp" in data.keys()
+    
     assert data["update_timestamp"] != None
+    assert data["b_update_timestamp"] != None
+    assert data["c_update_timestamp"] != None
+    assert data["d_update_timestamp"] != None
+    assert data["e_update_timestamp"] != None
+
     assert type(data["update_timestamp"]) is float
+    assert type(data["b_update_timestamp"]) is float
+    assert type(data["c_update_timestamp"]) is float
+    assert type(data["d_update_timestamp"]) is float
+    assert type(data["e_update_timestamp"]) is float
+
     del data["update_timestamp"]
+    del data["b_update_timestamp"]
+    del data["c_update_timestamp"]
+    del data["d_update_timestamp"]
+    del data["e_update_timestamp"]
+    
     assert data == {'b': None, 'c':None, 'd': None, 'e': [1,2,3]}
+
+
+def test_timestamp_pre_load():
+    timestamp = time.time()
+    
+    cache = Flat_Cache(['b','c','d', 'update_timestamp'],[1,2,3,timestamp])
+    
+    assert cache.getUpdateTimestamp("update_timestamp") == timestamp
+
+    # effectively append
+    cache.insert_location(position='e')
+    cache.insert(position="e", data=[1,2,3])
+    data = cache.select()
+
+    del data["update_timestamp"]
+    del data["b_update_timestamp"]
+    del data["c_update_timestamp"]
+    del data["d_update_timestamp"]
+    del data["e_update_timestamp"]
+    
+    assert data == {'b': 1, 'c':2, 'd': 3, 'e': [1,2,3]}

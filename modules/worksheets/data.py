@@ -58,7 +58,8 @@ class Bdfs_Worksheet_Data(BaseClass):
         uniqueHeaders = []
         duplicateHeaders = []
         emptyHeaderIndexes = []
-
+        timestampHeaders = []
+        
         for index, header in enumerate(headers):
             if "" == header:
                 #replace the header with a placeholder name
@@ -73,15 +74,20 @@ class Bdfs_Worksheet_Data(BaseClass):
             # check for duplication
             if header not in uniqueHeaders:
                 uniqueHeaders.append(header)
+                if header != "update_timestamp":
+                    timestampHeaders.append(f"{header}_update_timestamp")
             else:
                 duplicateHeaders.append(header)
 
-        # support update_timestamp
-        if not "update_timestamp" in headers:
-            headers.append("update_timestamp")
+        # # support update_timestamp
+        # if not "update_timestamp" in headers:
+        #     headers.append("update_timestamp")
 
-            if not "update_timestamp" in uniqueHeaders:
-                uniqueHeaders.append("update_timestamp")
+        #     if not "update_timestamp" in uniqueHeaders:
+        #         uniqueHeaders.append("update_timestamp")
+        
+        # # add in the timestamp headers
+        # headers += timestampHeaders
 
         if 0 < len(duplicateHeaders):
             Logger.critical("There are duplicate headers in your spreadsheet with these names: {}".format(duplicateHeaders))
@@ -224,10 +230,10 @@ class Bdfs_Worksheet_Data(BaseClass):
 
     @Debugger
     @validate_arguments
-    def getAsListOfLists(self, update_timestamp:bool=False) -> list[list]:
+    def getAsListOfLists(self, update_timestamp:bool=True) -> list[list]:
         return self.dataStore.getAsListOfLists(update_timestamp=update_timestamp)
     
     @Debugger
     @validate_arguments
-    def getAsListOfDicts(self, update_timestamp:bool=False) -> list[dict]:
+    def getAsListOfDicts(self, update_timestamp:bool=True) -> list[dict]:
         return self.dataStore.getAsListOfDicts(update_timestamp=update_timestamp)

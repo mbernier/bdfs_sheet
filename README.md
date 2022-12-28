@@ -159,9 +159,6 @@ Environment options are all explained in the comments of the `default` environme
 
 To do:
 
-stop it from appending
-- needs to find and replace the items in the destination, rather than replace all or append
-
 Product Titles
 - rearrange titles: The items that get the most clicks Lucia 22 Matte Black Barn Door
     - "single barn door", double barn door further up in the title
@@ -169,15 +166,10 @@ Product Titles
 - attributes through type, categories, description - rich content
 
 
-Ads
-- Get a video ad created for BarnDoors.forsale
-- Get a google ads account linked to a YouTube Channel - video ad needs to be loaded in the YT channel, then it is added to pmax campaign as an asset
-- Danny will send a doc on best practices, their creative team can develop the ads - will send info over
-
-
 Initial Migration to new Data sources:
-1. Create a BDFS_Inventory source class to read the data from BDFS_Inventory
-1. Create a Sarto_Inventory destination class to cleanup the data to match what is on Sarto's website and put it in a new spreadseet with new worksheets
+
+1. Modify Flat cache to keep track of updated timestamp for each field, then teach upstream to write that to the sheet using "fieldname_updated" - this way we can merge only the fields we care about, rather than the whole row, allowing the code to modify any one cell that it needs and push only that cell.
+
 1. Create a BDFS_Spreadsheet destination class that will create only the shopify data we need for BDFS from the sarto data
     - Add in the columns we want and put them in the right order
     - apply formulas and templates (see below)

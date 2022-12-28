@@ -1,5 +1,5 @@
 import pytest, pydantic
-
+from collections import OrderedDict
 from modules import caches
 from modules.caches.flat import Flat_Cache
 from modules.caches.nested import Nested_Cache
@@ -217,6 +217,14 @@ def test_reorderColumns():
     cache.reorderColumns(['f','b','d','c','e'])
     assert cache.select(0, update_timestamp=False) == {'f': 7, 'b': 3, 'd': 5, 'c': 4, 'e': 6}
     assert cache.select(1, update_timestamp=False) == {'f': 5, 'b': 1, 'd': 3, 'c': 2, 'e': 4}
+    
+    somedataKeys = cache.select(0).keys()
+    assert "b_update_timestamp" in somedataKeys
+    assert "c_update_timestamp" in somedataKeys
+    assert "d_update_timestamp" in somedataKeys
+    assert "e_update_timestamp" in somedataKeys
+    assert "f_update_timestamp" in somedataKeys
+
 
 ####
 #

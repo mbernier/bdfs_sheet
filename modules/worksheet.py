@@ -174,11 +174,9 @@ class Bdfs_Worksheet(BaseClass):
     #will return something like -- "A1:CT356"
     @Debugger
     @validate_arguments
-    def getDataRange(self, update_timestamp=True) -> str: #tested
+    def getDataRange(self) -> str: #tested
         height = self.height()+1
         width = self.width()
-        if True == update_timestamp:
-            width += 1
         dataRange = f"{self.getA1(1,1)}:{self.getA1(height, width)}"
         return dataRange
 

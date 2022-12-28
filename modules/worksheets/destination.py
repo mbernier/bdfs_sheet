@@ -223,14 +223,14 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
             self.gspread_worksheet_resize_to_data()
 
             # get the meta about our new data to commit
-            dataRange = self.getDataRange(update_timestamp=True)
+            dataRange = self.getDataRange()
 
             headers = self.getColumns()
 
             # we are adding this every time, it will be in the data
             headers.append("update_timestamp")
 
-            values = self.getDataAsListOfLists(update_timestamp=True)
+            values = self.getDataAsListOfLists()
 
             batch_update = [{
                 'range': dataRange,
