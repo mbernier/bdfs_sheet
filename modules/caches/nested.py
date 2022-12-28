@@ -293,13 +293,14 @@ class Nested_Cache(BdfsCache):
         for row in range(0, self.height()):
             rowData = self._storage[row] # get the old row, so we can fetch the data
 
-            newData = [] # temp storage for the old row's data
+            # rather than try to move the data around, just recreate it
+            newData = Flat_Cache(newColumns)
 
             for column in newColumns:
                 # get the data from the old row and order it in the new list
-                newData.append(rowData.select(column))
+                newData.insert(position=column, data=rowData.select(column))
             
-            self.updateRow(row, newData)
+            self._storage[row] = newData
         
         # make sure we reset the uniqueIndex, just in case it moved
         self.__setupUniqueIndex()

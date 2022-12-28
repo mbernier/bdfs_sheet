@@ -68,7 +68,7 @@ def test_cache_set_again():
 
     with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.insert(0, "a", 1)
-    assert "2 positional arguments expected but 4 given (type=type_error)" in str(excinfo.value)
+    assert "3 positional arguments expected but 4 given" in str(excinfo.value)
 
 
 def test_cache_set_again2():
@@ -77,7 +77,6 @@ def test_cache_set_again2():
 
     with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.insert(row=0, position="a", data=1)
-    # assert excinfo.value.message == "Nested_Cache has 2 at a. To update data in the cache, use update()"
     assert "unexpected keyword arguments: 'row', 'position', 'data' (type=type_error)" in str(excinfo.value)
 
 

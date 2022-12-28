@@ -159,6 +159,33 @@ Environment options are all explained in the comments of the `default` environme
 
 To do:
 
+
+
+
+
+
+
+
+Work up the stack from Nested_Cache to Worksheet - with update_timestamps and Nested_cache not caring about headers
+- should worksheet_data care about headers or get that from Nested_Cache? 
+- Is there a point where we can pass headers UPwards from Nested_Cache, so that the update_Timestamp headers get passed up and merged with the other headers?
+    - May need to look at expected Cols and make sure they are there, then allow update_timestamp cols in, even though they are not expected?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Product Titles
 - rearrange titles: The items that get the most clicks Lucia 22 Matte Black Barn Door
     - "single barn door", double barn door further up in the title
