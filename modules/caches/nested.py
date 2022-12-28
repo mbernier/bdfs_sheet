@@ -145,9 +145,12 @@ class Nested_Cache(BdfsCache):
         
         if None != locations and self.height() > 0: # this should only ever happen on the first insert
             raise Nested_Cache_Exception("locations were passed to insert after the first row was inserted, that's a no-no")
+        elif None == locations and self.height() == 0:
+            raise Nested_Cache_Exception("Locations have not been set up for Nested_Cache")
         elif None == locations and self.height() > 0:
             # only do this after the first row is set up, bc first row will have locations passed
             locations = self.getLocations()
+
 
         newRow = Flat_Cache(locations, rowData)
 
@@ -241,7 +244,10 @@ class Nested_Cache(BdfsCache):
     @validate_arguments
     def insert_location(self, location:str, index:int=None):
 
-        if self.height() > 0:
+        # we have our first location, so we need to add it
+        if self.height() == 0:
+            self.insert(locations=[location], rowData=None)
+        elif self.height() > 0:
             for row in range(0, self.height()):
                 self._storage[row].insert_location(position=location, index=index)
         

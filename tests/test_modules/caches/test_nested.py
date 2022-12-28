@@ -21,13 +21,13 @@ def test_empty_cache_select():
 def test_empty_cache_select2():
     cache = Nested_Cache([], [])
 
-    with pytest.raises(Flat_Cache_Exception) as excinfo:
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
         cache.insert([1])
-    assert excinfo.value.message == "Location '0' does not exist, try \"insert_location('0')\""
+    assert excinfo.value.message == "Locations have not been set up for Nested_Cache"
 
     cache.insert_location("test")
 
-    assert cache.height() == 0
+    assert cache.height() == 1
     
     cache.insert([1])
 
