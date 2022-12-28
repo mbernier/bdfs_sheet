@@ -4,12 +4,12 @@ from modules.worksheets.bases.sarto_doors import Sarto_Inventory_Base
 from modules.spreadsheets.destinations.sarto_inventory import Sarto_Inventory_Spreadsheet_Destination
 from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
 from modules.caches.nested import Nested_Cache
+from modules.worksheets.data import Bdfs_Worksheet_Data
 
 if __name__ == "__main__":
 
     # migrator = Originalbdfs_Inventory_To_Sarto_Inventory()
     # migrator.run()
 
-    cache = Nested_Cache(['b','c','d','e','f'],[[3,4,5,6,7],[1,2,3,4,5]])
-    cache.reorderColumns(['f','b','d','c','e'])
-    print(cache.select(0))
+    data = Bdfs_Worksheet_Data([["name","email", "cake"],["bob", "something@example.com", "chocolate"],["mary", "example@example.com", "strawberry"]])
+    print(data.getHeaders())

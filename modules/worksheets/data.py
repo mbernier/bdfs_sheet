@@ -24,11 +24,6 @@ class Bdfs_Worksheet_Data(BaseClass):
     @validate_arguments
     def __init__(self, sheetData:list=[], uniqueField = None):
         self.dataStore:Nested_Cache = None
-        self._emptyHeaderIndexes = []
-        self._uniqueHeaders = []
-        self._duplicateHeaders = [] 
-        self._headers = []
-        self._removedHeaders = []
         self.uniqueField = None
         self.uniques = []
 
@@ -46,9 +41,9 @@ class Bdfs_Worksheet_Data(BaseClass):
         if [] != sheetData:
             # store all the data in the data store
             headers = sheetData.pop(0)
-            self._headers, self._uniqueHeaders, self._duplicateHeaders, self._emptyHeaderIndexes = self.__prepHeaders(headers)
+            headers = self.__prepHeaders(headers)
 
-        self.dataStore = Nested_Cache(locations=self._headers, data=sheetData, uniqueField=self.uniqueField)
+        self.dataStore = Nested_Cache(locations=headers, data=sheetData, uniqueField=self.uniqueField)
 
 
     # replaces empty headers with "NoHeaderFound_{index}"
@@ -79,20 +74,10 @@ class Bdfs_Worksheet_Data(BaseClass):
             else:
                 duplicateHeaders.append(header)
 
-        # # support update_timestamp
-        # if not "update_timestamp" in headers:
-        #     headers.append("update_timestamp")
-
-        #     if not "update_timestamp" in uniqueHeaders:
-        #         uniqueHeaders.append("update_timestamp")
-        
-        # # add in the timestamp headers
-        # headers += timestampHeaders
-
         if 0 < len(duplicateHeaders):
             Logger.critical("There are duplicate headers in your spreadsheet with these names: {}".format(duplicateHeaders))
 
-        return headers.copy(), uniqueHeaders, duplicateHeaders, emptyHeaderIndexes
+        return headers.copy()
 
     ####
     #
@@ -102,7 +87,7 @@ class Bdfs_Worksheet_Data(BaseClass):
 
     @Debugger
     def getHeaders(self)->list:
-        return self._headers.copy()
+        return self.dataStore.getLocations()
 
 
     # add multiple headers to the data
@@ -111,7 +96,7 @@ class Bdfs_Worksheet_Data(BaseClass):
     def addHeaders(self, headers:list[str]):
         for header in headers:
             # add to the end of the data
-            self.dataStore.insert_location(location=header)
+            self.addHeader(name=header)
 
 
     @Debugger
@@ -126,22 +111,14 @@ class Bdfs_Worksheet_Data(BaseClass):
     @Debugger
     @validate_arguments
     def removeHeaders(self, headers:list[str]):
-
         # call directly to the multi-delete on Nested Cache
         self.dataStore.deleteColumns(positions=headers)
-        self._headers = list(set(self._headers) - set(headers))
 
 
     @Debugger
     @validate_arguments
-    def removeHeader(self, header:str=None):
-        
+    def removeHeader(self, header:str=None):        
         self.dataStore.deleteColumn(position=header)
-        # do a double check for whether this was removed by reference
-        #   it is possible that the headers list in NestedCache is referencing the headers list here
-        #   so when we deleteColumn() and remove from that list, we remove it here, too
-        if header in self._headers:
-            self._headers.remove(header)
 
 
     # set the data headers order to the order in this list
@@ -150,9 +127,6 @@ class Bdfs_Worksheet_Data(BaseClass):
     def reorderHeaders(self, newHeaders:list[str]):
         # Make sure the order is correct
         self.dataStore.reorderColumns(newHeaders)
-
-        # make sure to update the list of locations in the correct order
-        self._headers = self.dataStore.getLocations()
 
 
     @Debugger

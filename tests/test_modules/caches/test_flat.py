@@ -199,13 +199,39 @@ def test_delete_location():
     cache.insert(position="c",data=4)
     cache.insert(position="d",data=5)
 
-    assert cache.data.storage == {'b': {'position': 0, 'data': 3}, 0: {'position': 'b', 'data': 3}, 'c': {'position': 1, 'data': 4}, 1: {'position': 'c', 'data': 4}, 'd': {'position': 2, 'data': 5}, 2: {'position': 'd', 'data': 5}}
+    assert cache.data.storage['b']['position'] == 0
+    assert cache.data.storage['b']['data'] == 3
+    assert cache.data.storage[0]['position'] == 'b'
+    assert cache.data.storage[0]['data'] == 3
+    
+    assert cache.data.storage['c']['position'] == 1
+    assert cache.data.storage['c']['data'] == 4
+    assert cache.data.storage[1]['position'] == 'c'
+    assert cache.data.storage[1]['data'] == 4
+
+    assert cache.data.storage['d']['position'] == 2
+    assert cache.data.storage['d']['data'] == 5
+    assert cache.data.storage[2]['position'] == 'd'
+    assert cache.data.storage[2]['data'] == 5
 
     cache.delete_location('c')
 
     assert cache.select(update_timestamp=False) == {'b': 3, 'd': 5}    
 
-    assert cache.data.storage == {'b': {'position': 0, 'data': 3}, 0: {'position': 'b', 'data': 3}, 'd': {'position': 1, 'data': 5}, 1: {'position': 'd', 'data': 5}}
+    assert cache.data.storage['b']['position'] == 0
+    assert cache.data.storage['b']['data'] == 3
+    assert cache.data.storage[0]['position'] == 'b'
+    assert cache.data.storage[0]['data'] == 3
+    
+    assert not 'c' in cache.data.storage.keys()
+    assert not 2 in cache.data.storage.keys()
+
+    assert cache.data.storage['d']['position'] == 1
+    assert cache.data.storage['d']['data'] == 5
+    assert cache.data.storage[1]['position'] == 'd'
+    assert cache.data.storage[1]['data'] == 5
+
+
 
 def test_update_location_fail():
     cache = Flat_Cache(['b','c','d'])
@@ -263,7 +289,7 @@ def test_timestamp():
     assert "c_update_timestamp" in data.keys()
     assert "d_update_timestamp" in data.keys()
     assert "e_update_timestamp" in data.keys()
-    
+
     assert data["update_timestamp"] != None
     assert data["b_update_timestamp"] != None
     assert data["c_update_timestamp"] != None
