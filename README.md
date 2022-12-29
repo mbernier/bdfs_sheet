@@ -37,9 +37,14 @@ We can then look into options for order processing as well.
 
 # Running tests
 In order to run the tests and have them pass, you will need to capture logs and stdout, to do that run tests thusly:
-```pytest --capture=tee-sys```
+```python -m pytest --capture=tee-sys -vv```
 or 
-```pytest --capture=tee-sys path/to/testing/filename```
+```python -m pytest --capture=tee-sys -vv path/to/test_file.py```
+
+what I did was in my shell profile, I aliased `pytest` to `python -m pytest --capture=tee-sys -vv` so that I only had to type `pytest` and I get the full functionality like so: 
+`pytest`
+or 
+`pytest path/to/test_file.py`
 
 # Running the script
 To run the script (replacing `python3` with the appropriate python command for your environment):
