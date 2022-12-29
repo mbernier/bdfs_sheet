@@ -7,7 +7,7 @@ from modules.logger import Logger
 
 
 
-class BaseClass():
+class Base_Class():
     class Config:
         arbitrary_types_allowed = True
     ####

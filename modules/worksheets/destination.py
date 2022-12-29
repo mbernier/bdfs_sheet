@@ -4,7 +4,7 @@ from collections import OrderedDict
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import utils as gspread_utils
 from gspread.worksheet import Worksheet
-from modules.base import BaseClass
+from modules.base import Base_Class
 from modules.decorator import Debugger
 from modules.logger import Logger
 from modules.worksheet import Bdfs_Worksheet,Worksheet_DataClass
@@ -45,11 +45,11 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
     # This is only in the Destination class
     @Debugger
-    def __checkSetup(self): #parent class __init__ runs this
+    def checkSetup(self): #parent class __init__ runs this
         # if we don't know what cols are expected, we cannot check the sheet is setup properly
         if [] == self.getExpectedColumns():
             #fail if no one set the spreadsheetId on the wrapper class
-            Logger.critical("Cols expected was not set before instantiating Spreadsheet class")
+            raise Bdfs_Worksheet_Destination_Exception("Cols expected was not set before instantiating Spreadsheet class")
         
     @Debugger
     def setupData(self, sheetData:list=None)->list:
@@ -106,7 +106,7 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     @validate_arguments
     def removeColumns(self, columns:list[str]):
         self.modifiesData()
-        self.sheetData.removeHeaders(headers=columns)
+        self.data.sheetData.removeHeaders(headers=columns)
 
 
     @Debugger

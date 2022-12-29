@@ -419,11 +419,11 @@ def test_exists_in_fail():
     aThing = Test()
     with pytest.raises(Helper_Exception) as excinfo:
         Helper.existsIn(key1, aThing)
-    assert excinfo.value.message == "No existsIn validation method exists for <class 'tests.test_modules.test_helper.Test'>"
+    assert "No existsIn validation method exists for" in excinfo.value.message
 
     with pytest.raises(Helper_Exception) as excinfo:
         Helper.existsIn(key2, aThing)
-    assert excinfo.value.message == "No existsIn validation method exists for <class 'tests.test_modules.test_helper.Test'>"
+    assert "No existsIn validation method exists for" in excinfo.value.message
     
 
 # not doing a test for this Helper Method: 

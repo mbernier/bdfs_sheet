@@ -95,6 +95,12 @@ class Helper:
         result =  all(elem in list1 for elem in list2)
         return result
 
+    @staticmethod
+    def listDiff(list1, list2) -> list:
+        return [x for x in list1 if x not in set(list2)]
+
+    def listsToDict(list1, list2) -> dict:
+        return dict(zip(list1, list2))
 
     @staticmethod
     def existsIn(item, lookIn):

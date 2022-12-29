@@ -7,7 +7,7 @@ from tests.test_modules.worksheets.sources.sources_helper import sources_helper
 class Test_Bdfs_Worksheet_Source:
     @classmethod
     def setup_class(self):
-        print("\n\tstarting class: {} execution".format(self.__name__))
+        print("\n\tStarting class: {} execution".format(self.__name__))
         self.worksheetName = "test_easy_data"
         self.renameWorksheetName = "test_easy_data_new_title"
         self.copyFromWorksheetName = "demo_worksheet"
@@ -18,15 +18,16 @@ class Test_Bdfs_Worksheet_Source:
         
     @classmethod
     def teardown_class(self): 
-        print("\tstarting Test_Bdfs_Worksheet_Source: {} execution".format(self.__name__))
+        print("\n\tTeardown class: {} execution".format(self.__name__))
 
     def setup_method(self, method):
+        print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
         # This will cause the code to only run for the methods we care about that need this separately
         # as of now, this is test_commit and test_commit_with_larger_data
         self.test_worksheet = sources_helper(self.test_worksheet, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, method)
 
     def teardown_method(self, method):
-        print("\tstarting execution of Source: {}".format(method.__name__))
+        pass
 
 
     ####
@@ -100,10 +101,8 @@ class Test_Bdfs_Worksheet_Source:
 
     def test_getDataRange(self):
         dataRange = self.test_worksheet.getDataRange()
-        assert dataRange == "A1:G4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
+        assert dataRange == "A1:M4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
-        dataRange = self.test_worksheet.getDataRange(update_timestamp=False)
-        assert dataRange == "A1:F4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
     def test_getExpectedColumns(self):
         with pytest.raises(AttributeError) as excinfo:
@@ -113,14 +112,14 @@ class Test_Bdfs_Worksheet_Source:
 
     def test_getColumns(self):
         cols = self.test_worksheet.getColumns()
-        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake']
+        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'update_timestamp']
 
 
     def test_getColumnCounts(self):
         counts = self.test_worksheet.getColumnCounts()
-        # also tests the gspread_worksheet_resize_to_data, bc if the data width is the same we got it right
-        # not setting to a specific number, bc we don't care what the width is, just that they are the same
-        assert counts['data'] == counts['gspread_worksheet'] 
+        # also tests the gspread_worksheet_resize_to_data, bc if the data width is 2x + 1 we got it right
+        assert counts['data'] == counts['gspread_worksheet'] * 2 + 1
+        assert counts['gspread_worksheet'] == 6
 
 
     def test_addColumns(self):
@@ -128,13 +127,13 @@ class Test_Bdfs_Worksheet_Source:
             self.test_worksheet.addColumn("newColumn1")
         assert "object has no attribute 'addColumn'" in str(excinfo.value)
         
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'update_timestamp']
 
         with pytest.raises(AttributeError) as excinfo:
             self.test_worksheet.addColumn(name="newColumn3", index=3)
         assert "object has no attribute 'addColumn'" in str(excinfo.value)
 
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'update_timestamp']
         
 
     def test_commit(self):

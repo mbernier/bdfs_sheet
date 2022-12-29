@@ -145,8 +145,8 @@ class DataMove():
                     # putRow will determine, based on uniqueKeys, whether this should be an insert or update
                     self.destinationWorksheet.putRow(destinationData)
                 else:
-                    print(f"\nLeft: {[x for x in modifiedData if x not in set(self.destination_expectedCols)]}\n")
-                    print(f"\nRight: {[x for x in self.destination_expectedCols if x not in set(modifiedData)]}\n")
+                    print(f"\nLeft: {Helper.listDiff(modifiedData, self.destination_expectedCols)}")
+                    print(f"\nRight: {Helper.listDiff(self.destination_expectedCols, modifiedData)}\n")
                     raise DataMove_Exception(f"There are columns missing from modified data. Received {list(modifiedData.keys())} Expected {self.destination_expectedCols}")
 
         self.run_hook('post_map')

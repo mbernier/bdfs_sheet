@@ -135,12 +135,12 @@ Relevant Files:
 
 *logger*
 Wrapper for logging functionality, making it easier to pass information to the logger. 
-Extending Logger or BaseClass will get you the logging methods in your class
+Extending Logger or Base_Class will get you the logging methods in your class
 
 Relevant Files
 - modules/logger.py
 
-*BaseClass*
+*Base_Class*
 Originally, this had the logging functionality, but that was broken out. Now this has a couple of helper methods wrapped up that were used in various places, but doesn't do much else.
 
 *DataStore*

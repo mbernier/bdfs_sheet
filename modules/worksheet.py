@@ -4,7 +4,7 @@ from collections import OrderedDict
 # https://github.com/burnash/gspread/blob/master/gspread/utils.py
 from gspread import utils as gspread_utils
 from gspread.worksheet import Worksheet
-from modules.base import BaseClass
+from modules.base import Base_Class
 from modules.caches.flat import Flat_Cache
 from modules.decorator import Debugger
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
@@ -50,7 +50,7 @@ class Worksheet_DataClass():
 # Rules; 
 #   pulls the worksheet data, does all the changes, only pushes changes when commit() is called.
 #
-class Bdfs_Worksheet(BaseClass):
+class Bdfs_Worksheet(Base_Class):
     cols_expected = None
     cols_expected_extra = None
     
@@ -68,7 +68,7 @@ class Bdfs_Worksheet(BaseClass):
         self.setupParams()
 
         # double check we have the required params from the extension class
-        self.__checkSetup()
+        self.checkSetup()
 
         # setup the changes items we want to track here
         self.data.changes = {"title": False, "data": False}
@@ -80,7 +80,7 @@ class Bdfs_Worksheet(BaseClass):
 
 
     @Debugger
-    def __checkSetup(self):
+    def checkSetup(self):
         pass #this functionality is moved to the Destination class
 
     @Debugger

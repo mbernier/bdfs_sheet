@@ -1,7 +1,7 @@
 import sys
-from modules.base import BaseClass
+from modules.base import Base_Class
 
-class BdfsCache(BaseClass):
+class Bdfs_Cache(Base_Class):
 
     _storage = {}
 
@@ -9,7 +9,7 @@ class BdfsCache(BaseClass):
         print("setData")
         pass
 
-    def unsetData():
+    def unsetData(self):
         print("unsetData")
         pass
 
@@ -19,6 +19,11 @@ class BdfsCache(BaseClass):
 
     def get(self):
         print("get")
+        pass
+
+    def insert(self):
+        print("insert")
+        self.__write()
         pass
 
     def clear(self):

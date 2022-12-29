@@ -1,8 +1,9 @@
 import sys
-from modules.cache import BdfsCache
+from modules.cache import Bdfs_Cache
 from modules.caches.flat import Flat_Cache
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
 from modules.decorator import Debugger
+from modules.helper import Helper
 from modules.logger import Logger
 from typing import Union
 from pydantic import Field, validate_arguments, StrictStr,ConstrainedStr
@@ -20,7 +21,7 @@ from pydantic.typing import Annotated
 #   locations flat cache is the same thing, it's the first row
 
 
-class Nested_Cache(BdfsCache):
+class Nested_Cache(Bdfs_Cache):
     _height = 0
 
     _storage: list = []
@@ -33,7 +34,7 @@ class Nested_Cache(BdfsCache):
     # locations are the indexes for the Flat_Cache
     #   We will make sure that they are setup properly as the caches are built
     @Debugger
-    def __init__(self, locations: list = [], data:list = [], uniqueField:str=None):        
+    def __init__(self, data:list[dict]=None, uniqueField:str=None):        
         self._storage = []
         self.uniques = []
         self.uniqueField = None
@@ -41,15 +42,11 @@ class Nested_Cache(BdfsCache):
 
         self.uniqueField = uniqueField
 
-        if 0 == len(locations):
-            if 0 < len(data): # we have data, but we don't have headers
-                raise Nested_Cache_Exception(f"Data {data} was sent with no headers")
-        else:
-            # set up the initial data
-            self.__setup(locations, data)
-            
-            # verify the unique field is in the locations list
-            self.__setupUniqueIndex()
+        # set up the initial data
+        self.__setup(data)
+        
+        # verify the unique field is in the locations list
+        self.__setupUniqueIndex()
         
 
     ####
@@ -58,12 +55,10 @@ class Nested_Cache(BdfsCache):
     #
     ####
     @Debugger
-    def __setup(self, locations:list, data:list):
-        for rowData in data:
-            if self.height() > 0: 
-                locations = None # stop sending locations after the first row
-
-            self.insert(rowData=rowData, locations=locations)
+    def __setup(self, data:list[dict]=None):
+        if None != data:
+            for rowData in data:
+                self.insert(rowData=rowData)
 
     @Debugger
     def __setupUniqueIndex(self):
@@ -141,18 +136,35 @@ class Nested_Cache(BdfsCache):
 
     @Debugger
     @validate_arguments
-    def insert(self, rowData:list=None, locations:list=None):
+    def insert(self, rowData:Union[list,dict]=None):
         
-        if None != locations and self.height() > 0: # this should only ever happen on the first insert
-            raise Nested_Cache_Exception("locations were passed to insert after the first row was inserted, that's a no-no")
-        elif None == locations and self.height() == 0:
-            raise Nested_Cache_Exception("Locations have not been set up for Nested_Cache")
-        elif None == locations and self.height() > 0:
+        if self.height() > 0:
             # only do this after the first row is set up, bc first row will have locations passed
             locations = self.getLocations()
+            if type(rowData) == list:
+                if len(rowData) != len(locations):
+                    raise Nested_Cache_Exception(f"rowData was expected to be of length {len(locations)} but {len(rowData)} was passed")
+                else:
+                    #make a dict
+                    rowData = Helper.listsToDict(locations, rowData)
+
+        else:
+            # this is the first row, let it set the standard for all other rows
+            locations = rowData.keys()
 
 
-        newRow = Flat_Cache(locations, rowData)
+        if locations != rowData.keys():
+            locationsHas = Helper.listDiff(locations, rowData.keys())
+            rowDataHas = Helper.listDiff(rowData.keys(), locations)
+
+            if [] != locationsHas:
+                raise Nested_Cache_Exception(f"rowData is missing {locationsHas}")
+
+            if [] != rowDataHas:
+                raise Nested_Cache_Exception(f"rowData contains extra locations: {rowDataHas}")
+
+
+        newRow = Flat_Cache(rowData)
 
         rowVal = "".join(map(str, newRow.getAsList(update_timestamp=False)))
         if len(rowVal) == 0 and None != self.uniqueField:
@@ -167,7 +179,7 @@ class Nested_Cache(BdfsCache):
     # given some data, identify whether it should be inserted or updated, based on the uniqueField
     @Debugger
     @validate_arguments
-    def putRow(self, rowData):
+    def putRow(self, rowData:list):
         if None != self.uniqueField:
             uniqueData = rowData[self.uniqueFieldIndex]
             if self.isUnique(uniqueData):
@@ -207,7 +219,7 @@ class Nested_Cache(BdfsCache):
     def updateRow(self, row:Annotated[int, Field(gt=-1)], rowData:list):
         self.validation_rowExists(row)
 
-        newRow = Flat_Cache(self.getLocations(), rowData)
+        newRow = Flat_Cache(Helper.listsToDict(self.getLocations(), rowData))
         oldRow = self._storage[row]
         
         newRowUnique = newRow.select(position=self.uniqueField)
@@ -228,9 +240,13 @@ class Nested_Cache(BdfsCache):
     ####
 
     @Debugger
-    def getLocations(self) -> list:
+    def getLocations(self, update_timestamp=False) -> list:
+        locations = self._storage[0].getKeys()
+        if True == update_timestamp:
+            timestamps = self._storage[0].getTimestampKeys()
+            locations += timestamps
         # all of the methods keep the Flat_Cache storages aligned, so this will be the same for all of them
-        return self._storage[0].getKeys()
+        return locations
 
 
     # do we know about this location?
@@ -294,13 +310,19 @@ class Nested_Cache(BdfsCache):
             rowData = self._storage[row] # get the old row, so we can fetch the data
 
             # rather than try to move the data around, just recreate it
-            newData = Flat_Cache(newColumns)
-
+            dataToLoad = []
+            #load the data into dataToLoad in the same order as the columns
             for column in newColumns:
-                # get the data from the old row and order it in the new list
-                newData.insert(position=column, data=rowData.select(column))
-            
-            self._storage[row] = newData
+                if rowData.positionIsTimestamp(column):
+                    # get the specific column's timestamp
+                    dataToLoad.append(rowData.getUpdateTimestamp(column))
+                else:
+                    # get the data from the old row and order it in the new list
+                    dataToLoad.append(rowData.select(column))
+                
+
+            # load all the data at once, so we can add the timestamps in
+            self._storage[row] = Flat_Cache(Helper.listsToDict(newColumns, dataToLoad))
         
         # make sure we reset the uniqueIndex, just in case it moved
         self.__setupUniqueIndex()
@@ -400,9 +422,11 @@ class Nested_Cache(BdfsCache):
         output = "Nested_Cache: \n"
         return str(self.getAsListOfDicts(update_timestamp=update_timestamp))
 
+
     @Debugger
     def getUniques(self) -> list:
         return self.uniques.copy()
+
 
     @Debugger
     @validate_arguments

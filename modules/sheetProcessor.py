@@ -1,12 +1,12 @@
 import sys, getopt, os, gspread
-from modules.base import BaseClass
+from modules.base import Base_Class
 from modules.decorator import Debugger
 from modules.logger import Logger
 
 # @todo refactor to pull out the getops functionality from this script
 #   create a class that takes in getopt options and data
 #   and then have this Sheet Processor extend that class and pass the configuration
-class SheetProcessor(BaseClass):
+class SheetProcessor(Base_Class):
 
     #Set the default spreadsheet classes, which will do very little...
     source_spreadsheet_class = "modules.spreadsheets.source.Bdfs_Spreadsheet_Source"

@@ -14,7 +14,7 @@ config_for_testing()
 # Make sure we're using the right parameters on pytest
 #
 ####
-opts, args = getopt.getopt(sys.argv[1:], "chs:w:l",["capture="])
+opts, args = getopt.getopt(sys.argv[1:], "chs:w:lvv",["capture=","ignore="])
 captureFound = False
 
 for opt, arg in opts: 

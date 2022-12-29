@@ -3,28 +3,33 @@ from modules.caches.flat import Flat_Cache
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from tests.test_modules.worksheets.destinations.destination_helper import destination_helper
 
+
 class Test_Bdfs_Worksheet_Destination:
     @classmethod
     def setup_class(self):
-        print("\n\tstarting class: {} execution".format(self.__name__))
+        print("\n\tStarting class: {} execution".format(self.__name__))
         self.worksheetName = "test_easy_data"
         self.renameWorksheetName = "test_easy_data_new_title"
         self.copyFromWorksheetName = "demo_worksheet"
         self.class_setup = True
         # Do the setup of the objects for this test, done outside of the testing file to work around pytest oddities
         self.test_worksheet = destination_helper(None, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, True)
-        
+
+
     @classmethod
     def teardown_class(self):
-        print("\tstarting Test_Bdfs_Worksheet_Destination: {} execution".format(self.__name__))
+        print("\n\tTeardown class: {} execution".format(self.__name__))
+
 
     def setup_method(self, method):
+        print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
         # This will cause the code to only run for the methods we care about that need this separately
         # as of now, this is test_commit and test_commit_with_larger_data
         self.test_worksheet = destination_helper(self.test_worksheet, self.worksheetName, self.copyFromWorksheetName, self.renameWorksheetName, method)
 
+
     def teardown_method(self, method):
-        print("\tstarting execution of Destination: {}".format(method.__name__))
+        pass
 
     ####
     #
@@ -55,9 +60,11 @@ class Test_Bdfs_Worksheet_Destination:
         self.test_worksheet.changed("data", False)
         assert False == self.test_worksheet.isChanged("data")
 
+
     def test_getTitle(self):
         title = self.test_worksheet.getTitle()
         assert self.worksheetName == title
+
 
     def test_setTitle_to_same_title(self):
         #if the titles are the same, we don't set the flag or the uncommitted title
@@ -93,6 +100,7 @@ class Test_Bdfs_Worksheet_Destination:
         dataRange = self.test_worksheet.getDataRange()
         assert dataRange == "A1:M4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
+
     def test_getExpectedColumns(self):
         cols = self.test_worksheet.getExpectedColumns()
         assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Hourly Pay', 'Total Pay']
@@ -100,7 +108,7 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_getColumns(self):
         cols = self.test_worksheet.getColumns()
-        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'update_timestamp', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp']
+        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'update_timestamp']
     
 
     def test_getColumnCounts(self):
@@ -114,10 +122,10 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_addColumns(self):
         self.test_worksheet.addColumn("newColumn1")
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', 'update_timestamp', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'newColumn1_update_timestamp']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'newColumn1_update_timestamp', 'update_timestamp']
 
         self.test_worksheet.addColumn(name="newColumn3", index=3)
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', 'update_timestamp', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'newColumn1_update_timestamp', 'newColumn3_update_timestamp']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'newColumn3_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'newColumn1_update_timestamp', 'update_timestamp']
 
 
     # def test_alignToColumns(self):

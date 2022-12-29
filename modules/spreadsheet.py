@@ -1,6 +1,6 @@
 import gspread, time
 from dataclasses import dataclass, field as dc_field
-from modules.base import BaseClass
+from modules.base import Base_Class
 from modules.logger import Logger
 from modules.decorator import Debugger
 from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
@@ -20,12 +20,12 @@ class Spreadsheet_Data():
     worksheets:dict = dc_field(default_factory=dict)
     gspread_worksheets:dict = dc_field(default_factory=dict)
     spreadsheet = None
-    # from BaseClass - allows us to set sub loggers
+    # from Base_Class - allows us to set sub loggers
     logger_name:str = "Spreadsheet"
     service_account = None
 
 
-class Bdfs_Spreadsheet(BaseClass): 
+class Bdfs_Spreadsheet(Base_Class): 
 
     data:Spreadsheet_Data = Spreadsheet_Data()
 

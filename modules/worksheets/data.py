@@ -1,7 +1,8 @@
 
 import sys
-from modules.base import BaseClass
+from modules.base import Base_Class
 from modules.caches.nested import Nested_Cache
+from modules.helper import Helper
 from modules.logger import Logger
 from modules.worksheets.exception import Bdfs_Worksheet_Data_Exception
 from modules.decorator import Debugger
@@ -9,7 +10,7 @@ from pydantic import validate_arguments
 from typing import Union
 
 
-class Bdfs_Worksheet_Data(BaseClass):
+class Bdfs_Worksheet_Data(Base_Class):
 
     dataStore:Nested_Cache = None
     _emptyHeaderIndexes = []
@@ -23,7 +24,7 @@ class Bdfs_Worksheet_Data(BaseClass):
     @Debugger
     @validate_arguments
     def __init__(self, sheetData:list=[], uniqueField = None):
-        self.dataStore:Nested_Cache = None
+        self.dataStore = None
         self.uniqueField = None
         self.uniques = []
 
@@ -43,7 +44,11 @@ class Bdfs_Worksheet_Data(BaseClass):
             headers = sheetData.pop(0)
             headers = self.__prepHeaders(headers)
 
-        self.dataStore = Nested_Cache(locations=headers, data=sheetData, uniqueField=self.uniqueField)
+        dictSheetData = []
+        for data in sheetData:
+            dictSheetData.append(Helper.listsToDict(headers, data))
+
+        self.dataStore = Nested_Cache(data=dictSheetData, uniqueField=self.uniqueField)
 
 
     # replaces empty headers with "NoHeaderFound_{index}"
@@ -87,7 +92,10 @@ class Bdfs_Worksheet_Data(BaseClass):
 
     @Debugger
     def getHeaders(self)->list:
-        return self.dataStore.getLocations()
+        # needs to merge the timestamps from storage + the headers
+        locations = self.dataStore.getLocations(update_timestamp=True)
+
+        return locations
 
 
     # add multiple headers to the data
@@ -147,6 +155,7 @@ class Bdfs_Worksheet_Data(BaseClass):
         # make sure the data is in the newHeaders order
         self.reorderHeaders(newHeaders)
 
+
     ####
     #
     # Row Methods
@@ -183,6 +192,7 @@ class Bdfs_Worksheet_Data(BaseClass):
         self.dataStore.deleteAllData()
         Logger.info("All data in Worksheet_Data has been deleted")
     
+
     @Debugger
     @validate_arguments
     def deleteRowWhere(self, column:str, value):
