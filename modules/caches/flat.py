@@ -454,8 +454,11 @@ class Flat_Cache(Bdfs_Cache):
 
         if not str is keyType and not int is keyType: # we don't have expected types
             raise Flat_Cache_Exception(f"Flat Cache can output either int or str keys, but not '{keyType}'")
+        
+        timestamps = []
 
         for indexKey in range(0,self.size()):
+            position = self.data.storage[indexKey]['position']
 
             if int is keyType or True == all:
                 # append indexKey or 
@@ -466,8 +469,7 @@ class Flat_Cache(Bdfs_Cache):
                 # get the string keys in the correct order
                 output.append(self.data.storage[indexKey]['position'])
 
-        return output
-
+        return output + timestamps
 
     # self.data.size is managed through the places where we update locations, via increaseSize() and decreaseSize()
     @Debugger
@@ -485,6 +487,9 @@ class Flat_Cache(Bdfs_Cache):
     def __str__(self, update_timestamp:bool=True) -> str:
         output = "Flat_Cache: \n"
         for item in self.getKeys():
+            if True == self.positionIsTimestamp(item):
+                continue
+
             data = self.getDict(item)
             output += "\t'{}': {}\n".format(item, data['data'])
 
@@ -501,6 +506,9 @@ class Flat_Cache(Bdfs_Cache):
     def getAsList(self, update_timestamp:bool=True) -> list:
         output = []
         for index in self.getKeys(keyType=int):
+            if True == self.positionIsTimestamp(index):
+                continue
+            
             data = self.getDict(index)
             output.insert(index, data['data'])
         
@@ -516,6 +524,9 @@ class Flat_Cache(Bdfs_Cache):
         output = OrderedDict()
         
         for index in self.getKeys(keyType=int): #it really doesn't matter which type you choose here
+            if True == self.positionIsTimestamp(index):
+                continue
+
             data = self.getDict(index)
             output[data['position']] = data['data']
         

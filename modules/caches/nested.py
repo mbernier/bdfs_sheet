@@ -1,6 +1,6 @@
 import sys
 from modules.cache import Bdfs_Cache
-from modules.caches.flat import Flat_Cache
+from modules.caches.flat import Flat_Cache, UPDATE_TIMESTAMP_KEY
 from modules.caches.exception import Nested_Cache_Exception, Flat_Cache_Exception
 from modules.decorator import Debugger
 from modules.helper import Helper
@@ -141,6 +141,7 @@ class Nested_Cache(Bdfs_Cache):
         if self.height() > 0:
             # only do this after the first row is set up, bc first row will have locations passed
             locations = self.getLocations()
+            
             if type(rowData) == list:
                 if len(rowData) != len(locations):
                     raise Nested_Cache_Exception(f"rowData was expected to be of length {len(locations)} but {len(rowData)} was passed")
@@ -152,10 +153,9 @@ class Nested_Cache(Bdfs_Cache):
             # this is the first row, let it set the standard for all other rows
             locations = rowData.keys()
 
-
         if locations != rowData.keys():
-            locationsHas = Helper.listDiff(locations, rowData.keys())
-            rowDataHas = Helper.listDiff(rowData.keys(), locations)
+            locationsHas = Helper.listDiff(locations, rowData.keys(), ignoreWith=UPDATE_TIMESTAMP_KEY)
+            rowDataHas = Helper.listDiff(rowData.keys(), locations, ignoreWith=UPDATE_TIMESTAMP_KEY)
 
             if [] != locationsHas:
                 raise Nested_Cache_Exception(f"rowData is missing {locationsHas}")

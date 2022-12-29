@@ -96,8 +96,17 @@ class Helper:
         return result
 
     @staticmethod
-    def listDiff(list1, list2) -> list:
-        return [x for x in list1 if x not in set(list2)]
+    def listDiff(list1, list2, ignoreWith:str=None) -> list:
+        returnData = []
+        for x in list1:
+            if x not in set(list2):
+                if None != ignoreWith:
+                    if ignoreWith not in x:
+                        returnData.append(x)
+                else:
+                    returnData.append(x)
+
+        return returnData
 
     def listsToDict(list1, list2) -> dict:
         return dict(zip(list1, list2))
