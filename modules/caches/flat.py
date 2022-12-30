@@ -70,6 +70,8 @@ class Flat_Cache(Bdfs_Cache):
             
             # add in whatever timestamps are left, likely only "update_timestamp"
             for timestamp, value in timestamps.items():
+                if "" == value: # if the field is in the spreadsheet, but it's empty we need to account for that
+                    value = None
                 # load the timestamps properly
                 self.update_timestamp(timestamp, value) #set the value
         

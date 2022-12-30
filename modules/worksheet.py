@@ -7,6 +7,7 @@ from gspread.worksheet import Worksheet
 from modules.base import Base_Class
 from modules.caches.flat import Flat_Cache
 from modules.decorator import Debugger
+from modules.helper import Helper
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
 from pydantic import validate_arguments
@@ -53,11 +54,13 @@ class Worksheet_DataClass():
 class Bdfs_Worksheet(Base_Class):
     cols_expected = None
     cols_expected_extra = None
-    
+    dataClass = "modules.worksheet.Worksheet_DataClass"
+
     @Debugger
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def __init__(self, worksheet:Worksheet):
-        self.data = Worksheet_DataClass()
+        worksheetDataClass = Helper.importClass(self.dataClass)
+        self.data = worksheetDataClass()
         # store the gspread worksheet for use later
         self.data.gspread_worksheet = worksheet
         self.data.title = worksheet.title
@@ -219,9 +222,7 @@ class Bdfs_Worksheet(Base_Class):
             sheetData = self.setupData(sheetData)
             
             # doing this to make dataclass happy and pass a bool, instead of str
-            uniqueField = None
-            if self.data.uniqueField != "" and None != self.data.uniqueField: 
-                uniqueField = self.data.uniqueField
+            uniqueField = self.getUniqueField()
             
             self.data.sheetData = Bdfs_Worksheet_Data(sheetData, uniqueField = uniqueField)
 
@@ -418,6 +419,12 @@ class Bdfs_Worksheet(Base_Class):
     ####
 
     @Debugger
+    def getUniqueField(self):
+        if self.data.uniqueField != "" and None != self.data.uniqueField:
+            return self.data.uniqueField
+        return None
+
+    @Debugger
     def width(self) -> int:
         self.getData()
         return self.data.sheetData.width()
@@ -429,13 +436,13 @@ class Bdfs_Worksheet(Base_Class):
 
     @Debugger
     @validate_arguments
-    def getDataAsListOfLists(self, update_timestamp:bool=False) -> list[list]:
+    def getDataAsListOfLists(self, update_timestamp:bool=True) -> list[list]:
         self.getData()
         return self.data.sheetData.getAsListOfLists(update_timestamp=update_timestamp)
    
     @Debugger
     @validate_arguments
-    def getDataAsListOfDicts(self, update_timestamp:bool=False) -> list[dict]:
+    def getDataAsListOfDicts(self, update_timestamp:bool=True) -> list[dict]:
         self.getData()
         return self.data.sheetData.getAsListOfDicts()
    

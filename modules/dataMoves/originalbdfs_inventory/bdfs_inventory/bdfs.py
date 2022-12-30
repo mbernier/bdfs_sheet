@@ -12,7 +12,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
 
     @Debugger
     @validate_arguments
-    def mapFields(self, sourceData:dict):
+    def mapFields(self, sourceData:dict): 
 
         # Door Count
         sourceData['Door Count'] = sourceData['Type']
