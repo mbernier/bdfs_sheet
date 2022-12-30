@@ -49,8 +49,16 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
         # if we don't know what cols are expected, we cannot check the sheet is setup properly
         if [] == self.getExpectedColumns():
             #fail if no one set the spreadsheetId on the wrapper class
-            raise Bdfs_Worksheet_Destination_Exception("Cols expected was not set before instantiating Spreadsheet class")
-        
+            raise Bdfs_Worksheet_Destination_Exception("""
+                Cols expected was not set before instantiating Spreadsheet class. If you added setupParams() don't forget to add this to your setupParams() method: 
+                ```
+                if None != self.cols_expected: 
+                    self.data.expectedColumns = self.cols_expected
+
+                if None != self.cols_expected_extra: 
+                    self.data.expectedColumns_extra = self.cols_expected_extra")
+                ```
+        """)
     @Debugger
     def setupData(self, sheetData:list=None)->list:
         if [] == sheetData:
@@ -113,7 +121,8 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     @validate_arguments
     def removeColumn(self, column:str):
         self.modifiesData()
-        self.data.sheetData.removeHeader(header=column)
+        
+        self.data.sheetData.removeHeader(header=column) 
 
 
     @Debugger
@@ -146,7 +155,7 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
     @Debugger
     @validate_arguments
     def addRow(self, rowData:list):
-        self.modifiesData() 
+        self.modifiesData()
         self.data.sheetData.insertRow(rowData)
 
     @Debugger
@@ -224,7 +233,7 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
             # get the meta about our new data to commit
             dataRange = self.getDataRange()
-            print(f"dataRange: {dataRange}")
+            
             headers = self.getColumns()
 
             # we are adding this every time, it will be in the data

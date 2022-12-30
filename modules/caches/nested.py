@@ -62,8 +62,9 @@ class Nested_Cache(Bdfs_Cache):
 
     @Debugger
     def __setupUniqueIndex(self):
-        if None != self.uniqueField and 0 < len(self.getLocations()):
-            self.uniqueFieldIndex = self.getLocations().index(self.uniqueField)
+        if self.height() > 0:
+            if None != self.uniqueField and 0 < len(self.getLocations()):
+                self.uniqueFieldIndex = self.getLocations().index(self.uniqueField)
 
     ####
     #
@@ -166,14 +167,11 @@ class Nested_Cache(Bdfs_Cache):
 
         newRow = Flat_Cache(rowData)
 
-        rowVal = "".join(map(str, newRow.getAsList(update_timestamp=False)))
-        if len(rowVal) == 0 and None != self.uniqueField:
-            Logger.info("found empty Row, skipping")
-        else:
-            if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
-                self.__updateUniques(newRow.select(position=self.uniqueField))
-            self._storage.append(newRow)
-            self.__increaseHeight()
+        if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
+            self.__updateUniques(newRow.select(position=self.uniqueField))
+
+        self._storage.append(newRow)
+        self.__increaseHeight()
     
 
     # given some data, identify whether it should be inserted or updated, based on the uniqueField
@@ -219,17 +217,21 @@ class Nested_Cache(Bdfs_Cache):
     def updateRow(self, row:Annotated[int, Field(gt=-1)], rowData:list):
         self.validation_rowExists(row)
 
+        locations = self.getLocations()
+
+        if len(rowData) != len(locations):
+            raise Nested_Cache_Exception(f"rowData was expected to be of length {len(locations)} but {len(rowData)} was passed")
+
         newRow = Flat_Cache(Helper.listsToDict(self.getLocations(), rowData))
         oldRow = self._storage[row]
         
         newRowUnique = newRow.select(position=self.uniqueField)
         oldRowUnique = oldRow.select(position=self.uniqueField)
 
-        if newRowUnique != oldRowUnique:
-            # check that the new uniqueField doesn't exist
-            if True == self.isUnique(newRowUnique):        
-                self.__removeUnique(oldRowUnique)
-                self.__updateUniques(newRowUnique,index=row)
+        # if we care about unique Fields check that the new uniqueField hasn't already been entered
+        if None != self.uniqueField and True == self.isUnique(newRowUnique):
+            self.__removeUnique(oldRowUnique)
+            self.__updateUniques(newRowUnique,index=row)
 
         self._storage[row] = newRow
 
@@ -264,25 +266,30 @@ class Nested_Cache(Bdfs_Cache):
 
         # we have our first location, so we need to add it
         if self.height() == 0:
-            self.insert(locations=[location], rowData=None)
+            # this inserts a new row with only this location, it calls __setupUniqueIndex() so we don't 
+            #   need to call it here
+            self.insert({location: None})
+            
         elif self.height() > 0:
             for row in range(0, self.height()):
                 self._storage[row].insert_location(position=location, index=index)
         
-        # things might have moved around, go get the index of the unique field just in case
-        self.__setupUniqueIndex()
+            # things might have moved around, go get the index of the unique field just in case
+            self.__setupUniqueIndex()
 
 
     # ask Flat Cache to delete the column
     @Debugger
     @validate_arguments
     def deleteColumn(self, position:StrictStr):
-
         if position == self.uniqueField:
             raise Nested_Cache_Exception(f"You cannot delete the unique column '{self.uniqueField}'")
 
+        if 0 == self.height():
+            raise Nested_Cache_Exception(f"Cannot delete a column from an empty Row")
+
         for row in range(0, self.height()):
-            self._storage[row].delete_location(position)
+            self._storage[row].delete_location(position) 
 
 
     # ask Flat Cache to delete each column

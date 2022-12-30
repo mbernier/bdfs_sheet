@@ -1,4 +1,3 @@
-
 import sys
 from modules.base import Base_Class
 from modules.caches.nested import Nested_Cache
@@ -20,6 +19,7 @@ class Bdfs_Worksheet_Data(Base_Class):
     _removedHeaders = []
     uniqueField = None
     uniques = []
+    empty_first_row_is_headers = False
 
     @Debugger
     @validate_arguments
@@ -27,6 +27,7 @@ class Bdfs_Worksheet_Data(Base_Class):
         self.dataStore = None
         self.uniqueField = None
         self.uniques = []
+        self.empty_first_row_is_headers = False
 
         # allow identifying which field is a way to identify the row
         if None != uniqueField:
@@ -46,7 +47,13 @@ class Bdfs_Worksheet_Data(Base_Class):
 
         dictSheetData = []
         for data in sheetData:
-            dictSheetData.append(Helper.listsToDict(headers, data))
+            # lets clean out empty rows
+            rowVal = "".join(map(str, data))
+            if len(rowVal) == 0 and None != self.uniqueField and self.empty_first_row_is_headers == False:
+                Logger.info("found empty Row, skipping")
+            else:
+                rowData = Helper.listsToDict(headers, data)
+                dictSheetData.append(rowData)
 
         self.dataStore = Nested_Cache(data=dictSheetData, uniqueField=self.uniqueField)
 
@@ -74,8 +81,6 @@ class Bdfs_Worksheet_Data(Base_Class):
             # check for duplication
             if header not in uniqueHeaders:
                 uniqueHeaders.append(header)
-                if header != "update_timestamp":
-                    timestampHeaders.append(f"{header}_update_timestamp")
             else:
                 duplicateHeaders.append(header)
 
@@ -102,9 +107,20 @@ class Bdfs_Worksheet_Data(Base_Class):
     @Debugger
     @validate_arguments
     def addHeaders(self, headers:list[str]):
-        for header in headers:
-            # add to the end of the data
-            self.addHeader(name=header)
+        if self.height() == 0:
+            data = []
+
+            # create a list of None items
+            for item in headers:
+                data.append(None)
+
+            # this happens when the spreadsheet is empty, so we want to make sure we setup the headers properly
+            self.load([headers, data])
+            self.empty_first_row_is_headers = True
+        else:
+            for header in headers:
+                # add to the end of the data
+                self.addHeader(name=header)
 
 
     @Debugger
@@ -126,7 +142,7 @@ class Bdfs_Worksheet_Data(Base_Class):
     @Debugger
     @validate_arguments
     def removeHeader(self, header:str=None):        
-        self.dataStore.deleteColumn(position=header)
+        self.dataStore.deleteColumn(position=header) 
 
 
     # set the data headers order to the order in this list
@@ -150,6 +166,7 @@ class Bdfs_Worksheet_Data(Base_Class):
 
         # add headers in newHeaders that are not in currentHeaders
         missingHeaders = list(set(newHeaders) - set(currentHeaders)) 
+
         self.addHeaders(missingHeaders)
 
         # make sure the data is in the newHeaders order
@@ -163,7 +180,7 @@ class Bdfs_Worksheet_Data(Base_Class):
     ####
     @Debugger
     @validate_arguments
-    def select(self, row:int, column:Union[int,str]=None, update_timestamp=True):
+    def select(self, row:int=None, column:Union[int,str]=None, update_timestamp=True):
         return self.dataStore.select(row=row, position=column, update_timestamp=update_timestamp)
 
 
@@ -171,14 +188,22 @@ class Bdfs_Worksheet_Data(Base_Class):
     @Debugger
     @validate_arguments
     def putRow(self, rowData:list):
-        self.dataStore.putRow(rowData=rowData)
-
+        if True == self.empty_first_row_is_headers:
+            self.dataStore.updateRow(0, rowData)
+            self.empty_first_row_is_headers = False
+        else:
+            self.dataStore.putRow(rowData=rowData)
+    
 
     # add a new row to storage
     @Debugger
     @validate_arguments
     def insertRow(self, rowData:list=None):
-        self.dataStore.insert(rowData)
+        if True == self.empty_first_row_is_headers:
+            self.dataStore.updateRow(0, rowData)
+            self.empty_first_row_is_headers = False
+        else:
+            self.dataStore.insert(rowData)
 
     ####
     #
