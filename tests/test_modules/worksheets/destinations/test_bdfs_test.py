@@ -98,7 +98,7 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_getDataRange(self):
         dataRange = self.test_worksheet.getDataRange()
-        assert dataRange == "A1:M4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
+        assert dataRange == "A1:N4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
 
     def test_getExpectedColumns(self):
@@ -128,39 +128,44 @@ class Test_Bdfs_Worksheet_Destination:
         assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'newColumn3_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'newColumn1_update_timestamp', 'update_timestamp']
 
 
-    # def test_alignToColumns(self):
-    #     newColumns = ['Name', 'cake', 'giraffe', 'Birthday']
-    #     self.test_worksheet.alignToColumns(newColumns)
-    #     assert self.test_worksheet.getColumns() == newColumns
+    def test_alignToColumns(self):
+        newColumns = ['Name', 'cake', 'giraffe', 'Birthday']
+        self.test_worksheet.alignToColumns(newColumns)
+
+        currentColumns = self.test_worksheet.getColumns()
+        assert "Name" in currentColumns
+        assert "cake" in currentColumns
+        assert "giraffe" in currentColumns
+        assert "Birthday" in currentColumns
+        assert "email" not in currentColumns
+        assert "Yearly Salary" not in currentColumns
+        assert "Hours Worked" not in currentColumns
+        assert "Favorite Cake" not in currentColumns
 
 
-    # def test_getRow(self):
-    #     # we have tested flat cache up to this point, so let's use it
-    #     # also, of note - we are using the local version of the workshet, not the remote here
-    #     #   so the previous tests affect what's available
-    #     fcache = Flat_Cache(
-    #                 ['Name', 'cake', 'giraffe', 'Birthday'], 
-    #                 ['Matt', None, None, '1/1/2001']
-    #             )
+    def test_getRow(self):
+        # we have tested flat cache up to this point, so let's use it
+        # also, of note - we are using the local version of the workshet, not the remote here
+        #   so the previous tests affect what's available
+        fcache = Flat_Cache({'Name': 'Matt', 'cake': None, 'giraffe': None, 'Birthday':'1/1/2001'})
 
-    #     assert self.test_worksheet.getRow(0, update_timestamp=False) == fcache.select(update_timestamp=False)
+        assert self.test_worksheet.getRow(0, update_timestamp=False) == fcache.select(update_timestamp=False)
 
 
-    # def test_getCell(self):
-    #     assert self.test_worksheet.getCell(0, "Name") == "Matt"
-    #     assert self.test_worksheet.getCell(0, "Birthday") == "1/1/2001"
+    def test_getCell(self):
+        assert self.test_worksheet.getCell(0, "Name") == "Matt"
+        assert self.test_worksheet.getCell(0, "Birthday") == "1/1/2001"
 
 
-    # def test_commit(self):
-    #     #pushes all the changes we have make to the sheet
-    #     self.test_worksheet.commit()
-
-    #     print("\n\n\nNeed to add tests to verify that the data was setup correctly in the gspread sheet\n\n\n")
+    def test_commit(self):
+        #pushes all the changes we have make to the sheet
+        self.test_worksheet.commit()
 
 
-    # def test_commit_with_larger_data(self):
-    #     # the worksheet is only 5 columns wide right now, let's see what happens if we add a lot more data
-    #     self.test_worksheet.addColumn("newColumn4")
-    #     self.test_worksheet.addColumn("newColumn5")
-    #     self.test_worksheet.addColumn("newColumn6")
-    #     self.test_worksheet.commit()
+    def test_commit_with_larger_data(self):
+        # the worksheet is only 5 columns wide right now, let's see what happens if we add a lot more data
+        self.test_worksheet.addColumn("newColumn4")
+        self.test_worksheet.addColumn("newColumn5")
+        self.test_worksheet.addColumn("newColumn6")
+        assert "A1:T4" == self.test_worksheet.getDataRange()
+        self.test_worksheet.commit()

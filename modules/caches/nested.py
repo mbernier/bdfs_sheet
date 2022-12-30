@@ -85,7 +85,7 @@ class Nested_Cache(Bdfs_Cache):
         self.validation_rowExists(row)
         obj = []
         row = self.select(row)
-        return row.getAsList()
+        return list(row.values())
 
 
     @Debugger
@@ -93,8 +93,7 @@ class Nested_Cache(Bdfs_Cache):
     def getRowAsDict(self, row:Annotated[int, Field(gt=-1)]):
         self.validation_rowExists(row)
         obj = {}
-        row = self.select(row)
-        return row.getAsDict()
+        return self.select(row)
 
     # uses the dict get() to return None or the value if the item exists
     @Debugger
@@ -107,13 +106,14 @@ class Nested_Cache(Bdfs_Cache):
             row = self.__getRowByUnique(uniqueData=unique)
             data = self._storage[row].select(position=position, update_timestamp=update_timestamp)
         else: 
-            # we want the datat some other way
-            self.validation_rowExists(row)
 
             if None == row:
                 # select all
                 return self.getAsListOfDicts(update_timestamp=update_timestamp)
-            
+            else: 
+                # a row was passed, validate it
+                self.validation_rowExists(row)
+
             # if position is None, will return the row, if it's set it will return the data at that position
             data = self._storage[row].select(position=position, update_timestamp=update_timestamp)
         return data
@@ -241,10 +241,12 @@ class Nested_Cache(Bdfs_Cache):
 
     @Debugger
     def getLocations(self, update_timestamp=False) -> list:
-        locations = self._storage[0].getKeys()
-        if True == update_timestamp:
-            timestamps = self._storage[0].getTimestampKeys()
-            locations += timestamps
+        locations = []
+        if 0 < self.height():
+            locations = self._storage[0].getKeys()
+            if True == update_timestamp:
+                timestamps = self._storage[0].getTimestampKeys()
+                locations += timestamps
         # all of the methods keep the Flat_Cache storages aligned, so this will be the same for all of them
         return locations
 

@@ -224,7 +224,7 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
             # get the meta about our new data to commit
             dataRange = self.getDataRange()
-
+            print(f"dataRange: {dataRange}")
             headers = self.getColumns()
 
             # we are adding this every time, it will be in the data

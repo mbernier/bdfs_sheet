@@ -101,7 +101,7 @@ class Test_Bdfs_Worksheet_Source:
 
     def test_getDataRange(self):
         dataRange = self.test_worksheet.getDataRange()
-        assert dataRange == "A1:M4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
+        assert dataRange == "A1:N4" #this counts the header row as row 1, where normally we don't do that in the code, bc gspread counts header row as row 1
 
 
     def test_getExpectedColumns(self):

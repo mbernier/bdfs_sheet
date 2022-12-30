@@ -17,7 +17,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         
         expectedCols = self.destination_expectedCols
         print(f"expCols: {expectedCols}")
-        # Redundant items: Title, Glass, Color, SKU
+        # Redundant items: Title, Color, SKU
         
         # URL
         sourceData['URL'] = sourceData['UnitedPorte URL']
@@ -37,9 +37,34 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         # Lites
         sourceData['Lites'] = sourceData['Glass Lites'].replace("lites","").replace("Lites", "").strip()
 
-        # Hardware Color
-        sourceData['Hardware Color'] = sourceData['Hardware']
-        sourceData['Hardware'] = "Rail with predrilled holes, Hangers with wheels, Door stops, Floor guide, Mounting screws"
+        # Hardware
+        if sourceData['Hardware'] == "slab":
+            sourceData['Hardware Type'] = "None"
+            sourceData['Hardware Color'] = "None"
+            sourceData['Hardware'] = "None"
+        else:
+            sourceData['Hardware Type'] = "Rail"
+            sourceData['Hardware Color'] = sourceData['Hardware'] 
+            sourceData['Hardware'] = "Rail with predrilled holes, Hangers with wheels, Door stops, Floor guide, Mounting screws"
+
+        # Glass
+        if sourceData['Glass'] == "No":
+            sourceData['Has Glass'] = "No"
+            sourceData['Glass Finish'] = "None"
+        else:
+            sourceData['Has Glass'] = "Yes"
+            sourceData['Glass Finish'] = sourceData['Glass']
+
+        if 'Finish' not in sourceData.keys():
+            sourceData['Finish'] = ""
+
+        if 'Materials' not in sourceData.keys():
+            sourceData['Materials'] = ""
+
+        if 'Door Thickness' not in sourceData.keys():
+            sourceData['Door Thickness'] = ""
+        
+        sourceData['Pre-drilled For Hardware'] = "No"
 
         # Parse out the model name and number
         if "" != sourceData['Title']:
@@ -101,14 +126,5 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
             # write the data to the sourceData obj
             sourceData[key] = outputData
 
-        outputObj = {}
-        # map the keys
-        for key in expectedCols:
-            
-            if key != "update_timestamp" and False == self.skipItem:
-                if not key in sourceData.keys():
-                    raise DataMove_Exception(f" '{key} was not found in sources, does it need to be mapped?")
-                
-                outputObj[key] = sourceData[key]
 
-        return outputObj
+        return sourceData

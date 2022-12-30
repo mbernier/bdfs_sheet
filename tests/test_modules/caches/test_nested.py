@@ -35,9 +35,19 @@ def test_select():
     cache = Nested_Cache([{'b':3,'c':None,'d':None}, {'b':None,'c':4,'d':None}, {'b':None,'c':None,'d':5}])
     assert cache.select(2, update_timestamp=False) == {'b': None, 'c': None, 'd': 5}
 
+
 def test_select2():
     cache = Nested_Cache([{'b':3,'c':None,'d':None}, {'b':None,'c':4,'d':None}, {'b':None,'c':None,'d':5}])
     assert cache.select(row=2, update_timestamp=False) == {'b': None, 'c': None, 'd': 5}
+
+
+def test_select_all():
+    cache = Nested_Cache([{'b':3,'c':None,'d':None}, {'b':None,'c':4,'d':None}, {'b':None,'c':None,'d':5}])
+    allData = cache.select()
+    assert len(allData) == 3
+    assert len(allData[0]) == 7
+    assert len(allData[1]) == 7
+    assert len(allData[2]) == 7
 
 
 ####
@@ -249,7 +259,7 @@ def test_delete_columns_check_multi_rows():
 
 ####
 #
-# Update Row
+# Row Methods
 #
 ####
 
@@ -259,6 +269,39 @@ def test_updateRow():
 
     assert cache.select(0, update_timestamp=False) == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
     assert cache.select(1, update_timestamp=False) == {'b': 10, 'c': 20,'d': 30,'e': 40,'f': 50}
+
+
+def test_getRowAsList():
+    cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}])
+    rowList = cache.getRowAsList(0)
+    assert rowList.index(3) == 0
+    assert rowList.index(4) == 1
+    assert rowList.index(5) == 2
+    assert rowList.index(6) == 3
+    assert rowList.index(7) == 4
+
+    rowList = cache.getRowAsList(1)
+    assert rowList.index(1) == 0
+    assert rowList.index(2) == 1
+    assert rowList.index(3) == 2
+    assert rowList.index(4) == 3
+    assert rowList.index(5) == 4
+
+def test_getRowAsDict():
+    cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}])
+    rowList = cache.getRowAsDict(0)
+    assert rowList['b'] == 3
+    assert rowList['c'] == 4
+    assert rowList['d'] == 5
+    assert rowList['e'] == 6
+    assert rowList['f'] == 7
+
+    rowList = cache.getRowAsDict(1)
+    assert rowList['b'] == 1
+    assert rowList['c'] == 2
+    assert rowList['d'] == 3
+    assert rowList['e'] == 4
+    assert rowList['f'] == 5
 
 ####
 #
@@ -362,6 +405,8 @@ def test_unique_select_by_unique():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
     row = cache.select(unique=3)
     assert row == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
+    row = cache.select(unique=1)
+    assert row == {'b':1,'c':2,'d':3,'e':4,'f':5}
 
 # test an update/insert based on data that exists
 def test_unique_select_by_unique():

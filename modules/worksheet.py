@@ -176,7 +176,7 @@ class Bdfs_Worksheet(Base_Class):
     @validate_arguments
     def getDataRange(self) -> str: #tested
         height = self.height()+1
-        width = self.width()
+        width = self.width()+1
         dataRange = f"{self.getA1(1,1)}:{self.getA1(height, width)}"
         return dataRange
 

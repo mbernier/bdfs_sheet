@@ -3,8 +3,12 @@ from modules.worksheets.bases.doors import Doors_Base
 
 class Sarto_Inventory_Base(Doors_Base):
 
-    cols_expected = ['URL', 'URL_key', 'Title', 'Type', 'Glass', 'Lites', 'Color', 'Hardware Color', 'Hardware', 'SKU', 'Model', 
-                    'Finish', 'Materials', 'Door Thickness', 'Pre-drilled For Hardware'
+    cols_expected = ['URL', 'URL_key', 'Title', 'Type', 
+                    'Has Glass', 'Glass Finish', 'Lites', 
+                    'Color', 'Finish',
+                    'Hardware Type', 'Hardware Color', 'Hardware', 
+                    'SKU', 'Model',
+                    'Materials', 'Door Thickness', 'Pre-drilled For Hardware',
                     'Image 1 URL', 'Image 2 URL', 'Image 3 URL', 'Image 4 URL', 'Image 5 URL', 
                     'Image 6 URL', 'Image 7 URL', 'Image 8 URL', 'Image 9 URL', 'Image 10 URL', 
                     'Description', 'Shipping', 'Discount']
