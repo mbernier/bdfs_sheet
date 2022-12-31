@@ -77,18 +77,13 @@ class DataMove():
     @Debugger
     @validate_arguments
     def openOrCreateDestinationWorksheet(self, worksheetName):
-        print("trying open or create")
         try:
-            print("trying getWorksheet")
             return self.destinationSpreadsheet.getWorksheet(worksheetTitle=worksheetName)
         except Bdfs_Spreadsheet_Exception as err:
-            print("get failed, trying insert")
             # allow not creating the spreadsheet, if wanted
             if True == self.destinationWorksheetCreateIfNotFound:
-                print("get failed, trying insert")
                 return self.destinationSpreadsheet.insertWorksheet(worksheetName=worksheetName)
             else:
-                print("we did something wrong")
                 raise DataMove_Exception(err.message)
         
 

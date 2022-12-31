@@ -265,7 +265,7 @@ def test_delete_columns_check_multi_rows():
 
 def test_updateRow():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}])
-    cache.updateRow(1, [10,20,30,40,50])
+    cache.updateRow(1, {'b':10,'c':20,'d':30,'e':40,'f':50})
 
     assert cache.select(0, update_timestamp=False) == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
     assert cache.select(1, update_timestamp=False) == {'b': 10, 'c': 20,'d': 30,'e': 40,'f': 50}
@@ -344,14 +344,14 @@ def test_unique_load_fail():
 # add a unique that isn't in the locations
 def test_unique_insert():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
-    cache.insert([2,3,4,5,6])
+    cache.insert({'b':2,'c':3,'d':4,'e':5,'f':6})
     assert cache.getUniques() == [3, 1, 2]
 
 # add a unique that is already set up
 def test_unique_insert_fail():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
     with pytest.raises(Nested_Cache_Exception) as excinfo:
-        cache.insert([3,3,4,5,6])
+        cache.insert({'b':3,'c':3,'d':4,'e':5,'f':6})
     assert "'3' for position 'b' violates uniqueness" in str(excinfo.value)
     
 # try to remove the unique column from the data
@@ -364,13 +364,13 @@ def test_unique_deleteColumn():
 # try to replace a row that has the same unique value
 def test_unique_updateRow_same_unique():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
-    cache.updateRow(row=0, rowData=[3,4,5,6,7])
+    cache.updateRow(row=0, rowData={'b':3,'c':4,'d':5,'e':6,'f':7})
     assert cache.getUniques() == [3, 1]
 
 # try to replace a row that doesn't have the same unique value
 def test_unique_updateRow_diff_unique():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
-    cache.updateRow(row=0, rowData=[2,4,5,6,7])
+    cache.updateRow(row=0, rowData={'b':2,'c':4,'d':5,'e':6,'f':7})
     assert cache.getUniques() == [2, 1]
 
 
@@ -412,11 +412,11 @@ def test_unique_select_by_unique():
 def test_unique_select_by_unique():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
     # will cause an update, so uniques will stay the same
-    row = cache.putRow([3,6,7,8,9])
+    row = cache.putRow({'b':3,'c':6,'d':7,'e':8,'f':9})
     assert cache.getUniques() == [3,1]
     
     # will cause an insert, so uniques will change
-    row = cache.putRow([4,99,100,101,102])
+    row = cache.putRow({'b':4,'c':99,'d':100,'e':101,'f':102})
     assert cache.getUniques() == [3,1,4]
 
 def testGetLocations():

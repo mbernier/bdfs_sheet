@@ -19,9 +19,7 @@ from modules.spreadsheets.exception import Bdfs_Spreadsheet_Destination_Exceptio
 
 class Simple_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
     spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
-
     worksheetKeeperPattern = "test"
-
     worksheet_class = "tests.test_modules.test_dataMove.Simple_Worksheet_Source"
 
 class Simple_Worksheet_Source(Bdfs_Worksheet_Source):
@@ -31,9 +29,7 @@ class Simple_Worksheet_Source(Bdfs_Worksheet_Source):
 
 class Simple_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
     spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
-
     worksheetKeeperPattern = "test"
-
     worksheet_class = "tests.test_modules.test_dataMove.Simple_Worksheet_Destination"
 
 class Simple_Worksheet_Destination(Bdfs_Worksheet_Destination):
@@ -46,18 +42,6 @@ class Simple_Worksheet_Destination(Bdfs_Worksheet_Destination):
         self.data.uniqueField = "Email"
         self.data.expectedColumns = self.cols_expected
         self.data.expectedColumns_extra = self.cols_expected_extra
-
-
-class Simple_Spreadsheet_Source2(Bdfs_Spreadsheet_Source):
-    spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI'
-    worksheetKeeperPattern = "test"
-    worksheet_class = "tests.test_modules.test_dataMove.Simple_Worksheet_Source2"
-
-class Simple_Worksheet_Source2(Bdfs_Worksheet_Source):
-    cols_expected = ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Hourly Pay', 'Total Pay']
-    cols_expected_extra = {}
-
-
 
 class Simple_DataMove(DataMove):
     sourceBasePath = "tests.test_modules."
@@ -74,7 +58,6 @@ class Simple_DataMove(DataMove):
     @Debugger
     @validate_arguments
     def pre_destination_open_create_worksheet(self, data:str):
-        print("doing the pre_destination_setup hook")
         worksheetName = data
         self.destinationSpreadsheet.clearWorksheet(worksheetName)
 
@@ -122,9 +105,11 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_run(self):
         self.migrator.run()
-        spreadsheet = Simple_Spreadsheet_Source2()
+
+        spreadsheet = Simple_Spreadsheet_Source()
+        spreadsheet.setupSpreadsheet()
         worksheet = spreadsheet.getWorksheet(worksheetTitle="test_dataMove1")
-        
+        data = worksheet.getData()
         # get the data we will start with
         row0 = worksheet.getRow(0, update_timestamp=True)
         assert row0['Name'] == "Matt"
@@ -155,12 +140,12 @@ class Test_Bdfs_Worksheet_Destination:
         assert row1['Email_update_timestamp'] == timestamp
 
         row2 = worksheet.getRow(2,update_timestamp=True)
-        assert row0['Name_update_timestamp'] == 54321.0
-        assert row0['Birthday_update_timestamp'] == 54321.0
-        assert row0['Email_update_timestamp'] == 54321.0
+        assert row2['Name_update_timestamp'] == 54321.0
+        assert row2['Birthday_update_timestamp'] == 54321.0
+        assert row2['Email_update_timestamp'] == 54321.0
         # these were all set at the same time, so the timestamp is the same for these
-        timestamp = row0['Yearly Salary_update_timestamp']
-        assert row0['Hours Worked_update_timestamp'] == timestamp
-        assert row0['Hourly Pay_update_timestamp'] == timestamp
-        assert row0['Total Pay_update_timestamp'] == timestamp
-        assert row0['update_timestamp'] == timestamp
+        timestamp = row2['Yearly Salary_update_timestamp']
+        assert row2['Hours Worked_update_timestamp'] == timestamp
+        assert row2['Hourly Pay_update_timestamp'] == timestamp
+        assert row2['Total Pay_update_timestamp'] == timestamp
+        assert row2['update_timestamp'] == timestamp

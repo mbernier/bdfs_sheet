@@ -232,7 +232,7 @@ class Nested_Cache(Bdfs_Cache):
 
         # let's let Flat_Cache do it's thing, handling the keys and the timestamps, then let's ask how many columns we have
         if len(newRow.getKeys(keyType=str)) != len(locations):
-            raise Nested_Cache_Exception(f"rowData was expected to be of length {len(newRow.getKeys(keyType=str))} but {len(rowData)} was passed")
+            raise Nested_Cache_Exception(f"rowData was expected to be of length {len(newRow.getKeys(keyType=str))} but {len(locations)} was passed")
         
         oldRow = self._storage[row]
         

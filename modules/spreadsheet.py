@@ -176,7 +176,7 @@ class Bdfs_Spreadsheet(Base_Class):
             if None == self.getWorksheets()[worksheetTitle]:
                 worksheetClass = self.getWorksheetClass()
                 self.data.worksheets[worksheetTitle] = worksheetClass(self.data.gspread_worksheets[worksheetTitle])
-            return self.getWorksheets()[worksheetTitle]
+            return self.data.worksheets[worksheetTitle]
         elif True == skipKept: # we don't care that this isn't in the keeper pattern
             if worksheetTitle in self.data.gspread_worksheets.keys(): # if it exists, go ahead and grab it
                 self.registerWorksheet(self.data.gspread_worksheets[worksheetTitle], bypassKeeperPattern=True)

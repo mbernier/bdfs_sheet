@@ -154,7 +154,7 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
     @Debugger
     @validate_arguments
-    def addRow(self, rowData:list):
+    def addRow(self, rowData:dict):
         self.modifiesData()
         self.data.sheetData.insertRow(rowData)
 

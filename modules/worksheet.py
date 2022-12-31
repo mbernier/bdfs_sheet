@@ -178,6 +178,7 @@ class Bdfs_Worksheet(Base_Class):
     @Debugger
     @validate_arguments
     def getDataRange(self) -> str: #tested
+        self.getData()
         height = self.height()+1
         width = self.width()+1
         dataRange = f"{self.getA1(1,1)}:{self.getA1(height, width)}"
@@ -264,6 +265,7 @@ class Bdfs_Worksheet(Base_Class):
     # return the number of columns in the worksheet
     @Debugger
     def getColumnCounts(self) -> dict: 
+        self.getData()
         obj = {
             'data': self.width(),
             'gspread_worksheet': len(self.data.gspread_worksheet.row_values(1))
@@ -306,6 +308,7 @@ class Bdfs_Worksheet(Base_Class):
     @Debugger
     @validate_arguments
     def getRow(self, row:int=None, unique:str=None, update_timestamp=True) -> Flat_Cache:
+        self.getData()
         return self.data.sheetData.select(row=row, unique=unique, update_timestamp=update_timestamp)
 
 
@@ -323,6 +326,7 @@ class Bdfs_Worksheet(Base_Class):
     @Debugger
     @validate_arguments
     def getCell(self, row:int, column:str):
+        self.getData()
         return self.data.sheetData.select(row,column)
 
 

@@ -312,7 +312,7 @@ class Test_Empty_w_Unique_Worksheet_Data:
     def test_empty_expectedCols(self):
         assert ["one", "two", "three", "six"] == self.worksheet.getExpectedColumns()
 
-    def test_empty_remove_column(self):
+    def test_empty_w_remove_column(self):
 
         columns = self.worksheet.getColumns()
         assert not "one" in columns
@@ -352,13 +352,13 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count("update_timestamp")
 
 
-    def test_empty_add_data(self):
+    def test_empty_w_add_data(self):
         
         with pytest.raises(Nested_Cache_Exception) as excinfo:
-            self.worksheet.addRow([1,2,3,6])
-        assert "rowData was expected to be of length 3 but 4 was passed" == excinfo.value.message
+            self.worksheet.addRow({"one":1,"two":2,"three":3,"four":6})
+        assert "rowData was expected to be of length 4 but 3 was passed" in excinfo.value.message
         
-        self.worksheet.addRow([1,2,3])
+        self.worksheet.addRow({"one":1,"two":2,"three":3})
 
         data = self.worksheet.getRow()
         assert type(data) == list
@@ -374,7 +374,7 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count("three")
         assert 1 == columns.count("update_timestamp")
     
-    def test_empty_commit(self):
+    def test_empty_w_commit(self):
         self.worksheet.commit()
         time.sleep(5)
         self.worksheet = self.sheet.getWorksheet("test_empty")
@@ -436,17 +436,17 @@ class Test_Start_With_Timestamp_Data_Worksheet_Data:
     def teardown_method(self, method):
         pass
 
-    def test_empty_expectedCols(self):
+    def test_empty_w_ts_expectedCols(self):
         assert ["Name", "Email", "Birthday", "Cake"] == self.worksheet.getExpectedColumns()
 
-    def test_empty_add_data(self):
+    def test_empty_w_ts_add_data(self):
         
         with pytest.raises(Nested_Cache_Exception) as excinfo:
-            self.worksheet.addRow(["Nate","something@example.com","1/1/2000","Purple"])
-        assert "rowData was expected to be of length 3 but 4 was passed" == excinfo.value.message
+            self.worksheet.addRow({'Name':"Nate",'Email':"something@example.com",'Birthday':"1/1/2000",'Cake':"Purple"})
+        assert "rowData contains extra locations: ['Cake']" in excinfo.value.message
         assert self.worksheet.height() == 4
 
-        self.worksheet.addRow(["Nate","something@example.com","1/1/2000"])
+        self.worksheet.addRow({'Name':"Nate",'Email':"something@example.com",'Birthday':"1/1/2000"})
         assert self.worksheet.height() == 5
 
         data = self.worksheet.getRow()
