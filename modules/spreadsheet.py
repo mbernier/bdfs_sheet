@@ -124,12 +124,12 @@ class Bdfs_Spreadsheet(Base_Class):
 
     @Debugger
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def registerWorksheet(self, worksheet: Worksheet):
+    def registerWorksheet(self, worksheet: Worksheet, bypassKeeperPattern=False):
         keeperPattern = self.getWorksheetKeeperPattern()
         title = worksheet.title
 
         # only restrict the worksheet list if there is a keeper pattern
-        if "" == keeperPattern or keeperPattern in title:
+        if "" == keeperPattern or keeperPattern in title or True == bypassKeeperPattern:
             # create the place for the worksheets, but don't actually grab them yet - reduces API calls
             self.data.worksheets[title] = None
 
@@ -166,8 +166,9 @@ class Bdfs_Spreadsheet(Base_Class):
 
     @Debugger
     @validate_arguments
-    def getWorksheet(self, worksheetTitle:str):
+    def getWorksheet(self, worksheetTitle:str, skipKept=False):
         self.setupWorksheets() #make sure they're setup before someone tries to get one
+        
         if {} == self.getWorksheets() and 0 == len(self.data.gspread_worksheets.keys()):
             raise Bdfs_Spreadsheet_Exception("Worksheets were not added to the Spreadsheet properly.")
         
@@ -176,5 +177,10 @@ class Bdfs_Spreadsheet(Base_Class):
                 worksheetClass = self.getWorksheetClass()
                 self.data.worksheets[worksheetTitle] = worksheetClass(self.data.gspread_worksheets[worksheetTitle])
             return self.getWorksheets()[worksheetTitle]
+        elif True == skipKept: # we don't care that this isn't in the keeper pattern
+            if worksheetTitle in self.data.gspread_worksheets.keys(): # if it exists, go ahead and grab it
+                self.registerWorksheet(self.data.gspread_worksheets[worksheetTitle], bypassKeeperPattern=True)
+            # this will call this function again, to make the worksheet get setup - tricky, but it works
+            return self.getWorksheet(worksheetTitle)
         else:
             raise Bdfs_Spreadsheet_Exception(f"The worksheet '{worksheetTitle}' was not found in the kept worksheets: {list(self.getWorksheets().keys())}")

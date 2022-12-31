@@ -180,14 +180,14 @@ class Bdfs_Worksheet_Data(Base_Class):
     ####
     @Debugger
     @validate_arguments
-    def select(self, row:int=None, column:Union[int,str]=None, update_timestamp=True):
-        return self.dataStore.select(row=row, position=column, update_timestamp=update_timestamp)
+    def select(self, row:int=None, column:Union[int,str]=None, unique:str=None, update_timestamp=True):
+        return self.dataStore.select(row=row, position=column, unique=unique, update_timestamp=update_timestamp)
 
 
     #given some data, identify if we need to update or insert the data
     @Debugger
     @validate_arguments
-    def putRow(self, rowData:list):
+    def putRow(self, rowData:dict):
         if True == self.empty_first_row_is_headers:
             self.dataStore.updateRow(0, rowData)
             self.empty_first_row_is_headers = False
@@ -198,7 +198,7 @@ class Bdfs_Worksheet_Data(Base_Class):
     # add a new row to storage
     @Debugger
     @validate_arguments
-    def insertRow(self, rowData:list=None):
+    def insertRow(self, rowData:dict=None):
         if True == self.empty_first_row_is_headers:
             self.dataStore.updateRow(0, rowData)
             self.empty_first_row_is_headers = False

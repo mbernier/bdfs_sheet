@@ -305,8 +305,8 @@ class Bdfs_Worksheet(Base_Class):
 
     @Debugger
     @validate_arguments
-    def getRow(self, row:int=None, update_timestamp=True) -> Flat_Cache:
-        return self.data.sheetData.select(row=row, update_timestamp=update_timestamp)
+    def getRow(self, row:int=None, unique:str=None, update_timestamp=True) -> Flat_Cache:
+        return self.data.sheetData.select(row=row, unique=unique, update_timestamp=update_timestamp)
 
 
     ####

@@ -25,6 +25,11 @@ class Helper:
 
     @staticmethod
     def callMethod(*args, **kwargs):
+        # Fields:        
+        #   klass = the class you want to call the method upon
+        #   methodName = the method you want to call
+        #   alternateKlass = a backup class if you need it
+        #   any other params you pass will be shared with the method you call
 
         if "klass" not in kwargs.keys():
             raise Helper_Exception('klass param must be defined for callMethod()')
@@ -90,6 +95,13 @@ class Helper:
     ####
 
     #does list1 contain everything in list2?
+    #     list1 = [1,2,3,4]
+    #     list2 = [1,2,3]
+    #     returns True
+    #
+    #     list1 = [1,2,3]
+    #     list2 = [1,2,3,4]
+    #     returns False
     @staticmethod
     def compareLists(list1, list2) -> bool:
         result =  all(elem in list1 for elem in list2)

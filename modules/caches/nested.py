@@ -137,49 +137,55 @@ class Nested_Cache(Bdfs_Cache):
 
     @Debugger
     @validate_arguments
-    def insert(self, rowData:Union[list,dict]=None):
+    def insert(self, rowData:dict=None):
         
         if self.height() > 0:
             # only do this after the first row is set up, bc first row will have locations passed
-            locations = self.getLocations()
-            
-            if type(rowData) == list:
-                if len(rowData) != len(locations):
-                    raise Nested_Cache_Exception(f"rowData was expected to be of length {len(locations)} but {len(rowData)} was passed")
-                else:
-                    #make a dict
-                    rowData = Helper.listsToDict(locations, rowData)
+            locations = self.getLocations() # returns only the locations, not the timestamps
 
+            newRow = Flat_Cache(rowData)
+            newRowLocations = newRow.getKeys(keyType=str) # will not return any timestamps, only raw keys
+
+            newRowKeys = newRow.getAsDict().keys()
+
+            # let's compare the raw keys to raw keys, ignoring timestamps that are handled by Flat_Cache
+            if len(newRowLocations) == len(locations):
+                # the keys are the same, now...do we have unique columns?
+                if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
+                    self.__updateUniques(newRow.select(position=self.uniqueField))
+
+                self._storage.append(newRow)
+                self.__increaseHeight()
+            else:
+                locationsHas = Helper.listDiff(locations, newRowKeys, ignoreWith=UPDATE_TIMESTAMP_KEY)
+                rowDataHas = Helper.listDiff(newRowKeys, locations, ignoreWith=UPDATE_TIMESTAMP_KEY)
+
+                if [] != locationsHas:
+                    raise Nested_Cache_Exception(f"rowData is missing {locationsHas}")
+
+                if [] != rowDataHas:
+                    raise Nested_Cache_Exception(f"rowData contains extra locations: {rowDataHas}")
+                
+                raise Nested_Cache_Exception(f"rowData was expected to be of length {len(locations)} but {len(newRowKeys)} was passed")
         else:
-            # this is the first row, let it set the standard for all other rows
-            locations = rowData.keys()
+            # we are in row one, whatever keys we are passed are what we're going to compare to going forward...
+            newRow = Flat_Cache(rowData)
+            
+            if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
+                self.__updateUniques(newRow.select(position=self.uniqueField))
 
-        if locations != rowData.keys():
-            locationsHas = Helper.listDiff(locations, rowData.keys(), ignoreWith=UPDATE_TIMESTAMP_KEY)
-            rowDataHas = Helper.listDiff(rowData.keys(), locations, ignoreWith=UPDATE_TIMESTAMP_KEY)
+            self._storage.append(newRow)
+            self.__increaseHeight()
+        
 
-            if [] != locationsHas:
-                raise Nested_Cache_Exception(f"rowData is missing {locationsHas}")
-
-            if [] != rowDataHas:
-                raise Nested_Cache_Exception(f"rowData contains extra locations: {rowDataHas}")
-
-
-        newRow = Flat_Cache(rowData)
-
-        if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
-            self.__updateUniques(newRow.select(position=self.uniqueField))
-
-        self._storage.append(newRow)
-        self.__increaseHeight()
     
 
     # given some data, identify whether it should be inserted or updated, based on the uniqueField
     @Debugger
     @validate_arguments
-    def putRow(self, rowData:list):
+    def putRow(self, rowData:dict):
         if None != self.uniqueField:
-            uniqueData = rowData[self.uniqueFieldIndex]
+            uniqueData = rowData[self.uniqueField]
             if self.isUnique(uniqueData):
                 # insert
                 self.insert(rowData)
@@ -214,15 +220,20 @@ class Nested_Cache(Bdfs_Cache):
     # replace the current row with different data
     @Debugger
     @validate_arguments
-    def updateRow(self, row:Annotated[int, Field(gt=-1)], rowData:list):
+    def updateRow(self, row:Annotated[int, Field(gt=-1)], rowData:dict):
         self.validation_rowExists(row)
 
         locations = self.getLocations()
 
-        if len(rowData) != len(locations):
-            raise Nested_Cache_Exception(f"rowData was expected to be of length {len(locations)} but {len(rowData)} was passed")
+        if type(rowData) is list:
+            rowData = Helper.listsToDict(self.getLocations(), rowData)
+        
+        newRow = Flat_Cache(rowData)
 
-        newRow = Flat_Cache(Helper.listsToDict(self.getLocations(), rowData))
+        # let's let Flat_Cache do it's thing, handling the keys and the timestamps, then let's ask how many columns we have
+        if len(newRow.getKeys(keyType=str)) != len(locations):
+            raise Nested_Cache_Exception(f"rowData was expected to be of length {len(newRow.getKeys(keyType=str))} but {len(rowData)} was passed")
+        
         oldRow = self._storage[row]
         
         newRowUnique = newRow.select(position=self.uniqueField)
@@ -407,7 +418,9 @@ class Nested_Cache(Bdfs_Cache):
     def __getRowByUnique(self, uniqueData):
         if None == self.uniqueField:
             raise Nested_Cache_Exception("No unique Field is set, so you cannot select a row by uniqueField")
-        return self.uniques.index(uniqueData)
+        if uniqueData in self.uniques:
+            return self.uniques.index(uniqueData)
+        raise Nested_Cache_Exception(f"'{uniqueData}' is not in the uniques list, you should try...except this error and handle it accordingly")
 
 
     @Debugger

@@ -453,7 +453,7 @@ class Test_Start_With_Timestamp_Data_Worksheet_Data:
         assert type(data) == list
         assert len(data) == 5
 
-        row0 = data[5]
+        row0 = data[4]
         assert row0['Name'] == 'Nate'
         assert row0['Email'] == 'something@example.com'
         assert row0['Birthday'] == '1/1/2000'

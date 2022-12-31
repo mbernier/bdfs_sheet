@@ -160,7 +160,7 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
     @Debugger
     @validate_arguments
-    def putRow(self, rowData:list):
+    def putRow(self, rowData:dict):
         self.modifiesData()
 
         # do the update or insert, based on the data that was passed
@@ -209,10 +209,13 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
         self.modifiesData()
         
         Logger.debug("Resizing the google worksheet to the current data size")
-        #rezize the spreadsheet to the data - makes our lives easier later on
-        self.data.gspread_worksheet.resize(cols=self.getColumnCounts()['data'])
         
-        self.changed('data')
+        dataColCount = self.getColumnCounts()['data']
+        if 0 < dataColCount:
+            #rezize the spreadsheet to the data - makes our lives easier later on
+            self.data.gspread_worksheet.resize(cols=dataColCount)
+        
+            self.changed('data')
     
     @Debugger
     def gspread_worksheet_clear(self):

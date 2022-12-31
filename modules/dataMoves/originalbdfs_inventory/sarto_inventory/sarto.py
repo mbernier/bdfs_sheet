@@ -21,7 +21,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         # URL
         sourceData['URL'] = sourceData['UnitedPorte URL']
         if "" == sourceData['URL']:
-            self.noteProblem("URL", f"Door with no URL: '{sourceData['Title']}'")
+            self.noteProblem(self.sourceWorksheetName, "URL", f"Door with no URL: '{sourceData['Title']}'")
             return
         else:
             #sarto URL Key
@@ -71,7 +71,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
             if 1 < len(splitTitle):
                 sourceData['Model'] = f"{splitTitle[0]} {splitTitle[1]}"
         else:
-            self.noteProblem("Title", f"Door with No Title: '{', '.join(sourceData)}'")
+            self.noteProblem(self.sourceWorksheetName, "Title", f"Door with No Title: '{', '.join(sourceData)}'")
             return
 
         # image URLs, up to 10 of them
