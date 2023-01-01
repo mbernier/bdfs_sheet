@@ -3,6 +3,7 @@ from collections import OrderedDict
 from pydantic import validate_arguments
 from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
 from modules.dataMoves.exception import DataMove_Exception
+from modules.caches.flat import UPDATE_TIMESTAMP_KEY, UPDATE_TIMESTAMP_POSTFIX, Flat_Cache
 from modules.caches.exception import Nested_Cache_Exception
 from modules.decorator import Debugger
 from modules.helper import Helper
@@ -24,6 +25,8 @@ class DataMove():
     destinationWorksheetCreateIfNotFound = True
     destinationStartHeights = {}
     problemsIdentified = {}
+
+    skipItem = {}
 
     newData = {}
 
@@ -65,6 +68,7 @@ class DataMove():
             self.run_hook('post_destination_open_create_worksheet', data=worksheet)
             # easy way to make destination fetch the data
             self.destinationStartHeights[worksheet] = self.destinationWorksheets[worksheet].height()
+    
         self.run_hook('post_destination_worksheet_setup_loop', data=self.destinationWorksheetNames)
 
         self.run_hook('pre_destinations_setup')
@@ -91,8 +95,11 @@ class DataMove():
     @Debugger
     @validate_arguments
     def run_hook(self, name:str, **kwargs):
+        args = Helper.prepArgs(**kwargs)
+        if "([], [])" == str(args):
+            args = ""
+        Logger.info(f"Hook: {name}::{args}")
         logger_name.name = "MapData"
-        Logger.info(f"Checking MapData hook: {name}")
         
         if Helper.classHasMethod(klass=self, methodName=name):
             Helper.callMethod(klass=self, methodName=name, **kwargs)
@@ -101,7 +108,7 @@ class DataMove():
     @Debugger
     def getSourceClass(self):
 
-        self.run_hook('pre_source_get_class', data=self.sourceBasePath + self.sourceClassPath)
+        self.run_hook('\npre_source_get_class', data=self.sourceBasePath + self.sourceClassPath)
 
         spreadsheetClass = self.getSpreadsheetClass(self.sourceBasePath + self.sourceClassPath)
 
@@ -112,7 +119,7 @@ class DataMove():
     @Debugger
     def getDestinationClass(self):
         
-        self.run_hook('pre_destination_get_class', data=(self.destinationBasePath + self.destinationClassPath))
+        self.run_hook('\npre_destination_get_class', data=(self.destinationBasePath + self.destinationClassPath))
         
         spreadsheet = self.getSpreadsheetClass(self.destinationBasePath + self.destinationClassPath)
         
@@ -123,23 +130,23 @@ class DataMove():
     @Debugger
     @validate_arguments
     def getSpreadsheetClass(self, spreadsheet_class:str):
-        return Helper.importClass(spreadsheet_class)
+        self.run_hook("\npre_get_spreadsheet_class")
+        classObj = Helper.importClass(spreadsheet_class)
+        self.run_hook("post_get_spreadsheet_class")
+        return classObj
 
 
     @Debugger
     def setupDestinations(self):
-        self.run_hook('pre_setupDestinations')
+        self.run_hook('\npre_setupDestinations')
         for worksheet in self.destinationWorksheetNames:
-            # The columns we will write to the destination
-            self.destination_expectedCols[worksheet] = self.destinationWorksheets[worksheet].getExpectedColumns()
-            
             # Make sure the columns we need at the destination are setup
-            self.destinationWorksheets[worksheet].alignToColumns(self.destination_expectedCols[worksheet])
+            self.destinationWorksheets[worksheet].alignToColumns(self.destinationWorksheets[worksheet].getExpectedColumns())
         self.run_hook('post_setupDestinations')
 
     @Debugger
     def map(self):
-        self.run_hook('pre_map')
+        self.run_hook('\npre_map')
 
         # for each row in the source spreadsheet, get the fields set up the way we want them and then apply them to the appropriate destination worksheet
         for row in range(0, self.sourceWorksheet.height()):
@@ -147,158 +154,223 @@ class DataMove():
             sourceData = self.sourceWorksheet.getRow(row, update_timestamp=True)
 
             # reset to false for the next item
-            self.skipItem = False # allows mapFields() to identify a row to skip
+            self.skipItem = {} # allows mapFields() to identify a row to skip
 
             # undo whatever has been done before for this data
             self.newData = {}
+            
+            self.run_hook("map_pre_mapFields")
             # merge the source and Destination data, based on whatever rules you need
             self.__mapFields(sourceData)
-            
-            # don't keep going
-            if True == self.skipItem:
-                continue
+            self.run_hook("map_post_mapFields")
 
             newDataKeys = self.newData.keys()
+            
+            self.run_hook("map_pre_loop_worksheets")
+            for worksheetName in self.destinationWorksheets.keys():
+                # don't keep going
+                if True == self.skipItem[worksheetName]:
+                    self.run_hook("map_loop_worksheets_did_skip_item", data=worksheetName)
+                    continue
+                self.run_hook("map_loop_worksheets_did_not_skip_item", data=worksheetName)
 
-            for worksheetName in self.destinationWorksheetNames:
-
-                if worksheetName not in newDataKeys:
+                if not worksheetName in newDataKeys:
                     raise DataMove_Exception(f"Data from MapFields did not include a key for destination worksheet '{worksheetName}'")
 
-                if worksheetName not in self.destinationWorksheets.keys():
+                if not worksheetName in self.destinationWorksheets.keys():
                     raise DataMove_Exception(f"Destination worksheet '{worksheetName}' not in destinationWorksheets list: '{self.destinationWorksheets.keys()}'")
 
                 # map the source keys to the destination keys we are expecting
                 modifiedData = OrderedDict()
-                for key in self.destination_expectedCols[worksheetName]:
+                self.run_hook("map_loop_worksheets_pre_key_loop", data=worksheetName)
+                for key in self.destinationWorksheets[worksheetName].getExpectedColumns():
+                    self.run_hook("map_loop_worksheets_in_key_loop", data=key)
                     #skip checking the keys for update_timestamp, as we will check them down the line
                     # update_timestamp will be updated in destination when the row is written
                     # the update_timestamps for the keys we're keeping will be grabbed when we decide if we're keeping source or destination
-                    if "update_timestamp" in key:
+                    self.run_hook("map_loop_worksheets_key_loop_pre_update_timestamp_check", data=key)
+                    if UPDATE_TIMESTAMP_KEY in key:
                         continue
+                    self.run_hook("map_loop_worksheets_key_loop_post_update_timestamp_check", data=key)
 
                     # we decided during mapping that we don't want this sourceRow in the destination, skip processing
-                    if True == self.skipItem:
+                    if True == self.skipItem[worksheetName]:
+                        self.run_hook("map_loop_worksheets_key_loop_did_skip_item")
                         continue
+                    self.run_hook("map_loop_worksheets_key_loop_did_not_skip_item")
 
                     #
                     # Check if we mapped all of the expected Columns
                     #
-                    newDataKeys = self.newData[worksheetName].keys()
-                    
-                    if not key in newDataKeys:
-                        raise DataMove_Exception(f" '{key} was not found in sources, it should be mapped before we can push data to destination")
+                    newDataWorksheetKeys = self.newData[worksheetName].keys()
 
+                    self.run_hook("map_loop_worksheets_key_loop_pre_key_in_mapped_data", data=key, mapped_data_keys=newDataWorksheetKeys)
+                    if not key in newDataWorksheetKeys:
+                        raise DataMove_Exception(f" '{key} was not found in sources, it should be mapped before we can push data to destination")
+                    self.run_hook("map_loop_worksheets_key_loop_post_key_in_mapped_data")
+
+                    self.run_hook("map_loop_worksheets_key_loop_pre_cleanSourceDataForDestination", data=key, worksheetName=worksheetName)
                     #cleanData will come back with the original key and if there was a timestamp on source or destination, that timestamp with the appropriate key
                     cleanData = self.cleanSourceDataForDestination(key, worksheetName)
+                    self.run_hook("map_loop_worksheets_key_loop_post_cleanSourceDataForDestination", cleanData=cleanData)
 
+                    self.run_hook("map_loop_worksheets_key_loop_pre_loop_cleanData")
                     # add the data to modifiedData, this is an OrderedDict, so theres no clean extend method
                     for cdkey,cdval in cleanData.items():
                         modifiedData[cdkey] = cdval
-                
+                    self.run_hook("map_loop_worksheets_key_loop_post_loop_cleanData", modifiedData=modifiedData)
+
+                self.run_hook("map_post_key_loop", data=worksheetName)
+
                 # if everything in destination expectedCols is in modified Data, then we are good,
                     # because the previous step made sure that we only have the keys we want + timestamp keys
                     # everything else was dropped through exclusion
-                if True == Helper.compareLists(modifiedData, self.destination_expectedCols[worksheetName]):
+                self.run_hook("map_loop_worksheets_key_loop_pre_compareLists")
+                if True == Helper.compareLists(modifiedData, self.destinationWorksheets[worksheetName].getExpectedColumns()):
+                    self.run_hook("map_loop_worksheets_key_loop_compareLists_success")
+                    self.run_hook("map_loop_worksheets_key_loop_compareLists_pre_putRow",data=modifiedData)
                     # putRow will determine, based on uniqueKeys, whether this should be an insert or update
                     self.destinationWorksheets[worksheetName].putRow(modifiedData)
+                    self.run_hook("map_loop_worksheets_key_loop_post_putRow")
                 else:
+                    self.run_hook("map_loop_worksheets_key_loop_compareLists_fail",data=modifiedData)
                     # do NOT DELETE THESE PRINT STATEMENTS
-                    print(f"\nLeft: {Helper.listDiff(modifiedData.keys(), self.destination_expectedCols[worksheetName])}")
-                    print(f"\nRight: {Helper.listDiff(self.destination_expectedCols[worksheetName], modifiedData.keys())}\n")
-                    raise DataMove_Exception(f"There are columns missing from modified data for worksheet '{worksheetName}'. Received {list(modifiedData.keys())} Expected {self.destination_expectedCols[worksheetName]}")
-
+                    print(f"\nLeft: {Helper.listDiff(modifiedData.keys(), self.destinationWorksheets[worksheetName].getExpectedColumns())}")
+                    print(f"\nRight: {Helper.listDiff(self.destinationWorksheets[worksheetName].getExpectedColumns(), modifiedData.keys())}\n")
+                    raise DataMove_Exception(f"There are columns missing from modified data for worksheet '{worksheetName}'. Received {list(modifiedData.keys())} Expected {self.destinationWorksheets[worksheetName].getExpectedColumns()}")
+            self.run_hook("map_post_loop_worksheets")
         self.run_hook('post_map')
 
     @Debugger
     @validate_arguments
-    def cleanSourceDataForDestination(self, key, worksheetName):
-        destinationDataColumns = self.destinationWorksheets[worksheetName].getColumns()
-
+    def getDestinationRow(self, worksheetName):
+        self.run_hook("start_getDestinationRow", worksheetName=worksheetName)
+        
+        self.run_hook("getDestinationRow_pre_get_destination_unique_field")
         destinationUniqueField = self.destinationWorksheets[worksheetName].getUniqueField()
+        self.run_hook("getDestinationRow_post_get_destination_unique_field", destinationUniqueField=destinationUniqueField)
+
+        destinationData = {}
+
+        self.run_hook("getDestinationRow_pre_check_destination_unique_field")
+        # get the destination row, based on the unique column if there is one, do nothing otherwise
+        if None != destinationUniqueField:
+            try:
+                self.run_hook("getDestinationRow_check_destination_unique_field_pre_getRow")
+                destinationData = self.destinationWorksheets[worksheetName].getRow(unique=self.newData[worksheetName][destinationUniqueField])
+                self.run_hook("getDestinationRow_check_destination_unique_field_post_getRow", destinationData=destinationData)
+            except Nested_Cache_Exception as err:
+                destinationData = {}
+        self.run_hook("end_getDestinationRow", worksheetName=worksheetName)
+        return destinationData
+
+    @Debugger
+    @validate_arguments
+    def cleanSourceDataForDestination(self, key, worksheetName):
+        self.run_hook("\nstart_cleanSourceDataForDestination",key=key, worksheetName=worksheetName)
 
         #
         # Fetch the data from the destination so we can check it for timestamps
         #
-        destinationData = {}
-        # get the destination row, based on the unique column if there is one, do nothing otherwise
-        if None != destinationUniqueField:
-            try:
-                destinationData = self.destinationWorksheets[worksheetName].getRow(unique=self.newData[worksheetName][destinationUniqueField])
-            except Nested_Cache_Exception as err:
-                destinationData = {}
-        
-        #
-        # Get the keys for the newData Dict
-        #
-        newDataKeys = list(self.newData[worksheetName].keys())
-        
+        destinationData = self.getDestinationRow()
         #
         # Decide which version of data we want, based on timestamps
         #
-        timestampKey = key+"_update_timestamp"
+        timestampKey = Flat_Cache.makeTimestampName(key)
         
         useNew = True #if False, use the data from destination
-                
-        if timestampKey in destinationDataColumns and timestampKey in destinationData:
-            #destination has the timestamp, does source?
-            if timestampKey in newDataKeys:
-                # destination Data and newData have the timestamp, which is newer?
-                if self.newData[worksheetName][timestampKey] == '':
-                    #does destination have an actual timestamp or just a place where it could be?
-                    if destinationData[timestampKey] == "":
-                        # both have no timestamp, so use the newData
-                        useNew = True
-                    else:
-                        # the newData doesn't have a timestamp, but we know that destination Data does
-                        useNew = False
-                elif self.newData[worksheetName][timestampKey] < destinationData[timestampKey]:
-                    # destination is newer than source
-                    useNew = False
-                else:
-                    useNew = True #redundant to point out the logic
-            else:
-                # there is no timestamp header in the source, but there is in the destination - use destination
-                useNew = False
+
+        #
+        # Get the keys for the newData Dict
+        #
+        self.run_hook("start_cleanSourceDataForDestination_pre_get_newDataTimestamp")
+        newDataKeys = list(self.newData[worksheetName].keys())
+        newDataHasTimestampKey = timestampKey in newDataKeys
+        newDataTimestamp:float = 0.0
+        if True == newDataHasTimestampKey:
+            newDataTimestamp = self.newData[worksheetName][timestampKey]
+        self.run_hook("start_cleanSourceDataForDestination_post_get_newDataTimestamp", newDataTimestamp=newDataTimestamp)
+
+        #
+        # Destination Data Keys
+        #
+        self.run_hook("start_cleanSourceDataForDestination_pre_get_destinationDataTimestamp")
+        destinationDataKeys = []
+        destinationHasTimestampKey = False
+        destinationTimestamp:float = 0.0
+        if len(destinationData) > 0:
+            destinationDataKeys = destinationData.keys()
+            destinationHasTimestampKey = timestampKey in destinationDataKeys
+            if True == destinationHasTimestampKey:
+                destinationTimestamp = destinationData[timestampKey]
+        self.run_hook("start_cleanSourceDataForDestination_post_get_destinationDataTimestamp", destinationTimestamp=destinationTimestamp)
+
+        self.run_hook("start_cleanSourceDataForDestination_pre_compareTimestamps")
+
+        if destinationTimestamp > newDataTimestamp:
+            self.run_hook("start_cleanSourceDataForDestination_in_compareTimestamps_useDestination_data")
+            # this is the only time when destination data is the right data to keep
+            useNew = False
         else:
-            # destination hasn't been updated from source, go ahead and override what is there
-            useNew = True
+            self.run_hook("start_cleanSourceDataForDestination_in_compareTimestamps_useSource_data")
+        
+        self.run_hook("start_cleanSourceDataForDestination_post_compareTimestamps")
         
         #setup outputData to get overridden by either source or destination, based on usedNew and the timestamp
         outputData = {key: None}
 
         # we decided that the newData version is what we want
         if True == useNew:
+            self.run_hook("start_cleanSourceDataForDestination_pre_useNew_data", data=self.newData[worksheetName][key])
             # the new data is the winner
             outputData[key] = self.newData[worksheetName][key]
+            self.run_hook("start_cleanSourceDataForDestination_pre_useNew_newData_has_timestamp", timestampKey=timestampKey)
             # does new data have a timestamp key for this field?
             if timestampKey in newDataKeys:
+                self.run_hook("start_cleanSourceDataForDestination_pre_in_useNew_newData_has_timestamp")
                 # timestamp for this key is in newData
                 outputData[timestampKey] = self.newData[worksheetName][timestampKey]
+                self.run_hook("start_cleanSourceDataForDestination_post_in_useNew_newData_has_timestamp", timestamp=self.newData[worksheetName][timestampKey])
             else:
                 # timestamp for this key is not in the newData
                 pass
+            self.run_hook("start_cleanSourceDataForDestination_post_useNew_newData_has_timestamp", timestampKey=timestampKey)
+            self.run_hook("start_cleanSourceDataForDestination_post_useNew_data")
         else:
+            self.run_hook("start_cleanSourceDataForDestination_pre_useDestination_data", data=destinationData[key])
             # the destination data is what we want, use that data
             outputData[key] = destinationData[key]
             if timestampKey in destinationData[key]:
+                self.run_hook("start_cleanSourceDataForDestination_useDestination_data_pre_has_timestamp")
                 # destination has the timestamp key, so pass that value along
                 outputData[timestampKey] = destinationData[timestampKey]
+                self.run_hook("start_cleanSourceDataForDestination_useDestination_data_post_has_timestamp", timestamp=destinationData[timestampKey])
+
+            self.run_hook("start_cleanSourceDataForDestination_post_useDestination_data")
         
+        self.run_hook("end_cleanSourceDataForDestination",outputData=outputData)
         return outputData
+
 
     @Debugger
     @validate_arguments
     def __mapFields(self, sourceData:dict):
-        
+        self.run_hook("\nstart_mapFields")
         #bc we will only grab the data based on the destination columns
             # we can copy the data into the worksheet specific dict and then use
             # mapFields to clean it up
+        self.run_hook("mapFields_pre_loop_worksheet")
         for worksheetName in self.destinationWorksheetNames:
+            self.run_hook("mapFields_in_loop_worksheet", worksheetName=worksheetName)
+            # start the skip off right
+            self.skipItem[worksheetName] = False
+
             methodName = f"mapFields_{worksheetName}"
             try:
+                self.run_hook("mapFields_loop_worksheet_pre_callMethod", methodName=methodName)
                 # tries to run methodName from self, passing it the sourceData as kwarg
-                newData = Helper.callMethod(klass=self, methodName=methodName, sourceData=sourceData.copy())                
+                newData = Helper.callMethod(klass=self, methodName=methodName, sourceData=sourceData.copy())
+                self.run_hook("mapFields_loop_worksheet_post_callMethod", methodName=methodName)
             except Helper_Exception as err:
                 if "but no method with that name exists" in err.message:
                     raise DataMove_Exception(f"DataMove requires a mapFields method for each worksheet and you need a method called '{methodName}' on {self.__class__.__name__}")
@@ -306,31 +378,35 @@ class DataMove():
                     # pass it back
                     raise Helper_Exception(err.message)
             
+            self.newData[worksheetName] = None # make sure there is a place for the data
+
+            self.run_hook("mapFields_loop_worksheet_pre_skipItem", skip=self.skipItem[worksheetName])
             # the mapFields methods can cause us to skip processing of a field, so we want to go ahead and do that here bc we have no data to process
-            if False == self.skipItem:
-
-                if True == Helper.compareLists(newData, self.destination_expectedCols[worksheetName]):
-                    self.newData[worksheetName] = newData
-                else:
-                    # do NOT DELETE THIS PRINT STATEMENT
-                    print(f"\nLeft: {Helper.listDiff(newData.keys(), self.destination_expectedCols[worksheetName])}")
-                    print(f"\nRight: {Helper.listDiff(self.destination_expectedCols[worksheetName], newData.keys())}\n")
-                    raise DataMove_Exception(f"There are columns missing from modified data for worksheet '{worksheetName}'. Received {list(newData.keys())} Expected {self.destination_expectedCols[worksheetName]}")
-
+            if False == self.skipItem[worksheetName]:
+                self.run_hook("mapFields_loop_worksheet_in_skipItem")
+                self.newData[worksheetName] = newData
+            
+            self.run_hook("mapFields_loop_worksheet_post_skipItem")
+        self.run_hook("mapFields_post_loop_worksheet")
+        self.run_hook("end_mapFields")
     
 
     @Debugger
     @validate_arguments
     def mapField(self, destinationWorksheet:str, field:str, data=None):
+        self.run_hook("\nstart_mapField", worksheetName=destinationWorksheet, field=field, data=data)
         if destinationWorksheet not in self.newData.keys():
+            self.run_hook("mapField_create_new_dict")
             self.newData[destinationWorksheet] = {field: data}
         else:
+            self.run_hook("mapField_add_to_dict")
             self.newData[destinationWorksheet][field] = data
+        self.run_hook("end_mapField")
 
 
     @Debugger
     def run(self):
-        self.run_hook('pre_run')
+        self.run_hook('\npre_run')
 
         self.run_hook('pre_destination_run_map')
         self.map()
@@ -351,9 +427,9 @@ class DataMove():
     @Debugger
     @validate_arguments
     def noteProblem(self, worksheetName:str, problemType:str, problemDescription:str):
-        self.run_hook('pre_problems_note')
+        self.run_hook('\npre_problems_note')
         
-        self.skipItem = True
+        self.skipItem[worksheetName] = True
 
         # setup the problems dict
         if len(self.problemsIdentified) == 0:
@@ -373,7 +449,7 @@ class DataMove():
 
     @Debugger
     def problems(self):
-        self.run_hook('pre_problems')
+        self.run_hook('\npre_problems')
         if None != self.problemsWorksheetName:
             try:
                 problemsWorksheet = self.destinationSpreadsheet.getWorksheet(worksheetTitle=self.problemsWorksheetName, skipKept=True)
@@ -413,7 +489,57 @@ class DataMove():
         self.run_hook('post_problems')
 
     @Debugger
+    @validate_arguments
     def commit(self, worksheetName:str):
-        self.run_hook('pre_destination_worksheet_commit', data=worksheetName)
+        self.run_hook('\npre_destination_worksheet_commit', data=worksheetName)
         self.destinationWorksheets[worksheetName].commit()
         self.run_hook('post_destination_worksheet_commit', data=worksheetName)
+
+    @Debugger
+    @validate_arguments
+    def prepImages(self, sourceData:dict):
+        self.run_hook("start_prepImages")
+                # image URLs, up to 10 of them
+        for counter in range(1,11):
+            imageKey = f"Image {counter} URL"
+            
+            imageUrl = ""
+            if imageKey in sourceData:
+                imageUrl = sourceData[imageKey]
+            
+            sourceData[imageKey] = imageUrl
+
+        self.run_hook("end_prepImages")
+        return sourceData
+    
+    @Debugger
+    @validate_arguments
+    def prepDescription(self, sourceData):
+        self.run_hook('start_prepDescription')
+        description = ""
+        if "Description" in sourceData:
+            description = sourceData['Description']
+        self.run_hook('end_prepDescription')
+        return description
+
+    @Debugger
+    @validate_arguments
+    def prepDiscount(self, worksheetName):
+        return float(self.destinationWorksheets[worksheetName].discount())
+
+    @Debugger
+    @validate_arguments
+    def calculatePrice(self, key:str, worksheetName, sourceData:dict):
+        if not "Discount" in sourceData.keys():
+            raise DataMove_Exception("Discount needs to be available in sourceData before calculatePrice() is run")
+        
+        sourceKey = self.cleanPriceKey(key)
+        
+        priceString = str(sourceData[sourceKey]).replace(",","").replace("$","")
+        priceFloat = float(priceString)
+
+        price = 1
+        if '' != priceFloat: # sometimes we don't have a price for a door
+            price = priceFloat
+
+        return price * (1 - self.prepDiscount(worksheetName=worksheetName))

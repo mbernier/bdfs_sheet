@@ -1,7 +1,7 @@
 import pytest, pydantic
 from collections import OrderedDict
 from modules import caches
-from modules.caches.flat import Flat_Cache
+from modules.caches.flat import UPDATE_TIMESTAMP_KEY, Flat_Cache
 from modules.caches.nested import Nested_Cache
 from modules.caches.exception import Nested_Cache_Exception
 from modules.caches.exception import Flat_Cache_Exception
@@ -316,11 +316,11 @@ def test_reorderColumns():
     assert cache.select(1, update_timestamp=False) == {'f': 5, 'b': 1, 'd': 3, 'c': 2, 'e': 4}
     
     somedataKeys = cache.select(0).keys()
-    assert "b_update_timestamp" in somedataKeys
-    assert "c_update_timestamp" in somedataKeys
-    assert "d_update_timestamp" in somedataKeys
-    assert "e_update_timestamp" in somedataKeys
-    assert "f_update_timestamp" in somedataKeys
+    assert Flat_Cache.makeTimestampName("b") in somedataKeys
+    assert Flat_Cache.makeTimestampName("c") in somedataKeys
+    assert Flat_Cache.makeTimestampName("d") in somedataKeys
+    assert Flat_Cache.makeTimestampName("e") in somedataKeys
+    assert Flat_Cache.makeTimestampName("f") in somedataKeys
 
 
 # ####
@@ -424,4 +424,4 @@ def testGetLocations():
     locations = cache.getLocations()
     assert locations == ['b','c','d','e','f']    
     locations = cache.getLocations(update_timestamp=True)
-    assert locations == ['b','c','d','e','f', 'b_update_timestamp','c_update_timestamp','d_update_timestamp','e_update_timestamp','f_update_timestamp', 'update_timestamp']
+    assert locations == ['b','c','d','e','f', Flat_Cache.makeTimestampName('b'), Flat_Cache.makeTimestampName('c'), Flat_Cache.makeTimestampName('d'), Flat_Cache.makeTimestampName('e'), Flat_Cache.makeTimestampName('f'), UPDATE_TIMESTAMP_KEY]

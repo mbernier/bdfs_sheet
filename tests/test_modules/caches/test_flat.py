@@ -1,6 +1,5 @@
 import pytest, time, pydantic
-
-from modules.caches.flat import Flat_Cache
+from modules.caches.flat import UPDATE_TIMESTAMP_KEY, UPDATE_TIMESTAMP_POSTFIX, Flat_Cache
 from modules.caches.exception import Flat_Cache_Exception
 
 
@@ -287,29 +286,29 @@ def test_timestamp():
     cache.insert(position="e", data=[1,2,3])
     data = cache.select()
     print(data)
-    assert "update_timestamp" in data.keys()
-    assert "b_update_timestamp" in data.keys()
-    assert "c_update_timestamp" in data.keys()
-    assert "d_update_timestamp" in data.keys()
-    assert "e_update_timestamp" in data.keys()
+    assert UPDATE_TIMESTAMP_KEY in data.keys()
+    assert Flat_Cache.makeTimestampName("b") in data.keys()
+    assert Flat_Cache.makeTimestampName("c") in data.keys()
+    assert Flat_Cache.makeTimestampName("d") in data.keys()
+    assert Flat_Cache.makeTimestampName("e") in data.keys()
 
-    assert data["update_timestamp"] != None
-    assert data["b_update_timestamp"] != None
-    assert data["c_update_timestamp"] != None
-    assert data["d_update_timestamp"] != None
-    assert data["e_update_timestamp"] != None
+    assert data[UPDATE_TIMESTAMP_KEY] != None
+    assert data[Flat_Cache.makeTimestampName("b")] != None
+    assert data[Flat_Cache.makeTimestampName("c")] != None
+    assert data[Flat_Cache.makeTimestampName("d")] != None
+    assert data[Flat_Cache.makeTimestampName("e")] != None
 
-    assert type(data["update_timestamp"]) is float
-    assert type(data["b_update_timestamp"]) is float
-    assert type(data["c_update_timestamp"]) is float
-    assert type(data["d_update_timestamp"]) is float
-    assert type(data["e_update_timestamp"]) is float
+    assert type(data[UPDATE_TIMESTAMP_KEY]) is float
+    assert type(data[Flat_Cache.makeTimestampName("b")]) is float
+    assert type(data[Flat_Cache.makeTimestampName("c")]) is float
+    assert type(data[Flat_Cache.makeTimestampName("d")]) is float
+    assert type(data[Flat_Cache.makeTimestampName("e")]) is float
 
-    del data["update_timestamp"]
-    del data["b_update_timestamp"]
-    del data["c_update_timestamp"]
-    del data["d_update_timestamp"]
-    del data["e_update_timestamp"]
+    del data[UPDATE_TIMESTAMP_KEY]
+    del data[Flat_Cache.makeTimestampName("b")]
+    del data[Flat_Cache.makeTimestampName("c")]
+    del data[Flat_Cache.makeTimestampName("d")]
+    del data[Flat_Cache.makeTimestampName("e")]
     
     assert data == {'b': None, 'c':None, 'd': None, 'e': [1,2,3]}
 
@@ -317,20 +316,20 @@ def test_timestamp():
 def test_timestamp_pre_load():
     timestamp = time.time()
     
-    cache = Flat_Cache({'b':1,'c':2,'d':3, 'update_timestamp':timestamp})
+    cache = Flat_Cache({'b':1,'c':2,'d':3, UPDATE_TIMESTAMP_KEY:timestamp})
     
-    assert cache.getUpdateTimestamp("update_timestamp") == timestamp
+    assert cache.getUpdateTimestamp(UPDATE_TIMESTAMP_KEY) == timestamp
 
     # effectively append
     cache.insert_location(position='e')
     cache.insert(position="e", data=[1,2,3])
     data = cache.select()
 
-    del data["update_timestamp"]
-    del data["b_update_timestamp"]
-    del data["c_update_timestamp"]
-    del data["d_update_timestamp"]
-    del data["e_update_timestamp"]
+    del data[UPDATE_TIMESTAMP_KEY]
+    del data[Flat_Cache.makeTimestampName("b")]
+    del data[Flat_Cache.makeTimestampName("c")]
+    del data[Flat_Cache.makeTimestampName("d")]
+    del data[Flat_Cache.makeTimestampName("e")]
     
     assert data == {'b': 1, 'c':2, 'd': 3, 'e': [1,2,3]}
 
@@ -338,10 +337,10 @@ def test_getTimestampsAsStr():
     cache = Flat_Cache({'b':1,'c':2,'d':3})
     data = cache.getTimestampsAsStr()
 
-    assert "'b_update_timestamp'" in data
-    assert "'c_update_timestamp'" in data
-    assert "'d_update_timestamp'" in data
-    assert "'update_timestamp'" in data
+    assert f"'{Flat_Cache.makeTimestampName('b')}" in data
+    assert f"'{Flat_Cache.makeTimestampName('c')}" in data
+    assert f"'{Flat_Cache.makeTimestampName('d')}" in data
+    assert f"{UPDATE_TIMESTAMP_KEY}" in data
 
 
 def test_getTimestampsAsList():
@@ -357,20 +356,20 @@ def test_getTimestampKeys():
     cache = Flat_Cache({'b':1,'c':2,'d':3})
     data = cache.getTimestampKeys()
 
-    assert data[0] == "b_update_timestamp"
-    assert data[1] == "c_update_timestamp"
-    assert data[2] == "d_update_timestamp"
-    assert data[3] == "update_timestamp"
+    assert data[0] == Flat_Cache.makeTimestampName("b")
+    assert data[1] == Flat_Cache.makeTimestampName("c")
+    assert data[2] == Flat_Cache.makeTimestampName("d")
+    assert data[3] == UPDATE_TIMESTAMP_KEY
 
 
 def test_getTimestampsAsDict():
     cache = Flat_Cache({'b':1,'c':2,'d':3})
     data = cache.getTimestampsAsDict()
 
-    assert type(data['b_update_timestamp']) == float
-    assert type(data['c_update_timestamp']) == float
-    assert type(data['d_update_timestamp']) == float
-    assert type(data['update_timestamp']) == float
+    assert type(data[Flat_Cache.makeTimestampName('b')]) == float
+    assert type(data[Flat_Cache.makeTimestampName('c')]) == float
+    assert type(data[Flat_Cache.makeTimestampName('d')]) == float
+    assert type(data[UPDATE_TIMESTAMP_KEY]) == float
 
 def test_getAsString():
     cache = Flat_Cache({'b':1,'c':2,'d':3})
@@ -380,20 +379,19 @@ def test_getAsString():
     assert "'b'" in data
     assert "'c'" in data
     assert "'d'" in data
-    assert "'b_update_timestamp'" in data
-    assert "'c_update_timestamp'" in data
-    assert "'d_update_timestamp'" in data
-    assert "'update_timestamp'" in data
+    assert f"'{Flat_Cache.makeTimestampName('b')}" in data
+    assert f"'{Flat_Cache.makeTimestampName('c')}" in data
+    assert f"'{Flat_Cache.makeTimestampName('d')}" in data
+    assert f"{UPDATE_TIMESTAMP_KEY}" in data
 
     data = cache.string(update_timestamp=False)
     assert "Flat_Cache" in data
     assert "'b'" in data
     assert "'c'" in data
     assert "'d'" in data
-    assert not "'b_update_timestamp'" in data
-    assert not "'c_update_timestamp'" in data
-    assert not "'d_update_timestamp'" in data
-    assert not "'update_timestamp'" in data
+    assert not f"'{Flat_Cache.makeTimestampName('c')}" in data
+    assert not f"'{Flat_Cache.makeTimestampName('d')}" in data
+    assert not f"{UPDATE_TIMESTAMP_KEY}" in data
 
 def test_getAsList():
     cache = Flat_Cache({'b':1,'c':2,'d':3})
@@ -419,10 +417,10 @@ def test_getAsDicts():
     assert data['b'] == 1
     assert data['c'] == 2
     assert data['d'] == 3
-    assert type(data['update_timestamp']) == float
-    assert type(data['b_update_timestamp']) == float
-    assert type(data['c_update_timestamp']) == float
-    assert type(data['d_update_timestamp']) == float
+    assert type(data[UPDATE_TIMESTAMP_KEY]) == float
+    assert type(data[Flat_Cache.makeTimestampName('b')]) == float
+    assert type(data[Flat_Cache.makeTimestampName('c')]) == float
+    assert type(data[Flat_Cache.makeTimestampName('d')]) == float
 
     data = cache.getAsDict(update_timestamp=False)
     assert data == {'b': 1, 'c': 2, 'd': 3}

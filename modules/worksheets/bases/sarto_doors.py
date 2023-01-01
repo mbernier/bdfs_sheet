@@ -1,7 +1,7 @@
 from modules.helper import Helper
 from modules.worksheets.bases.doors import Doors_Base
 
-class Sarto_Inventory_Base(Doors_Base):
+class Sarto_Inventory_Base(Doors_Base): 
 
     cols_expected = ['URL', 'URL_key', 'Title', 'Type', 
                     'Has Glass', 'Glass Finish', 'Lites', 

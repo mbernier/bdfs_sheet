@@ -1,4 +1,5 @@
 import pytest, time
+from modules.caches.flat import Flat_Cache
 from modules.spreadsheets.sources.simple_sheet import Simple_Spreadsheet_Source
 from modules.worksheets.exception import Bdfs_Worksheet_Source_Exception
 from tests.test_modules.worksheets.sources.sources_helper import sources_helper
@@ -112,7 +113,7 @@ class Test_Bdfs_Worksheet_Source:
 
     def test_getColumns(self):
         cols = self.test_worksheet.getColumns()
-        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'update_timestamp']
+        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', Flat_Cache.makeTimestampName('Name'), Flat_Cache.makeTimestampName('Birthday'), Flat_Cache.makeTimestampName('Email'), Flat_Cache.makeTimestampName('Yearly Salary'), Flat_Cache.makeTimestampName('Hours Worked'), Flat_Cache.makeTimestampName('Favorite Cake'), 'update_timestamp']
 
 
     def test_getColumnCounts(self):
@@ -127,13 +128,13 @@ class Test_Bdfs_Worksheet_Source:
             self.test_worksheet.addColumn("newColumn1")
         assert "object has no attribute 'addColumn'" in str(excinfo.value)
         
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'update_timestamp']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', Flat_Cache.makeTimestampName('Name'), Flat_Cache.makeTimestampName('Birthday'), Flat_Cache.makeTimestampName('Email'), Flat_Cache.makeTimestampName('Yearly Salary'), Flat_Cache.makeTimestampName('Hours Worked'), Flat_Cache.makeTimestampName('Favorite Cake'), 'update_timestamp']
 
         with pytest.raises(AttributeError) as excinfo:
             self.test_worksheet.addColumn(name="newColumn3", index=3)
         assert "object has no attribute 'addColumn'" in str(excinfo.value)
 
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'update_timestamp']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', Flat_Cache.makeTimestampName('Name'), Flat_Cache.makeTimestampName('Birthday'), Flat_Cache.makeTimestampName('Email'), Flat_Cache.makeTimestampName('Yearly Salary'), Flat_Cache.makeTimestampName('Hours Worked'), Flat_Cache.makeTimestampName('Favorite Cake'), 'update_timestamp']
         
 
     def test_commit(self):

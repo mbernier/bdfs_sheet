@@ -52,7 +52,7 @@ class Flat_Cache(Bdfs_Cache):
             for location, value in data.items():
 
                 # if we get a timestamp with the data, we need to remove it from locations and data
-                if self.positionIsTimestamp(location): #others will be fieldnameUPDATE_TIMESTAMP_POSTFIX
+                if Flat_Cache.positionIsTimestamp(location): #others will be fieldnameUPDATE_TIMESTAMP_POSTFIX
                     # let's hold onto these for a second
                     timestamps[location] = value
                 else:
@@ -63,7 +63,7 @@ class Flat_Cache(Bdfs_Cache):
                     self.insert(location, value)
                     
                     # create a timestamp if we didn't get one
-                    timestampLocation = self.__makeTimestampName(position=location)
+                    timestampLocation = Flat_Cache.makeTimestampName(position=location)
 
                     # update the timestamp to now, we will overwrite if we have it later
                     self.update_timestamp(position=location, timestamp=time.time())
@@ -89,7 +89,7 @@ class Flat_Cache(Bdfs_Cache):
     @Debugger
     @validate_arguments(config=dict(smart_union=True))
     def insert(self, position: Union[int,str], data=None):
-        if self.positionIsTimestamp(position): #skip it
+        if Flat_Cache.positionIsTimestamp(position): #skip it
             return
 
         self.fail_if_position_dne(position)
@@ -103,7 +103,7 @@ class Flat_Cache(Bdfs_Cache):
     #change the data at the location
     @Debugger
     def update(self, position: Union[int,str], data=None):
-        if self.positionIsTimestamp(position): #skip it
+        if Flat_Cache.positionIsTimestamp(position): #skip it
             return
         self.fail_if_position_dne(position)
         self.__write(position=position, data=data)
@@ -113,7 +113,7 @@ class Flat_Cache(Bdfs_Cache):
     @Debugger
     @validate_arguments
     def select(self, position: Union[int,str] = None, update_timestamp:bool=True):
-        if self.positionIsTimestamp(position): #skip it
+        if Flat_Cache.positionIsTimestamp(position): #skip it
             raise Flat_Cache_Exception(f"To select a timestamp, like '{position}', use the timestamp methods")
 
         if None == position:
@@ -126,7 +126,7 @@ class Flat_Cache(Bdfs_Cache):
     @Debugger
     @validate_arguments
     def delete(self, position:Union[str,int]):
-        if self.positionIsTimestamp(position): #skip it
+        if Flat_Cache.positionIsTimestamp(position): #skip it
             raise Flat_Cache_Exception("You cannot delete a timestamp field")
 
         self.fail_if_position_dne(position)
@@ -224,7 +224,7 @@ class Flat_Cache(Bdfs_Cache):
     @validate_arguments
     def delete_location(self, position: Union[int,str]):
         # you can't delete update_timestamps
-        if self.positionIsTimestamp(position):
+        if Flat_Cache.positionIsTimestamp(position):
             return
 
         self.fail_if_position_dne(position)
@@ -247,7 +247,7 @@ class Flat_Cache(Bdfs_Cache):
     @validate_arguments
     def insert_location(self, position:str, index:int=None):
         # you can't insert the update_timestamp
-        if self.positionIsTimestamp(position):
+        if Flat_Cache.positionIsTimestamp(position):
             return
 
         if self.positionExists(position):
@@ -409,9 +409,9 @@ class Flat_Cache(Bdfs_Cache):
 
 
     @Debugger
-    @validate_arguments
-    def __makeTimestampName(self, position:str) -> str:
-        if self.positionIsTimestamp(position):
+    @staticmethod
+    def makeTimestampName(position:str) -> str:
+        if Flat_Cache.positionIsTimestamp(position):
             return position
         
         return f"{position}_update_timestamp"
@@ -421,7 +421,10 @@ class Flat_Cache(Bdfs_Cache):
     def __convertTimestampNameToPosition(self, name):
         return name.replace(UPDATE_TIMESTAMP_POSTFIX,"")
 
-    def positionIsTimestamp(self, position):
+
+    @staticmethod
+    @Debugger
+    def positionIsTimestamp(position):
         if type(position) is str and UPDATE_TIMESTAMP_KEY in position:
             return True
         return False
@@ -489,7 +492,7 @@ class Flat_Cache(Bdfs_Cache):
     def __str__(self, update_timestamp:bool=True) -> str:
         output = "Flat_Cache: \n"
         for item in self.getKeys():
-            if True == self.positionIsTimestamp(item):
+            if True == Flat_Cache.positionIsTimestamp(item):
                 continue
 
             data = self.getDict(item)
@@ -508,7 +511,7 @@ class Flat_Cache(Bdfs_Cache):
     def getAsList(self, update_timestamp:bool=True) -> list:
         output = []
         for index in self.getKeys(keyType=int):
-            if True == self.positionIsTimestamp(index):
+            if True == Flat_Cache.positionIsTimestamp(index):
                 continue
             
             data = self.getDict(index)
@@ -526,7 +529,7 @@ class Flat_Cache(Bdfs_Cache):
         output = OrderedDict()
         
         for index in self.getKeys(keyType=int): #it really doesn't matter which type you choose here
-            if True == self.positionIsTimestamp(index):
+            if True == Flat_Cache.positionIsTimestamp(index):
                 continue
 
             data = self.getDict(index)
@@ -544,7 +547,7 @@ class Flat_Cache(Bdfs_Cache):
         
         for item in self.getKeys():
             data = self.getDict(item)
-            timestamps += f"\t'{self.__makeTimestampName(item)}': {data['timestamp']}\n"
+            timestamps += f"\t'{Flat_Cache.makeTimestampName(item)}': {data['timestamp']}\n"
 
         timestamps += f"\t'update_timestamp': {self.data.update_timestamp}\n"
         
@@ -569,7 +572,7 @@ class Flat_Cache(Bdfs_Cache):
         timestamps = []
         
         for index in self.getKeys(keyType=str):
-            timestamps.append(self.__makeTimestampName(index))
+            timestamps.append(Flat_Cache.makeTimestampName(index))
         
         timestamps.append(UPDATE_TIMESTAMP_KEY)
 
@@ -583,7 +586,7 @@ class Flat_Cache(Bdfs_Cache):
         
         for index in self.getKeys(keyType=int): #it really doesn't matter which type you choose here
             data = self.getDict(index)
-            timestamps[self.__makeTimestampName(data['position'])] = data['timestamp']
+            timestamps[Flat_Cache.makeTimestampName(data['position'])] = data['timestamp']
         
         timestamps[UPDATE_TIMESTAMP_KEY] = self.data.update_timestamp
         

@@ -35,7 +35,17 @@ from pydantic import validate_arguments
 # 'update_cell', 'update_cells', 'update_index', 'update_note', 'update_tab_color', 'update_title', 'updated', 'url']
 
 class Worksheet_DataClass_Destination(Worksheet_DataClass):
-    discount:float = dc_field(default_factory=float)
+    gspread_worksheet:Worksheet = None                      # The worksheet object itself, allows us to run gspread functions
+    sheetData:Bdfs_Worksheet_Data = None                    # source of truth for the data of the worksheet, DO NOT call factory here
+    discount:int = dc_field(default_factory=int)
+    title:str  = dc_field(default_factory=str)              # The Sheet title
+    expectedColumns:list = dc_field(default_factory=list)   # A list of columns we expect to have in the sheet
+    expectedColumns_extra:list = dc_field(default_factory=list)
+    uncommitted_title: str = dc_field(default_factory=str)  # temp storage if we change the title of the worksheet, until commit
+    changes:dict[bool] = dc_field(default_factory=dict)     # {"title": False, "data": False}
+    sheet_retrieved:bool = False
+    id: int = dc_field(default_factory=int)
+    uniqueField: str = dc_field(default_factory=str)
 
 #
 # Rules; 
@@ -89,6 +99,11 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
             self.changed('title')
         return self.getTitle()
 
+    @Debugger
+    @validate_arguments
+    def discount(self):
+        return float(self.data.discount)
+
     ####
     #
     # Column Methods
@@ -97,16 +112,15 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
 
     @Debugger
     def getExpectedColumns(self) -> list: #tested
-        expectedCols = self.data.expectedColumns
         # check the indexes of extra columns (e.g. single, double)
         for index in self.data.expectedColumns_extra:
             # if the index is in the worksheet title, add them
             if index in self.getTitle():
                 # if the columns are already in the expectedCols, don't add them
                 for column in self.data.expectedColumns_extra[index]:
-                    if column not in expectedCols:
-                        expectedCols.append(column)
-        return expectedCols
+                    if not column in self.data.expectedColumns:
+                        self.data.expectedColumns.append(column)
+        return self.data.expectedColumns
     
 
     # wrapper function to take care of some pre-work on removing columns

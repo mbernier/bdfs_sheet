@@ -1,5 +1,5 @@
 import gspread, pytest
-from modules.caches.flat import Flat_Cache
+from modules.caches.flat import Flat_Cache, UPDATE_TIMESTAMP_KEY
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from tests.test_modules.worksheets.destinations.destination_helper import destination_helper
 
@@ -108,7 +108,7 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_getColumns(self):
         cols = self.test_worksheet.getColumns()
-        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'update_timestamp']
+        assert cols == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', Flat_Cache.makeTimestampName('Name'), Flat_Cache.makeTimestampName('Birthday'), Flat_Cache.makeTimestampName('Email'), Flat_Cache.makeTimestampName('Yearly Salary'), Flat_Cache.makeTimestampName('Hours Worked'), Flat_Cache.makeTimestampName('Favorite Cake'), UPDATE_TIMESTAMP_KEY]
     
 
     def test_getColumnCounts(self):
@@ -122,10 +122,10 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_addColumns(self):
         self.test_worksheet.addColumn("newColumn1")
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'newColumn1_update_timestamp', 'update_timestamp']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday', 'Email', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', Flat_Cache.makeTimestampName('Name'), Flat_Cache.makeTimestampName('Birthday'), Flat_Cache.makeTimestampName('Email'), Flat_Cache.makeTimestampName('Yearly Salary'), Flat_Cache.makeTimestampName('Hours Worked'), Flat_Cache.makeTimestampName('Favorite Cake'), Flat_Cache.makeTimestampName('newColumn1'), UPDATE_TIMESTAMP_KEY]
 
         self.test_worksheet.addColumn(name="newColumn3", index=3)
-        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', 'Name_update_timestamp', 'Birthday_update_timestamp', 'Email_update_timestamp', 'newColumn3_update_timestamp', 'Yearly Salary_update_timestamp', 'Hours Worked_update_timestamp', 'Favorite Cake_update_timestamp', 'newColumn1_update_timestamp', 'update_timestamp']
+        assert self.test_worksheet.getColumns() == ['Name', 'Birthday','Email', 'newColumn3', 'Yearly Salary', 'Hours Worked', 'Favorite Cake', 'newColumn1', Flat_Cache.makeTimestampName('Name'), Flat_Cache.makeTimestampName('Birthday'), Flat_Cache.makeTimestampName('Email'), Flat_Cache.makeTimestampName('newColumn3'), Flat_Cache.makeTimestampName('Yearly Salary'), Flat_Cache.makeTimestampName('Hours Worked'), Flat_Cache.makeTimestampName('Favorite Cake'), Flat_Cache.makeTimestampName('newColumn1'), UPDATE_TIMESTAMP_KEY]
 
 
     def test_alignToColumns(self):

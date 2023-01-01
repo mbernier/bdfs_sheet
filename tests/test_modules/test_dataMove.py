@@ -1,5 +1,5 @@
 import pytest, sys
-
+from modules.caches.flat import Flat_Cache, UPDATE_TIMESTAMP_KEY
 from modules.decorator import Debugger
 from modules.dataMove import DataMove
 from pydantic import validate_arguments
@@ -50,7 +50,7 @@ class Simple_DataMove(DataMove):
 
     destinationBasePath = "tests.test_modules."
     destinationClassPath = "test_dataMove.Simple_Spreadsheet_Destination"
-    destinationWorksheetNames = ["test_dataMove1"]
+    destinationWorksheetNames = ["test_dataMove1", "test_dataMove2"]
 
     destinationWorksheetCreateIfNotFound = True
 
@@ -58,8 +58,11 @@ class Simple_DataMove(DataMove):
     @Debugger
     @validate_arguments
     def pre_destination_open_create_worksheet(self, data:str):
+        worksheets = self.destinationSpreadsheet.getWorksheets()
         worksheetName = data
-        self.destinationSpreadsheet.clearWorksheet(worksheetName)
+        if worksheetName in worksheets.keys():
+            self.destinationSpreadsheet.clearWorksheet(worksheetName)
+
 
     # does the field mapping for the destination worksheet called "test_dataMove1"
     # the timestamps are already in the sourceData so you don't need to do anything with them
@@ -79,6 +82,16 @@ class Simple_DataMove(DataMove):
         sourceData['Hours Worked']  = 100
         sourceData['Hourly Pay']    = 20.00
         sourceData['Total Pay']     = 100 * 20.00
+
+        return sourceData
+    
+    @Debugger
+    @validate_arguments
+    def mapFields_test_dataMove2(self, sourceData:dict):
+        sourceData['Yearly Salary'] = 2008 * 10
+        sourceData['Hours Worked']  = 10
+        sourceData['Hourly Pay']    = 2.00
+        sourceData['Total Pay']     = 10 * 20.00
 
         return sourceData
 
@@ -119,33 +132,76 @@ class Test_Bdfs_Worksheet_Destination:
         assert row0['Hours Worked'] == "100"
         assert row0['Hourly Pay'] == "20"
         assert row0['Total Pay'] == "2000"
-        assert row0['Name_update_timestamp'] == 12345.0
-        assert row0['Birthday_update_timestamp'] == 12345.0
-        assert row0['Email_update_timestamp'] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Name')] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Birthday')] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Email')] == 12345.0
         # these were all set at the same time, so the timestamp is the same for these
-        timestamp = row0['Yearly Salary_update_timestamp']
-        assert row0['Hours Worked_update_timestamp'] == timestamp
-        assert row0['Hourly Pay_update_timestamp'] == timestamp
-        assert row0['Total Pay_update_timestamp'] == timestamp
-        assert row0['update_timestamp'] == timestamp
+        timestamp = row0[Flat_Cache.makeTimestampName('Yearly Salary')]
+        assert row0[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
+        assert row0[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
+        assert row0[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
+        assert row0[UPDATE_TIMESTAMP_KEY] == timestamp
 
         row1 = worksheet.getRow(1, update_timestamp=True)
-        timestamp = row1['Yearly Salary_update_timestamp']
-        assert row1['Hours Worked_update_timestamp'] == timestamp
-        assert row1['Hourly Pay_update_timestamp'] == timestamp
-        assert row1['Total Pay_update_timestamp'] == timestamp
-        assert row1['update_timestamp'] == timestamp
-        assert row1['Name_update_timestamp'] == timestamp
-        assert row1['Birthday_update_timestamp'] == timestamp
-        assert row1['Email_update_timestamp'] == timestamp
+        timestamp = row1[Flat_Cache.makeTimestampName('Yearly Salary')]
+        assert row1[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
+        assert row1[UPDATE_TIMESTAMP_KEY] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Name')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Birthday')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Email')] == timestamp
 
         row2 = worksheet.getRow(2,update_timestamp=True)
-        assert row2['Name_update_timestamp'] == 54321.0
-        assert row2['Birthday_update_timestamp'] == 54321.0
-        assert row2['Email_update_timestamp'] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Name')] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Birthday')] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Email')] == 54321.0
         # these were all set at the same time, so the timestamp is the same for these
-        timestamp = row2['Yearly Salary_update_timestamp']
-        assert row2['Hours Worked_update_timestamp'] == timestamp
-        assert row2['Hourly Pay_update_timestamp'] == timestamp
-        assert row2['Total Pay_update_timestamp'] == timestamp
-        assert row2['update_timestamp'] == timestamp
+        timestamp = row2[Flat_Cache.makeTimestampName('Yearly Salary')]
+        assert row2[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
+        assert row2[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
+        assert row2[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
+        assert row2[UPDATE_TIMESTAMP_KEY] == timestamp
+
+
+        worksheet = spreadsheet.getWorksheet(worksheetTitle="test_dataMove2")
+        data = worksheet.getData()
+        # get the data we will start with
+        row0 = worksheet.getRow(0, update_timestamp=True)
+        assert row0['Name'] == "Matt"
+        assert row0['Birthday'] == "1/1/2001"
+        assert row0['Email'] == "email@example.com"
+        assert row0['Yearly Salary'] == "20080"
+        assert row0['Hours Worked'] == "10"
+        assert row0['Hourly Pay'] == "2"
+        assert row0['Total Pay'] == "200"
+        assert row0[Flat_Cache.makeTimestampName('Name')] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Birthday')] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Email')] == 12345.0
+        # these were all set at the same time, so the timestamp is the same for these
+        timestamp = row0[Flat_Cache.makeTimestampName('Yearly Salary')]
+        assert row0[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
+        assert row0[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
+        assert row0[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
+        assert row0[UPDATE_TIMESTAMP_KEY] == timestamp
+
+        row1 = worksheet.getRow(1, update_timestamp=True)
+        timestamp = row1[Flat_Cache.makeTimestampName('Yearly Salary')]
+        assert row1[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('update_timestamp')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Name')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Birthday')] == timestamp
+        assert row1[Flat_Cache.makeTimestampName('Email')] == timestamp
+
+        row2 = worksheet.getRow(2,update_timestamp=True)
+        assert row2[Flat_Cache.makeTimestampName('Name')] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Birthday')] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Email')] == 54321.0
+        # these were all set at the same time, so the timestamp is the same for these
+        timestamp = row2[Flat_Cache.makeTimestampName('Yearly Salary')]
+        assert row2[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
+        assert row2[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
+        assert row2[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
+        assert row2[UPDATE_TIMESTAMP_KEY] == timestamp

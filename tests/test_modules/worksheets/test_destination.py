@@ -1,9 +1,10 @@
 import pytest, time
+from modules.caches.exception import Flat_Cache_Exception, Nested_Cache_Exception
+from modules.caches.flat import Flat_Cache, UPDATE_TIMESTAMP_KEY
 from modules.spreadsheets.destination import Bdfs_Spreadsheet_Destination
+from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
 from modules.worksheets.destination import Bdfs_Worksheet_Destination
 from modules.worksheets.exception import Bdfs_Worksheet_Destination_Exception
-from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
-from modules.caches.exception import Flat_Cache_Exception, Nested_Cache_Exception
 
 
 ####
@@ -335,7 +336,7 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count("one")
         assert 1 == columns.count("two")
         assert 1 == columns.count("three")
-        assert 1 == columns.count("update_timestamp")
+        assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
 
         # add six from expected, then remove
         self.worksheet.removeColumn("six")
@@ -349,7 +350,7 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count("one")
         assert 1 == columns.count("two")
         assert 1 == columns.count("three")
-        assert 1 == columns.count("update_timestamp")
+        assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
 
 
     def test_empty_w_add_data(self):
@@ -372,7 +373,7 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count("one")
         assert 1 == columns.count("two")
         assert 1 == columns.count("three")
-        assert 1 == columns.count("update_timestamp")
+        assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
     
     def test_empty_w_commit(self):
         self.worksheet.commit()
@@ -383,10 +384,10 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count("one")
         assert 1 == columns.count("two")
         assert 1 == columns.count("three")
-        assert 1 == columns.count("one_update_timestamp")
-        assert 1 == columns.count("two_update_timestamp")
-        assert 1 == columns.count("three_update_timestamp")
-        assert 1 == columns.count("update_timestamp")
+        assert 1 == columns.count(Flat_Cache.makeTimestampName("one"))
+        assert 1 == columns.count(Flat_Cache.makeTimestampName("two"))
+        assert 1 == columns.count(Flat_Cache.makeTimestampName("three"))
+        assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
         assert type
 
 ####
@@ -462,4 +463,4 @@ class Test_Start_With_Timestamp_Data_Worksheet_Data:
         assert 1 == columns.count("Name")
         assert 1 == columns.count("Email")
         assert 1 == columns.count("Birthday")
-        assert 1 == columns.count("update_timestamp")
+        assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
