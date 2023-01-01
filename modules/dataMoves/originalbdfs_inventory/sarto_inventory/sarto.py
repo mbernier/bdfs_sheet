@@ -36,7 +36,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         sourceData['Type'] = 'Barn Door'
                 
         # Lites
-        sourceData['Lites'] = sourceData['Glass Lites'].replace("lites","").replace("Lites", "").strip()
+        sourceData['Lites'] = self.prepLites(sourceData)
 
         # Hardware
         sourceData = self.prepHardware(sourceData)
@@ -203,3 +203,8 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
             sourceData['Hardware'] = f"{sourceData['Hardware']} Rail with predrilled holes, {sourceData['Hardware']} Hangers with wheels, Door stops, Plastic Fin Floor guide, and Mounting screws"
         
         return sourceData
+    
+    @Debugger
+    @validate_arguments
+    def prepLites(self, sourceData):
+        return sourceData['Glass Lites'].replace("lites","").replace("Lites", "").strip()

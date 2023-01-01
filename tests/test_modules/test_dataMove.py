@@ -94,7 +94,15 @@ class Simple_DataMove(DataMove):
         sourceData['Total Pay']     = 10 * 20.00
 
         return sourceData
-
+    
+    @Debugger
+    def just_a_hook(self):
+        return "a test hook ran"
+    
+    @Debugger
+    @validate_arguments
+    def just_a_hook_with_data(self, data:str):
+        return f"another test hook ran {data}"
 
 class Test_Bdfs_Worksheet_Destination:
     @classmethod
@@ -116,6 +124,55 @@ class Test_Bdfs_Worksheet_Destination:
     def teardown_method(self, method):
         pass
 
+    def test_hook(self):
+        assert "a test hook ran" == self.migrator.run_hook('just_a_hook')
+
+    def test_hook_with_params(self):
+        assert "another test hook ran 1234" == self.migrator.run_hook("just_a_hook_with_data", data="1234")
+
+    def test_openOrCreateDestinationWorksheet(self):
+        pass
+
+    def test_getSourceClass(self):
+        pass
+
+    def test_getDestinationClass(self):
+        pass
+
+    def test_getSpreadsheetClass(self):
+        pass
+
+    def test_setupDestinations(self):
+        pass
+
+    def test_getDestinationRow(self):
+        pass
+    
+    def test_cleanSourceDataForDestination(self):
+        pass
+
+    def test_cleanSourceDataForDestination_useSource(self):
+        pass
+
+    def test_cleanSourceDataForDestination_useDestination(self):
+        pass
+
+    def test_handleWorksheetMethods(self):
+        pass
+
+    def test_noteProblems(self):
+        pass
+    
+    def test_problems(self):
+        pass
+
+    def test_storeTheData(self):
+        pass
+
+    def test_checkMappedData(self):
+        pass
+    
+
     def test_run(self):
         self.migrator.run()
 
@@ -131,7 +188,7 @@ class Test_Bdfs_Worksheet_Destination:
         assert row0['Yearly Salary'] == "40160"
         assert row0['Hours Worked'] == "100"
         assert row0['Hourly Pay'] == "20"
-        assert row0['Total Pay'] == "2000"
+        assert row0['Total Pay'] == "2000" 
         assert row0[Flat_Cache.makeTimestampName('Name')] == 12345.0
         assert row0[Flat_Cache.makeTimestampName('Birthday')] == 12345.0
         assert row0[Flat_Cache.makeTimestampName('Email')] == 12345.0

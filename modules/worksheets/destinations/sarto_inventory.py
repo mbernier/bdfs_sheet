@@ -24,7 +24,6 @@ class Sarto_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
     dataClass = "modules.worksheets.destinations.sarto_inventory.Sarto_Worksheet_DataClass"
 
     def setupParams(self):
-        print("Got to Sarto_Inventory_Worksheet_Destination")
         # sets up all the params we need from some very basic data
         base = Sarto_Inventory_Base()
 
@@ -32,4 +31,3 @@ class Sarto_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
         self.data.expectedColumns_extra = base.cols_expected_extra
         self.data.uniqueField = base.uniqueField
         self.data.discount = base.discount
-        print(f"self.data.uniqueField: {self.data.uniqueField}")
