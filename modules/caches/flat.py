@@ -102,7 +102,7 @@ class Flat_Cache(Bdfs_Cache):
 
     #change the data at the location
     @Debugger
-    def update(self, position: Union[int,str], data=None):
+    def update(self, position: Union[int,str], data:dict=None):
         if Flat_Cache.positionIsTimestamp(position): #skip it
             return
         self.fail_if_position_dne(position)

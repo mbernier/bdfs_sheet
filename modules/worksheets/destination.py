@@ -172,11 +172,11 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
         self.modifiesData()
         self.data.sheetData.insertRow(rowData)
 
+
     @Debugger
     @validate_arguments
     def putRow(self, rowData:dict):
         self.modifiesData()
-
         # do the update or insert, based on the data that was passed
         self.data.sheetData.putRow(rowData)
 
@@ -264,7 +264,7 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
                 'range': dataRange,
                 'values': [headers]+values,
             }]
-
+            
             # kill the data in the sheet, so that we are not writing into data that is differently sized than our current local data
             self.gspread_worksheet_clear()
 

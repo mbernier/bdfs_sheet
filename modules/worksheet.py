@@ -442,7 +442,8 @@ class Bdfs_Worksheet(Base_Class):
     @validate_arguments
     def getDataAsListOfLists(self, update_timestamp:bool=True) -> list[list]:
         self.getData()
-        return self.data.sheetData.getAsListOfLists(update_timestamp=update_timestamp)
+        listOfLists = self.data.sheetData.getAsListOfLists(update_timestamp=update_timestamp)
+        return listOfLists
    
     @Debugger
     @validate_arguments

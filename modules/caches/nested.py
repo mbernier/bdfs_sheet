@@ -130,7 +130,7 @@ class Nested_Cache(Bdfs_Cache):
             self.__updateUniques(data, index=row)
 
         self.validation_rowExists(row)
-
+        
         # do the manual update, we are not replacing the row, only the data in these locations
         self._storage[row].update(position=position, data=data)
         
@@ -138,7 +138,6 @@ class Nested_Cache(Bdfs_Cache):
     @Debugger
     @validate_arguments
     def insert(self, rowData:dict=None):
-        
         if self.height() > 0:
             # only do this after the first row is set up, bc first row will have locations passed
             locations = self.getLocations() # returns only the locations, not the timestamps
@@ -232,7 +231,7 @@ class Nested_Cache(Bdfs_Cache):
 
         # let's let Flat_Cache do it's thing, handling the keys and the timestamps, then let's ask how many columns we have
         if len(newRow.getKeys(keyType=str)) != len(locations):
-            raise Nested_Cache_Exception(f"rowData was expected to be of length {len(newRow.getKeys(keyType=str))} but {len(locations)} was passed")
+            raise Nested_Cache_Exception(f"rowData was expected to be of length {len(locations)} but {len(newRow.getKeys(keyType=str))} was passed")
         
         oldRow = self._storage[row]
         
@@ -243,7 +242,7 @@ class Nested_Cache(Bdfs_Cache):
         if None != self.uniqueField and True == self.isUnique(newRowUnique):
             self.__removeUnique(oldRowUnique)
             self.__updateUniques(newRowUnique,index=row)
-
+        
         self._storage[row] = newRow
 
     #### 
@@ -455,7 +454,7 @@ class Nested_Cache(Bdfs_Cache):
     def getAsListOfLists(self,update_timestamp:bool=True) -> list[list]:
         output = []
         for rowindex, row in enumerate(self._storage):
-            rowAsList = row.getAsList(update_timestamp=update_timestamp) 
+            rowAsList = row.getAsList(update_timestamp=update_timestamp)
             output.append(rowAsList)
         return output
 

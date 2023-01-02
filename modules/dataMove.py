@@ -68,6 +68,8 @@ class DataMove():
             self.run_hook('post_destination_open_create_worksheet', data=worksheet)
             # easy way to make destination fetch the data
             self.destinationStartHeights[worksheet] = self.destinationWorksheets[worksheet].height()
+            self.newData[worksheet] = {}
+            self.skipItem[worksheet] = False
     
         self.run_hook('post_destination_worksheet_setup_loop', data=self.destinationWorksheetNames)
 
@@ -102,7 +104,7 @@ class DataMove():
         logger_name.name = "MapData"
         
         if Helper.classHasMethod(klass=self, methodName=name):
-            Helper.callMethod(klass=self, methodName=name, **kwargs)
+            return Helper.callMethod(klass=self, methodName=name, **kwargs)
 
 
     @Debugger
@@ -155,7 +157,7 @@ class DataMove():
             
             self.run_hook("map_pre_mapFields")
             # merge the source and Destination data, based on whatever rules you need
-            self.__mapFields(sourceData)
+            self.fieldMapper(sourceData)
             self.run_hook("map_post_mapFields")
             
             self.checkMappedData()
@@ -167,6 +169,7 @@ class DataMove():
     def checkMappedData(self):
         self.run_hook("start_checkMappedData")
         newDataKeys = self.newData.keys()
+        modifiedData = {}
         for worksheetName in self.destinationWorksheets.keys():
             # don't keep going
             if True == self.skipItem[worksheetName]:
@@ -174,52 +177,53 @@ class DataMove():
                 continue
             self.run_hook("checkMappedData_did_not_skip_item", data=worksheetName)
 
-            if not worksheetName in newDataKeys:
-                raise DataMove_Exception(f"Data from MapFields did not include a key for destination worksheet '{worksheetName}'")
-
             if not worksheetName in self.destinationWorksheets.keys():
                 raise DataMove_Exception(f"Destination worksheet '{worksheetName}' not in destinationWorksheets list: '{self.destinationWorksheets.keys()}'")
 
-            #
-            # Check if we mapped all of the expected Columns
-            #
-            newDataWorksheetKeys = self.newData[worksheetName].keys()
-
-            # map the source keys to the destination keys we are expecting
-            modifiedData = OrderedDict()
-
-            self.run_hook("checkMappedData_pre_key_loop", data=worksheetName)
-            for key in self.destinationWorksheets[worksheetName].getExpectedColumns():
-                self.run_hook("checkMappedData_in_key_loop", data=key)
-                #skip checking the keys for update_timestamp, as we will check them down the line
-                # update_timestamp will be updated in destination when the row is written
-                # the update_timestamps for the keys we're keeping will be grabbed when we decide if we're keeping source or destination
-                self.run_hook("checkMappedData_pre_update_timestamp_check", data=key)
-                if UPDATE_TIMESTAMP_KEY in key:
-                    continue
-                self.run_hook("checkMappedData_post_update_timestamp_check", data=key)
-
-                # we decided during mapping that we don't want this sourceRow in the destination, skip processing
-                if True == self.skipItem[worksheetName]:
-                    self.run_hook("checkMappedData_did_skip_item")
-                    continue
-                self.run_hook("checkMappedData_did_not_skip_item")
-
-                self.run_hook("checkMappedData_pre_key_in_mapped_data", data=key, mapped_data_keys=newDataWorksheetKeys)
-                if not key in newDataWorksheetKeys:
-                    raise DataMove_Exception(f" '{key} was not found in sources, it should be mapped before we can push data to destination")
-                self.run_hook("checkMappedData_post_key_in_mapped_data")
-
-                self.run_hook("checkMappedData_pre_cleanSourceDataForDestination", data=key, worksheetName=worksheetName)
-                #cleanData will come back with the original key and if there was a timestamp on source or destination, that timestamp with the appropriate key
-                modifiedData = self.cleanSourceDataForDestination(key, worksheetName)
-                self.run_hook("checkMappedData_post_cleanSourceDataForDestination", cleanData=modifiedData)
-            self.run_hook("checkMappedData_post_key_loop", data=worksheetName)
-
+            modifiedData = self.verifyRowData(worksheetName)
+            
             self.storeTheData(worksheetName, modifiedData)
 
         self.run_hook("end_checkMappedData")
 
+    @Debugger
+    @validate_arguments
+    def verifyRowData(self, worksheetName):
+        #
+        # Check if we mapped all of the expected Columns
+        #
+        newDataWorksheetKeys = self.newData[worksheetName].keys()
+        # map the source keys to the destination keys we are expecting
+        modifiedData = OrderedDict()
+
+        self.run_hook("verifyRowData_pre_key_loop", data=worksheetName)
+        for key in self.destinationWorksheets[worksheetName].getExpectedColumns():
+            self.run_hook("verifyRowData_in_key_loop", data=key)
+            #skip checking the keys for update_timestamp, as we will check them down the line
+            # update_timestamp will be updated in destination when the row is written
+            # the update_timestamps for the keys we're keeping will be grabbed when we decide if we're keeping source or destination
+            self.run_hook("verifyRowData_pre_update_timestamp_check", data=key)
+            if UPDATE_TIMESTAMP_KEY in key:
+                continue
+            self.run_hook("verifyRowData_post_update_timestamp_check", data=key)
+
+            # we decided during mapping that we don't want this sourceRow in the destination, skip processing
+            if True == self.skipItem[worksheetName]:
+                self.run_hook("verifyRowData_did_skip_item")
+                continue
+            self.run_hook("verifyRowData_did_not_skip_item")
+
+            self.run_hook("verifyRowData_pre_key_in_mapped_data", data=key, mapped_data_keys=newDataWorksheetKeys)
+            if not key in newDataWorksheetKeys:
+                raise DataMove_Exception(f" '{key} was not found in sources, it should be mapped before we can push data to destination")
+            self.run_hook("verifyRowData_post_key_in_mapped_data")
+
+            self.run_hook("verifyRowData_pre_chooseSourceOrDestinationData", data=key, worksheetName=worksheetName)
+            #cleanData will come back with the original key and if there was a timestamp on source or destination, that timestamp with the appropriate key
+            modifiedData.update(self.chooseSourceOrDestinationData(key, worksheetName))
+            self.run_hook("verifyRowData_post_chooseSourceOrDestinationData", cleanData=modifiedData)
+        self.run_hook("end_verifyRowData", data=worksheetName)
+        return modifiedData
 
     @Debugger
     @validate_arguments
@@ -268,8 +272,8 @@ class DataMove():
 
     @Debugger
     @validate_arguments
-    def cleanSourceDataForDestination(self, key, worksheetName):
-        self.run_hook("\nstart_cleanSourceDataForDestination",key=key, worksheetName=worksheetName)
+    def chooseSourceOrDestinationData(self, key:str, worksheetName:str) -> dict:
+        self.run_hook("\nstart_chooseSourceOrDestinationData",key=key, worksheetName=worksheetName)
 
         #
         # Decide which version of data we want, based on timestamps
@@ -278,22 +282,51 @@ class DataMove():
         
         useNew = True #if False, use the data from destination
 
-        #
-        # Get the keys for the newData Dict
-        #
-        self.run_hook("start_cleanSourceDataForDestination_pre_get_newDataTimestamp")
-        newDataKeys = list(self.newData[worksheetName].keys())
-        newDataHasTimestampKey = timestampKey in newDataKeys
-        newDataTimestamp:float = 0.0
-        if True == newDataHasTimestampKey:
-            newDataTimestamp = self.newData[worksheetName][timestampKey]
-        self.run_hook("start_cleanSourceDataForDestination_post_get_newDataTimestamp", newDataTimestamp=newDataTimestamp)
+        newDataTimestamp = self.chooseSourceOrDestinationData_getSourceTimestamp(worksheetName, timestampKey)
 
         #
         # Destination Data Keys
         #
-        self.run_hook("start_cleanSourceDataForDestination_pre_get_destinationDataTimestamp")
-        destinationData = self.getDestinationRow()
+        destinationData = self.getDestinationRow(worksheetName)
+
+        destinationTimestamp = self.chooseSourceOrDestinationData_getDestinationTimestamp(timestampKey, destinationData.copy())
+        #setup outputData to get overridden by either source or destination, based on usedNew and the timestamp
+        outputData = {key: None}
+
+        self.run_hook("start_chooseSourceOrDestinationData_pre_compareTimestamps")
+        if destinationTimestamp > newDataTimestamp:
+            self.run_hook("start_chooseSourceOrDestinationData_in_compareTimestamps_useDestination_data")
+            # this is the only time when destination data is the right data to keep
+            outputData = self.chooseSourceOrDestinationData_useDestination(key, timestampKey, destinationData.copy())
+        else:
+            self.run_hook("start_chooseSourceOrDestinationData_in_compareTimestamps_useSource_data")        
+            outputData = self.chooseSourceOrDestinationData_useSource(worksheetName, key, timestampKey)
+        self.run_hook("start_chooseSourceOrDestinationData_post_compareTimestamps")            
+        
+        self.run_hook("end_chooseSourceOrDestinationData",outputData=outputData)
+        return outputData
+
+
+    @Debugger
+    @validate_arguments
+    def chooseSourceOrDestinationData_getSourceTimestamp(self, worksheetName:str, timestampKey:str):
+        #
+        # Get the keys for the newData Dict
+        #
+        self.run_hook("start_chooseSourceOrDestinationData_getSourceTimestamp")
+        newDataKeys = list(self.newData[worksheetName].keys())
+        newDataHasTimestampKey = timestampKey in newDataKeys
+        newDataTimestamp:float = 0.0
+        if True == newDataHasTimestampKey and None != self.newData[worksheetName][timestampKey]:
+            newDataTimestamp = float(self.newData[worksheetName][timestampKey])
+        self.run_hook("end_chooseSourceOrDestinationData_getSourceTimestamp", newDataTimestamp=newDataTimestamp)
+        return newDataTimestamp
+    
+
+    @Debugger
+    @validate_arguments
+    def chooseSourceOrDestinationData_getDestinationTimestamp(self, timestampKey:str, destinationData:dict):
+        self.run_hook("start_chooseSourceOrDestinationData_getDestinationTimestamp")
         destinationDataKeys = []
         destinationHasTimestampKey = False
         destinationTimestamp:float = 0.0
@@ -301,65 +334,54 @@ class DataMove():
             destinationDataKeys = destinationData.keys()
             destinationHasTimestampKey = timestampKey in destinationDataKeys
             if True == destinationHasTimestampKey:
-                destinationTimestamp = destinationData[timestampKey]       
-        self.run_hook("start_cleanSourceDataForDestination_post_get_destinationDataTimestamp", destinationTimestamp=destinationTimestamp)
+                destinationTimestamp = float(destinationData[timestampKey])
+        self.run_hook("end_chooseSourceOrDestinationData_getDestinationTimestamp", destinationTimestamp=destinationTimestamp)
+        return destinationTimestamp
 
-        #setup outputData to get overridden by either source or destination, based on usedNew and the timestamp
-        outputData = {key: None}
-
-        self.run_hook("start_cleanSourceDataForDestination_pre_compareTimestamps")
-        if destinationTimestamp > newDataTimestamp:
-            self.run_hook("start_cleanSourceDataForDestination_in_compareTimestamps_useDestination_data")
-            # this is the only time when destination data is the right data to keep
-            outputData = self.cleanSourceDataForDestination_useDestination(key, timestampKey, destinationData)
-        else:
-            self.run_hook("start_cleanSourceDataForDestination_in_compareTimestamps_useSource_data")        
-            outputData = self.cleanSourceDataForDestination_useSource(worksheetName, key, timestampKey)
-        self.run_hook("start_cleanSourceDataForDestination_post_compareTimestamps")            
-        
-        self.run_hook("end_cleanSourceDataForDestination",outputData=outputData)
-        return outputData
 
     @Debugger
     @validate_arguments
-    def cleanSourceDataForDestination_useSource(self, worksheetName, key, timestampKey):
-        self.run_hook("start_cleanSourceDataForDestination_pre_useNew_data", data=self.newData[worksheetName][key])
+    def chooseSourceOrDestinationData_useSource(self, worksheetName, key, timestampKey):
+        self.run_hook("start_chooseSourceOrDestinationData_pre_useNew_data", data=self.newData[worksheetName][key])
         outputData = {}
         newDataKeys = self.newData.keys()
         # the new data is the winner
         outputData[key] = self.newData[worksheetName][key]
-        self.run_hook("start_cleanSourceDataForDestination_pre_useNew_newData_has_timestamp", timestampKey=timestampKey)
+        self.run_hook("start_chooseSourceOrDestinationData_pre_useNew_newData_has_timestamp", timestampKey=timestampKey)
         # does new data have a timestamp key for this field?
         if timestampKey in newDataKeys:
-            self.run_hook("start_cleanSourceDataForDestination_pre_in_useNew_newData_has_timestamp")
+            self.run_hook("start_chooseSourceOrDestinationData_pre_in_useNew_newData_has_timestamp")
             # timestamp for this key is in newData
             outputData[timestampKey] = self.newData[worksheetName][timestampKey]
-            self.run_hook("start_cleanSourceDataForDestination_post_in_useNew_newData_has_timestamp", timestamp=self.newData[worksheetName][timestampKey])
+            self.run_hook("start_chooseSourceOrDestinationData_post_in_useNew_newData_has_timestamp", timestamp=self.newData[worksheetName][timestampKey])
         else:
             # timestamp for this key is not in the newData
             pass
-        self.run_hook("start_cleanSourceDataForDestination_post_useNew_newData_has_timestamp", timestampKey=timestampKey)
-        self.run_hook("start_cleanSourceDataForDestination_post_useNew_data")
+        self.run_hook("start_chooseSourceOrDestinationData_post_useNew_newData_has_timestamp", timestampKey=timestampKey)
+        self.run_hook("start_chooseSourceOrDestinationData_post_useNew_data")
+        return outputData
 
 
     @Debugger
     @validate_arguments
-    def cleanSourceDataForDestination_useDestination(self, key, timestampKey, destinationData):
+    def chooseSourceOrDestinationData_useDestination(self, key:str, timestampKey:str, destinationData:dict):
         outputData = {}
-        self.run_hook("start_cleanSourceDataForDestination_pre_useDestination_data", data=destinationData[key])
+        self.run_hook("start_chooseSourceOrDestinationData_pre_useDestination_data", data=destinationData[key])
         # the destination data is what we want, use that data
         outputData[key] = destinationData[key]
         if timestampKey in destinationData[key]:
-            self.run_hook("start_cleanSourceDataForDestination_useDestination_data_pre_has_timestamp")
+            self.run_hook("start_chooseSourceOrDestinationData_useDestination_data_pre_has_timestamp")
             # destination has the timestamp key, so pass that value along
             outputData[timestampKey] = destinationData[timestampKey]
-            self.run_hook("start_cleanSourceDataForDestination_useDestination_data_post_has_timestamp", timestamp=destinationData[timestampKey])
+            self.run_hook("start_chooseSourceOrDestinationData_useDestination_data_post_has_timestamp", timestamp=destinationData[timestampKey])
 
-        self.run_hook("start_cleanSourceDataForDestination_post_useDestination_data")
+        self.run_hook("start_chooseSourceOrDestinationData_post_useDestination_data")
+        return outputData
+
 
     @Debugger
     @validate_arguments
-    def __mapFields(self, sourceData:dict):
+    def fieldMapper(self, sourceData:dict):
         self.run_hook("\nstart_mapFields")
         #bc we will only grab the data based on the destination columns
             # we can copy the data into the worksheet specific dict and then use
@@ -428,16 +450,26 @@ class DataMove():
         self.map()
         self.run_hook('post_destination_run_map')
 
-        for worksheetName in self.destinationWorksheetNames:
-            self.run_hook('pre_destination_run_commit')
-            self.commit(worksheetName)
-            self.run_hook('post_destination_run_commit')
+        self.doCommit()
         
         self.run_hook('pre_run_problems')
         self.problems()
         self.run_hook('post_run_problems')
         
         self.run_hook('post_run')
+
+
+    @Debugger
+    @validate_arguments
+    def doCommit(self):
+        self.run_hook("start_doCommit")
+        for worksheetName in self.destinationWorksheetNames:
+            self.run_hook('doCommit_pre_run_commit')
+
+            self.destinationWorksheets[worksheetName].commit()
+
+            self.run_hook('doCommit__run_commit')
+        self.run_hook("end_doCommit")
 
 
     @Debugger
@@ -503,14 +535,6 @@ class DataMove():
                     print(f"\t- {value}")
 
         self.run_hook('post_problems')
-
-
-    @Debugger
-    @validate_arguments
-    def commit(self, worksheetName:str):
-        self.run_hook('\npre_destination_worksheet_commit', data=worksheetName)
-        self.destinationWorksheets[worksheetName].commit()
-        self.run_hook('post_destination_worksheet_commit', data=worksheetName)
 
 
     ####
