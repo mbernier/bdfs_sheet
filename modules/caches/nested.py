@@ -30,7 +30,8 @@ class Nested_Cache(Bdfs_Cache):
     uniques = []
     uniqueField = None
     uniqueFieldIndex = None
-
+    headerRowOnly = False
+    
     # locations are the indexes for the Flat_Cache
     #   We will make sure that they are setup properly as the caches are built
     @Debugger
@@ -39,9 +40,8 @@ class Nested_Cache(Bdfs_Cache):
         self.uniques = []
         self.uniqueField = None
         self.uniqueFieldIndex = None
-
         self.uniqueField = uniqueField
-
+        self.headerRowOnly = False
         # set up the initial data
         self.__setup(data)
         
@@ -58,7 +58,8 @@ class Nested_Cache(Bdfs_Cache):
     def __setup(self, data:list[dict]=None):
         if None != data:
             for rowData in data:
-                self.insert(rowData=rowData)
+                self.insertRow(rowData=rowData)
+
 
     @Debugger
     def __setupUniqueIndex(self):
@@ -96,6 +97,7 @@ class Nested_Cache(Bdfs_Cache):
         obj = {}
         return self.select(row)
 
+
     # uses the dict get() to return None or the value if the item exists
     @Debugger
     @validate_arguments # no need to test location exists, return None if the data doesn't exist at row or location
@@ -107,7 +109,6 @@ class Nested_Cache(Bdfs_Cache):
             row = self.__getRowByUnique(uniqueData=unique)
             data = self._storage[row].select(position=position, update_timestamp=update_timestamp)
         else: 
-
             if None == row:
                 # select all
                 return self.getAsListOfDicts(update_timestamp=update_timestamp)
@@ -119,9 +120,14 @@ class Nested_Cache(Bdfs_Cache):
             data = self._storage[row].select(position=position, update_timestamp=update_timestamp)
         return data
 
+
     @Debugger
     @validate_arguments
     def update(self, row:Annotated[int, Field(gt=-1)], position:Union[int,str], data=None):
+        self.__handleHeaderRowOnly(row)
+
+        self.validation_rowExists(row)
+
         if position == self.uniqueField:
             # get the old uniqueValue
             oldUnique = self.select(position=position,row=row)
@@ -129,15 +135,66 @@ class Nested_Cache(Bdfs_Cache):
             self.__removeUnique(oldUnique)
             self.__updateUniques(data, index=row)
 
-        self.validation_rowExists(row)
-        
         # do the manual update, we are not replacing the row, only the data in these locations
         self._storage[row].update(position=position, data=data)
         
+    @Debugger
+    @validate_arguments
+    def insert(self):
+        raise Nested_Cache_Exception("There is no Nested_Cache.insert() method, maybe you meant insertRow()?")
+        
+    ####
+    #
+    # Row Actions
+    #
+    ####
+
+    @Debugger
+    @validate_arguments # no need to test location exists, return None if the data doesn't exist at row or location
+    def selectRow(self, row:Annotated[int,Field(gt=-1)]=None, unique=None, update_timestamp=True):
+        if None != unique:
+            if None != row:
+                raise Nested_Cache_Exception("Passing row and unique together is poor form, pick one")
+            # we want the row based on the unique value
+            row = self.__getRowByUnique(uniqueData=unique)
+            data = self._storage[row].select(position=None, update_timestamp=update_timestamp)
+        else: 
+
+            if None == row:
+                # select all
+                return self.getAsListOfDicts(update_timestamp=update_timestamp)
+            else: 
+                # a row was passed, validate it
+                self.validation_rowExists(row)
+
+            # if position is None, will return the row, if it's set it will return the data at that position
+            data = self._storage[row].select(position=None, update_timestamp=update_timestamp)
+        return data
+
+    # given some data, identify whether it should be inserted or updated, based on the uniqueField
+    @Debugger
+    @validate_arguments
+    def putRow(self, rowData:dict):
+        if None != self.uniqueField:
+            uniqueData = rowData[self.uniqueField]
+            if self.isUnique(uniqueData):
+                # insert
+                self.insertRow(rowData)
+            else:
+                row = self.__getRowByUnique(uniqueData)
+                # update
+                self.updateRow(row=row,rowData=rowData)
+        else:
+            # if there is no unique constraint, do an insert
+            self.insertRow(rowData)
+
 
     @Debugger
     @validate_arguments
-    def insert(self, rowData:dict=None):
+    def insertRow(self, rowData:dict=None):
+        if rowData == {}: # we shouldn't insert anything, bc it's empty
+            return
+
         if self.height() > 0:
             # only do this after the first row is set up, bc first row will have locations passed
             locations = self.getLocations() # returns only the locations, not the timestamps
@@ -150,11 +207,7 @@ class Nested_Cache(Bdfs_Cache):
             # let's compare the raw keys to raw keys, ignoring timestamps that are handled by Flat_Cache
             if len(newRowLocations) == len(locations):
                 # the keys are the same, now...do we have unique columns?
-                if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
-                    self.__updateUniques(newRow.select(position=self.uniqueField))
-
-                self._storage.append(newRow)
-                self.__increaseHeight()
+                self.__handleUniqueRowLogic(newRow)
             else:
                 locationsHas = Helper.listDiff(locations, newRowKeys, ignoreWith=UPDATE_TIMESTAMP_KEY)
                 rowDataHas = Helper.listDiff(newRowKeys, locations, ignoreWith=UPDATE_TIMESTAMP_KEY)
@@ -170,37 +223,35 @@ class Nested_Cache(Bdfs_Cache):
             # we are in row one, whatever keys we are passed are what we're going to compare to going forward...
             newRow = Flat_Cache(rowData)
             
-            if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
-                self.__updateUniques(newRow.select(position=self.uniqueField))
+            self.__handleUniqueRowLogic(newRow)
 
-            self._storage.append(newRow)
-            self.__increaseHeight()
-        
 
-    
-
-    # given some data, identify whether it should be inserted or updated, based on the uniqueField
     @Debugger
     @validate_arguments
-    def putRow(self, rowData:dict):
-        if None != self.uniqueField:
-            uniqueData = rowData[self.uniqueField]
-            if self.isUnique(uniqueData):
-                # insert
-                self.insert(rowData)
-            else:
-                row = self.__getRowByUnique(uniqueData)
-                # update
-                self.updateRow(row=row,rowData=rowData)
+    def __handleUniqueRowLogic(self, newRow):
+        if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
+            self.__updateUniques(newRow.select(position=self.uniqueField))
+        
+        if self.headerRowOnly == True:
+            # we have a placeholder row in the header and we now have a suitable replacement row
+            self._storage = [newRow] # first row
+            
+            if False == newRow.isEmpty(): # The new row has more than None stored
+                self.headerRowOnly = False
+
         else:
-            # if there is no unique constraint, do an insert
-            self.insert(rowData)
+            self._storage.append(newRow)
+        
+        self.__increaseHeight()
 
 
     @Debugger
     @validate_arguments
     def deleteRow(self, row:Annotated[int, Field(gt=-1)]):
         self.validation_rowExists(row)
+        if self.headerRowOnly == True:
+            raise Nested_Cache_Exception("There is only an empty header row, you shouldn't delete that")
+
         row = self._storage.pop(row)
         Logger.info("Row {} deleted".format(row))
 
@@ -221,6 +272,7 @@ class Nested_Cache(Bdfs_Cache):
     @validate_arguments
     def updateRow(self, row:Annotated[int, Field(gt=-1)], rowData:dict):
         self.validation_rowExists(row)
+        self.__handleHeaderRowOnly(row)
 
         locations = self.getLocations()
 
@@ -273,12 +325,14 @@ class Nested_Cache(Bdfs_Cache):
     @Debugger
     @validate_arguments
     def insert_location(self, location:str, index:int=None):
-
+        
         # we have our first location, so we need to add it
         if self.height() == 0:
             # this inserts a new row with only this location, it calls __setupUniqueIndex() so we don't 
             #   need to call it here
-            self.insert({location: None})
+            self.headerRowOnly = True
+
+            self.insertRow({location: None})
             
         elif self.height() > 0:
             for row in range(0, self.height()):
@@ -350,7 +404,7 @@ class Nested_Cache(Bdfs_Cache):
 
     ####
     #
-    # Meta
+    # Meta Methods
     #
     ####
 
@@ -364,6 +418,8 @@ class Nested_Cache(Bdfs_Cache):
     # reset all the data to nothing
     @Debugger
     def deleteAllData(self):
+        # if we had a headerRowOnly, we don't any longer
+        self.headerRowOnly = False
         self._storage = []
         self._height = 0
         Logger.info("All data in Nested_Cache has been deleted")
@@ -374,6 +430,12 @@ class Nested_Cache(Bdfs_Cache):
         # decrement bc the user doesn't need to know we are overloading the 0th row
         return self._height
 
+
+    @Debugger
+    @validate_arguments
+    def __handleHeaderRowOnly(self, row:Annotated[int, Field(gt=-1)]):
+        if self.headerRowOnly == True and row ==0:
+            self.headerRowOnly == False
 
     @Debugger
     @validate_arguments
@@ -497,5 +559,5 @@ class Nested_Cache(Bdfs_Cache):
     def validation_rowExists(self, row:Annotated[int, Field(gt=-1)]) -> bool:
         Logger.validation_method_debug("validation_rowExists", locals())
         if not self.rowExists(row):
-            raise Nested_Cache_Exception("Row {} doesn't exist, to add it use insert(rowData)".format(row))
+            raise Nested_Cache_Exception("Row {} doesn't exist, to add it use insertRow(rowData)".format(row))
         return True

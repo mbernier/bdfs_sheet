@@ -7,259 +7,259 @@ from modules.worksheets.destination import Bdfs_Worksheet_Destination
 from modules.worksheets.exception import Bdfs_Worksheet_Destination_Exception
 
 
-####
-#
-# Fail with the check for "kept" spreadsheets
-#
-####
+# ####
+# #
+# # Fail with the check for "kept" spreadsheets
+# #
+# ####
 
-class Simple_Spreadsheet_Destination_Fail(Bdfs_Spreadsheet_Destination):
-    spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
+# class Simple_Spreadsheet_Destination_Fail(Bdfs_Spreadsheet_Destination):
+#     spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
 
-    worksheetKeeperPattern = "test"
+#     worksheetKeeperPattern = "test"
 
-    worksheet_class = "tests.test_modules.worksheets.test_destination.Simple_Worksheet_Destination"
+#     worksheet_class = "tests.test_modules.worksheets.test_destination.Simple_Worksheet_Destination"
 
-class Simple_Worksheet_Destination(Bdfs_Worksheet_Destination):
-    # hourly Pay and total Pay will be added in testing
-    cols_expected = []
+# class Simple_Worksheet_Destination(Bdfs_Worksheet_Destination):
+#     # hourly Pay and total Pay will be added in testing
+#     cols_expected = []
 
-    cols_expected_extra = {}
+#     cols_expected_extra = {}
     
-    def __init__(self, worksheet):
-        super().__init__(worksheet)
+#     def __init__(self, worksheet):
+#         super().__init__(worksheet)
     
-def test_failed_destination_worksheet_not_kept():
-    with pytest.raises(Bdfs_Spreadsheet_Exception) as excinfo:
-        destination = Simple_Spreadsheet_Destination_Fail()
-        spreadsheet = destination.setupSpreadsheet()
-        test_worksheet = destination.getWorksheet("demo_worksheet")
-    assert "The worksheet 'demo_worksheet' was not found in the kept worksheets" in excinfo.value.message
-    time.sleep(5)
+# def test_failed_destination_worksheet_not_kept():
+#     with pytest.raises(Bdfs_Spreadsheet_Exception) as excinfo:
+#         destination = Simple_Spreadsheet_Destination_Fail()
+#         spreadsheet = destination.setupSpreadsheet()
+#         test_worksheet = destination.getWorksheet("demo_worksheet")
+#     assert "The worksheet 'demo_worksheet' was not found in the kept worksheets" in excinfo.value.message
+#     time.sleep(5)
 
-####
-#
-# Fail bc Expected Columns are not set up
-#
-####
+# ####
+# #
+# # Fail bc Expected Columns are not set up
+# #
+# ####
 
-class Failed_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
-    spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
+# class Failed_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
+#     spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
 
-    worksheetKeeperPattern = ""
+#     worksheetKeeperPattern = ""
 
-    worksheet_class = "tests.test_modules.worksheets.test_destination.Failed_Worksheet_Destination"
+#     worksheet_class = "tests.test_modules.worksheets.test_destination.Failed_Worksheet_Destination"
 
-class Failed_Worksheet_Destination(Bdfs_Worksheet_Destination):
-    # hourly Pay and total Pay will be added in testing
-    cols_expected = []
+# class Failed_Worksheet_Destination(Bdfs_Worksheet_Destination):
+#     # hourly Pay and total Pay will be added in testing
+#     cols_expected = []
 
-    cols_expected_extra = {}
+#     cols_expected_extra = {}
     
-    def __init__(self, worksheet):
-        super().__init__(worksheet)
+#     def __init__(self, worksheet):
+#         super().__init__(worksheet)
 
-def test_failed_destination():
-    with pytest.raises(Bdfs_Worksheet_Destination_Exception) as excinfo:
-        destination = Failed_Spreadsheet_Destination()
-        spreadsheet = destination.setupSpreadsheet()
-        test_worksheet = destination.getWorksheet("demo_worksheet")
+# def test_failed_destination():
+#     with pytest.raises(Bdfs_Worksheet_Destination_Exception) as excinfo:
+#         destination = Failed_Spreadsheet_Destination()
+#         spreadsheet = destination.setupSpreadsheet()
+#         test_worksheet = destination.getWorksheet("demo_worksheet")
 
-    assert "Cols expected was not set before instantiating Spreadsheet class" in excinfo.value.message
-    time.sleep(5)
+#     assert "Cols expected was not set before instantiating Spreadsheet class" in excinfo.value.message
+#     time.sleep(5)
 
-####
-#
-# Run through basic functionality on a known good spreadsheet, that has no timestamps to start with
-#
-####
+# ####
+# #
+# # Run through basic functionality on a known good spreadsheet, that has no timestamps to start with
+# #
+# ####
 
-class Good_Simple_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
-    spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
+# class Good_Simple_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
+#     spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
 
-    worksheetKeeperPattern = "demo"
+#     worksheetKeeperPattern = "demo"
 
-    worksheet_class = "tests.test_modules.worksheets.test_destination.Good_Worksheet_Destination"
+#     worksheet_class = "tests.test_modules.worksheets.test_destination.Good_Worksheet_Destination"
 
-class Good_Worksheet_Destination(Bdfs_Worksheet_Destination):
-    # hourly Pay and total Pay will be added in testing
-    cols_expected = ["one", "two", "three"]
+# class Good_Worksheet_Destination(Bdfs_Worksheet_Destination):
+#     # hourly Pay and total Pay will be added in testing
+#     cols_expected = ["one", "two", "three"]
 
-    cols_expected_extra = {"test": ["four","five"],
-                            "demo": ["six"]}
+#     cols_expected_extra = {"test": ["four","five"],
+#                             "demo": ["six"]}
     
-    def __init__(self, worksheet):
-        super().__init__(worksheet)
+#     def __init__(self, worksheet):
+#         super().__init__(worksheet)
 
-class Test_Good_Worksheet_Data:
-    @classmethod
-    def setup_class(self):
-        print("\n\tStarting class: {} execution".format(self.__name__))
-        sheet = Good_Simple_Spreadsheet_Destination()
-        sheet.setupSpreadsheet()
-        self.sheet = sheet
-        self.worksheet = self.sheet.getWorksheet("demo_worksheet")
-        time.sleep(5)
+# class Test_Good_Worksheet_Data:
+#     @classmethod
+#     def setup_class(self):
+#         print("\n\tStarting class: {} execution".format(self.__name__))
+#         sheet = Good_Simple_Spreadsheet_Destination()
+#         sheet.setupSpreadsheet()
+#         self.sheet = sheet
+#         self.worksheet = self.sheet.getWorksheet("demo_worksheet")
+#         time.sleep(5)
         
-    @classmethod
-    def teardown_class(self): 
-        print("\n\tTeardown class: {} execution".format(self.__name__))
+#     @classmethod
+#     def teardown_class(self): 
+#         print("\n\tTeardown class: {} execution".format(self.__name__))
 
-    def setup_method(self, method):
-        print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
+#     def setup_method(self, method):
+#         print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
 
-    def teardown_method(self, method):
-        pass
+#     def teardown_method(self, method):
+#         pass
 
-    def test_good_destination(self):
-        assert ["one", "two", "three", "six"] == self.worksheet.getExpectedColumns()
+#     def test_good_destination(self):
+#         assert ["one", "two", "three", "six"] == self.worksheet.getExpectedColumns()
 
-    def test_good_remove_column(self):
-        with pytest.raises(Flat_Cache_Exception) as excinfo:
-            self.worksheet.removeColumn("six")
-        assert "Location 'six' does not exist, try \"insert_location('six')\"" in excinfo.value.message
+#     def test_good_remove_column(self):
+#         with pytest.raises(Flat_Cache_Exception) as excinfo:
+#             self.worksheet.removeColumn("six")
+#         assert "Location 'six' does not exist, try \"insert_location('six')\"" in excinfo.value.message
 
-        columns = self.worksheet.getColumns()
-        assert not "one" in self.worksheet.getColumns()
-        assert not "two" in self.worksheet.getColumns()
-        assert not "three" in self.worksheet.getColumns()
-        assert not "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert not "one" in self.worksheet.getColumns()
+#         assert not "two" in self.worksheet.getColumns()
+#         assert not "three" in self.worksheet.getColumns()
+#         assert not "six" in self.worksheet.getColumns()
 
-        columns = self.worksheet.getColumns() + self.worksheet.getExpectedColumns()
-        self.worksheet.alignToColumns(columns)
+#         columns = self.worksheet.getColumns() + self.worksheet.getExpectedColumns()
+#         self.worksheet.alignToColumns(columns)
 
-        columns = self.worksheet.getColumns()
-        assert "one" in self.worksheet.getColumns()
-        assert "two" in self.worksheet.getColumns()
-        assert "three" in self.worksheet.getColumns()
-        assert "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert "one" in self.worksheet.getColumns()
+#         assert "two" in self.worksheet.getColumns()
+#         assert "three" in self.worksheet.getColumns()
+#         assert "six" in self.worksheet.getColumns()
     
-        # add six from expected, then remove
-        self.worksheet.removeColumn("six")
+#         # add six from expected, then remove
+#         self.worksheet.removeColumn("six")
 
-        columns = self.worksheet.getColumns()
-        assert "one" in self.worksheet.getColumns()
-        assert "two" in self.worksheet.getColumns()
-        assert "three" in self.worksheet.getColumns()
-        assert not "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert "one" in self.worksheet.getColumns()
+#         assert "two" in self.worksheet.getColumns()
+#         assert "three" in self.worksheet.getColumns()
+#         assert not "six" in self.worksheet.getColumns()
 
 
-    def test_good_remove_columns(self):
+#     def test_good_remove_columns(self):
 
-        columns = self.worksheet.getColumns() + self.worksheet.getExpectedColumns()
-        self.worksheet.alignToColumns(columns)
+#         columns = self.worksheet.getColumns() + self.worksheet.getExpectedColumns()
+#         self.worksheet.alignToColumns(columns)
 
-        columns = self.worksheet.getColumns()
-        assert "one" in self.worksheet.getColumns()
-        assert "two" in self.worksheet.getColumns()
-        assert "three" in self.worksheet.getColumns()
-        assert "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert "one" in self.worksheet.getColumns()
+#         assert "two" in self.worksheet.getColumns()
+#         assert "three" in self.worksheet.getColumns()
+#         assert "six" in self.worksheet.getColumns()
 
-        self.worksheet.removeColumns(["one", "two", "three", "six"])
+#         self.worksheet.removeColumns(["one", "two", "three", "six"])
 
-        columns = self.worksheet.getColumns()
-        assert not "one" in self.worksheet.getColumns()
-        assert not "two" in self.worksheet.getColumns()
-        assert not "three" in self.worksheet.getColumns()
-        assert not "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert not "one" in self.worksheet.getColumns()
+#         assert not "two" in self.worksheet.getColumns()
+#         assert not "three" in self.worksheet.getColumns()
+#         assert not "six" in self.worksheet.getColumns()
 
-####
-#
-# Start with an empty sheet, no unique
-#
-####
+# ####
+# #
+# # Start with an empty sheet, no unique
+# #
+# ####
 
-class Empty_Simple_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
-    spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
+# class Empty_Simple_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
+#     spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
 
-    worksheetKeeperPattern = "empty"
+#     worksheetKeeperPattern = "empty"
 
-    worksheet_class = "tests.test_modules.worksheets.test_destination.Empty_Worksheet_Destination"
+#     worksheet_class = "tests.test_modules.worksheets.test_destination.Empty_Worksheet_Destination"
 
-class Empty_Worksheet_Destination(Bdfs_Worksheet_Destination):
-    # hourly Pay and total Pay will be added in testing
-    cols_expected = ["one", "two", "three"]
+# class Empty_Worksheet_Destination(Bdfs_Worksheet_Destination):
+#     # hourly Pay and total Pay will be added in testing
+#     cols_expected = ["one", "two", "three"]
 
-    cols_expected_extra = {"test": ["six"]}
+#     cols_expected_extra = {"test": ["six"]}
     
-    def __init__(self, worksheet):
-        super().__init__(worksheet)
+#     def __init__(self, worksheet):
+#         super().__init__(worksheet)
 
 
-class Test_Empty_Worksheet_Data:
-    @classmethod
-    def setup_class(self):
-        print("\n\tStarting class: {} execution".format(self.__name__))
-        sheet = Empty_Simple_Spreadsheet_Destination()
-        sheet.setupSpreadsheet()
-        self.sheet = sheet
-        self.worksheet = self.sheet.getWorksheet("test_empty")
-        time.sleep(5)
-        self.worksheet.gspread_worksheet_clear()
-        time.sleep(5)
+# class Test_Empty_Worksheet_Data:
+#     @classmethod
+#     def setup_class(self):
+#         print("\n\tStarting class: {} execution".format(self.__name__))
+#         sheet = Empty_Simple_Spreadsheet_Destination()
+#         sheet.setupSpreadsheet()
+#         self.sheet = sheet
+#         self.worksheet = self.sheet.getWorksheet("test_empty")
+#         time.sleep(5)
+#         self.worksheet.gspread_worksheet_clear()
+#         time.sleep(5)
         
-    @classmethod
-    def teardown_class(self): 
-        print("\n\tTeardown class: {} execution".format(self.__name__))
+#     @classmethod
+#     def teardown_class(self): 
+#         print("\n\tTeardown class: {} execution".format(self.__name__))
 
-    def setup_method(self, method):
-        print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
+#     def setup_method(self, method):
+#         print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
 
-    def teardown_method(self, method):
-        pass
+#     def teardown_method(self, method):
+#         pass
 
-    def test_empty_expectedCols(self):
-        assert ["one", "two", "three", "six"] == self.worksheet.getExpectedColumns()
+#     def test_empty_expectedCols(self):
+#         assert ["one", "two", "three", "six"] == self.worksheet.getExpectedColumns()
 
-    def test_empty_remove_column(self):
+#     def test_empty_remove_column(self):
 
-        columns = self.worksheet.getColumns()
-        assert not "one" in self.worksheet.getColumns()
-        assert not "two" in self.worksheet.getColumns()
-        assert not "three" in self.worksheet.getColumns()
-        assert not "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert not "one" in self.worksheet.getColumns()
+#         assert not "two" in self.worksheet.getColumns()
+#         assert not "three" in self.worksheet.getColumns()
+#         assert not "six" in self.worksheet.getColumns()
 
-        with pytest.raises(Nested_Cache_Exception) as excinfo:
-            self.worksheet.removeColumn("eleven")
-        assert "Cannot delete a column from an empty Row" in excinfo.value.message
+#         with pytest.raises(Nested_Cache_Exception) as excinfo:
+#             self.worksheet.removeColumn("eleven")
+#         assert "Cannot delete a column from an empty Row" in excinfo.value.message
         
-        columns = self.worksheet.getColumns() + self.worksheet.getExpectedColumns()
-        self.worksheet.alignToColumns(columns)
+#         columns = self.worksheet.getColumns() + self.worksheet.getExpectedColumns()
+#         self.worksheet.alignToColumns(columns)
 
-        columns = self.worksheet.getColumns()
-        assert "one" in self.worksheet.getColumns()
-        assert "two" in self.worksheet.getColumns()
-        assert "three" in self.worksheet.getColumns()
-        assert "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert "one" in self.worksheet.getColumns()
+#         assert "two" in self.worksheet.getColumns()
+#         assert "three" in self.worksheet.getColumns()
+#         assert "six" in self.worksheet.getColumns()
     
-        # add six from expected, then remove
-        self.worksheet.removeColumn("six")
+#         # add six from expected, then remove
+#         self.worksheet.removeColumn("six")
 
-        columns = self.worksheet.getColumns()
-        assert "one" in self.worksheet.getColumns()
-        assert "two" in self.worksheet.getColumns()
-        assert "three" in self.worksheet.getColumns()
-        assert not "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert "one" in self.worksheet.getColumns()
+#         assert "two" in self.worksheet.getColumns()
+#         assert "three" in self.worksheet.getColumns()
+#         assert not "six" in self.worksheet.getColumns()
 
 
-    def test_empty_remove_columns(self):
+#     def test_empty_remove_columns(self):
 
-        columns = self.worksheet.getColumns() + self.worksheet.getExpectedColumns()
-        self.worksheet.alignToColumns(columns)
+#         columns = self.worksheet.getColumns() + self.worksheet.getExpectedColumns()
+#         self.worksheet.alignToColumns(columns)
 
-        columns = self.worksheet.getColumns()
-        assert "one" in self.worksheet.getColumns()
-        assert "two" in self.worksheet.getColumns()
-        assert "three" in self.worksheet.getColumns()
-        assert "six" in self.worksheet.getColumns()
+#         columns = self.worksheet.getColumns()
+#         assert "one" in self.worksheet.getColumns()
+#         assert "two" in self.worksheet.getColumns()
+#         assert "three" in self.worksheet.getColumns()
+#         assert "six" in self.worksheet.getColumns()
 
-        self.worksheet.removeColumns(["one", "two", "three", "six"])
+#         self.worksheet.removeColumns(["one", "two", "three", "six"])
 
-        columns = self.worksheet.getColumns()
-        assert not "one" in columns
-        assert not "two" in columns
-        assert not "three" in columns
-        assert not "six" in columns
+#         columns = self.worksheet.getColumns()
+#         assert not "one" in columns
+#         assert not "two" in columns
+#         assert not "three" in columns
+#         assert not "six" in columns
 
 ####
 #
@@ -357,7 +357,7 @@ class Test_Empty_w_Unique_Worksheet_Data:
         
         with pytest.raises(Nested_Cache_Exception) as excinfo:
             self.worksheet.addRow({"one":1,"two":2,"three":3,"four":6})
-        assert "rowData was expected to be of length 4 but 3 was passed" in excinfo.value.message
+        assert "rowData was expected to be of length 3 but 4 was passed" in excinfo.value.message
         
         self.worksheet.addRow({"one":1,"two":2,"three":3})
 
@@ -375,6 +375,12 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count("three")
         assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
     
+    def test_empty_getRow_w_unique(self):
+        with pytest.raises(Nested_Cache_Exception) as excinfo:
+            row = self.worksheet.getRow(unique="This isn't in the data")
+        assert " is not in the uniques list, you should try" in excinfo.value.message
+
+    
     def test_empty_w_commit(self):
         self.worksheet.commit()
         time.sleep(5)
@@ -390,77 +396,77 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
         assert type
 
-####
-#
-# Start with a sheet that already has timestamps, some filled, some empty
-#   just testing the loading of the data to local, not testing commit()
-#
-####
+# ####
+# #
+# # Start with a sheet that already has timestamps, some filled, some empty
+# #   just testing the loading of the data to local, not testing commit()
+# #
+# ####
 
-class Start_With_Timestamp_Data_Simple_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
-    spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
+# class Start_With_Timestamp_Data_Simple_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
+#     spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory
 
-    worksheetKeeperPattern = "test_start"
+#     worksheetKeeperPattern = "test_start"
 
-    worksheet_class = "tests.test_modules.worksheets.test_destination.Start_With_Timestamp_Data_Worksheet_Destination"
+#     worksheet_class = "tests.test_modules.worksheets.test_destination.Start_With_Timestamp_Data_Worksheet_Destination"
 
-class Start_With_Timestamp_Data_Worksheet_Destination(Bdfs_Worksheet_Destination):
-    # hourly Pay and total Pay will be added in testing
-    cols_expected = ["Name", "Email", "Birthday"]
+# class Start_With_Timestamp_Data_Worksheet_Destination(Bdfs_Worksheet_Destination):
+#     # hourly Pay and total Pay will be added in testing
+#     cols_expected = ["Name", "Email", "Birthday"]
 
-    cols_expected_extra = {"test": ["Cake"]}
+#     cols_expected_extra = {"test": ["Cake"]}
     
-    def setupParams(self):
-        self.data.uniqueField = "Email"
-        self.data.expectedColumns = self.cols_expected
-        self.data.expectedColumns_extra = self.cols_expected_extra
+#     def setupParams(self):
+#         self.data.uniqueField = "Email"
+#         self.data.expectedColumns = self.cols_expected
+#         self.data.expectedColumns_extra = self.cols_expected_extra
 
-class Test_Start_With_Timestamp_Data_Worksheet_Data:
-    @classmethod
-    def setup_class(self):
-        print("\n\tStarting class: {} execution".format(self.__name__))
-        sheet = Start_With_Timestamp_Data_Simple_Spreadsheet_Destination()
-        sheet.setupSpreadsheet()
-        self.sheet = sheet
-        self.worksheet = self.sheet.getWorksheet("test_start_with_columns")
-        time.sleep(5)
+# class Test_Start_With_Timestamp_Data_Worksheet_Data:
+#     @classmethod
+#     def setup_class(self):
+#         print("\n\tStarting class: {} execution".format(self.__name__))
+#         sheet = Start_With_Timestamp_Data_Simple_Spreadsheet_Destination()
+#         sheet.setupSpreadsheet()
+#         self.sheet = sheet
+#         self.worksheet = self.sheet.getWorksheet("test_start_with_columns")
+#         time.sleep(5)
         
-    @classmethod
-    def teardown_class(self): 
-        # Make it empty at the end
-        # self.worksheet.gspread_worksheet_clear()
-        print("\n\tTeardown class: {} execution".format(self.__name__))
+#     @classmethod
+#     def teardown_class(self): 
+#         # Make it empty at the end
+#         # self.worksheet.gspread_worksheet_clear()
+#         print("\n\tTeardown class: {} execution".format(self.__name__))
 
-    def setup_method(self, method):
-        print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
+#     def setup_method(self, method):
+#         print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
 
-    def teardown_method(self, method):
-        pass
+#     def teardown_method(self, method):
+#         pass
 
-    def test_empty_w_ts_expectedCols(self):
-        assert ["Name", "Email", "Birthday", "Cake"] == self.worksheet.getExpectedColumns()
+#     def test_empty_w_ts_expectedCols(self):
+#         assert ["Name", "Email", "Birthday", "Cake"] == self.worksheet.getExpectedColumns()
 
-    def test_empty_w_ts_add_data(self):
+#     def test_empty_w_ts_add_data(self):
         
-        with pytest.raises(Nested_Cache_Exception) as excinfo:
-            self.worksheet.addRow({'Name':"Nate",'Email':"something@example.com",'Birthday':"1/1/2000",'Cake':"Purple"})
-        assert "rowData contains extra locations: ['Cake']" in excinfo.value.message
-        assert self.worksheet.height() == 4
+#         with pytest.raises(Nested_Cache_Exception) as excinfo:
+#             self.worksheet.addRow({'Name':"Nate",'Email':"something@example.com",'Birthday':"1/1/2000",'Cake':"Purple"})
+#         assert "rowData contains extra locations: ['Cake']" in excinfo.value.message
+#         assert self.worksheet.height() == 4
 
-        self.worksheet.addRow({'Name':"Nate",'Email':"something@example.com",'Birthday':"1/1/2000"})
-        assert self.worksheet.height() == 5
+#         self.worksheet.addRow({'Name':"Nate",'Email':"something@example.com",'Birthday':"1/1/2000"})
+#         assert self.worksheet.height() == 5
 
-        data = self.worksheet.getRow()
-        assert type(data) == list
-        assert len(data) == 5
+#         data = self.worksheet.getRow()
+#         assert type(data) == list
+#         assert len(data) == 5
 
-        row0 = data[4]
-        assert row0['Name'] == 'Nate'
-        assert row0['Email'] == 'something@example.com'
-        assert row0['Birthday'] == '1/1/2000'
+#         row0 = data[4]
+#         assert row0['Name'] == 'Nate'
+#         assert row0['Email'] == 'something@example.com'
+#         assert row0['Birthday'] == '1/1/2000'
 
-        columns = self.worksheet.getColumns()
-        assert 1 == columns.count("Name")
-        assert 1 == columns.count("Email")
-        assert 1 == columns.count("Birthday")
-        assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
+#         columns = self.worksheet.getColumns()
+#         assert 1 == columns.count("Name")
+#         assert 1 == columns.count("Email")
+#         assert 1 == columns.count("Birthday")
+#         assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)

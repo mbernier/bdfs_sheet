@@ -21,23 +21,35 @@ def test_doorFields():
     expectedCost = float(outputData['Price:30" x 80"']) * (1 - outputData['Discount'])
     assert outputData['Cost: 30"x80"'] == expectedCost
 
+
+def test_cleanPriceKey():
+    result = obj.cleanPriceKey('Cost: 18" x 80"')
+    assert result == 'Price:18" x 80"'
+
+
 def test_calculatePrice():
     testSource = {'Cost: 18" x 80"': 10000, 'Price:18" x 80"': 100, 'Discount': 0.25}
     # Note - this will NOT use the value in sourceData['Discount'] it will use
     # what is set on the destination class
-    price = obj.calculatePrice('Cost: 18" x 80"', 'slabs_single', testSource)
+    price = obj.calculatePrice('Cost: 18" x 80"', worksheetName, testSource)
     assert price == 70.00
+
 
 def test_calculatePrice_with_symbols():
     testSource = {'Cost: 18" x 80"': 10000, 'Price:18" x 80"': '$1,000.00', 'Discount': 0.25}
     # Note - this will NOT use the value in sourceData['Discount'] it will use
     # what is set on the destination class
-    price = obj.calculatePrice('Cost: 18" x 80"', 'slabs_single', testSource)
+    price = obj.calculatePrice('Cost: 18" x 80"', worksheetName, testSource)
     assert price == 700.00
 
-def test_cleanPriceKey():
-    result = obj.cleanPriceKey('Cost: 18" x 80"')
-    assert result == 'Price:18" x 80"'
+
+def test_calculatePrice_with_blank_price():
+    testSource = {'Cost: 18" x 80"': 10000, 'Price:18" x 80"': '', 'Discount': 0.25}
+    # Note - this will NOT use the value in sourceData['Discount'] it will use
+    # what is set on the destination class
+    price = obj.calculatePrice('Cost: 18" x 80"', worksheetName, testSource)
+    assert price == ''
+
 
 def test_prepUrl():
     outputUrl = obj.prepUrl(slabSourceData.copy())

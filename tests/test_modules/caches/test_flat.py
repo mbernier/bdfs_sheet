@@ -7,6 +7,7 @@ def test_cache_creation():
      cache = Flat_Cache()
      assert cache != None
      assert cache.data.storage == {}
+     assert cache.isEmpty() == True
 
 
 def test_empty_cache_select():
@@ -20,6 +21,7 @@ def test_empty_cache_select():
     cache = Flat_Cache({'a':None})
     value = cache.select("a")
     assert value == None
+    assert cache.isEmpty() == True
 
 
 def test_empty_cache_select():
@@ -27,6 +29,7 @@ def test_empty_cache_select():
     cache.insert_location('a')
     value = cache.select(position="a")
     assert value == None
+    assert cache.isEmpty() == True
  
 
 def test_pass_data_as_list():
@@ -37,13 +40,16 @@ def test_pass_data_as_list():
 
 def test_pass_locations_data():
     cache = Flat_Cache({'a': 1})
+    assert cache.isEmpty() == False
     assert 1 == cache.select("a")
     assert 1 == cache.select(0)
+    
 
 
 def test_cache_insert():
     cache = Flat_Cache({'a':None})
     cache.insert("a", 1)
+    assert cache.isEmpty() == False
     value = cache.select("a")
     assert value == 1
 
@@ -57,12 +63,14 @@ def test_cache_set2():
 
 def test_cache_set_again():
     cache = Flat_Cache({'a':None})
+    assert cache.isEmpty() == True
     assert cache.data.storage['a']['data'] == None
     assert cache.data.storage['a']['position'] == 0
     assert cache.data.storage[0]['data'] == None
     assert cache.data.storage[0]['position'] == 'a'
 
     cache.insert("a", 2)
+    assert cache.isEmpty() == False
     value = cache.select("a")
     assert 2 == value
 
@@ -73,6 +81,7 @@ def test_cache_set_again():
 
 def test_cache_set_again2():
     cache = Flat_Cache({'a':None})
+    assert cache.isEmpty() == True
     assert cache.data.storage['a']['data'] == None
     assert cache.data.storage['a']['position'] == 0
 
@@ -89,6 +98,7 @@ def test_cache_set_again2():
 
 def test_insert_dne_location():
     cache = Flat_Cache({'a':None})
+    assert cache.isEmpty() == True
     with pytest.raises(Flat_Cache_Exception) as excinfo:
         cache.insert('b',12345)
     assert excinfo.value.message == "Location 'b' does not exist, try \"insert_location('b')\""
@@ -96,8 +106,11 @@ def test_insert_dne_location():
 
 def test_update():
     cache = Flat_Cache({'b':None})
+    assert cache.isEmpty() == True
     cache.insert("b",3)
+    assert cache.isEmpty() == False
     cache.update("b", 5)
+    assert cache.isEmpty() == False
     assert 5 == cache.select("b")
 
 
@@ -132,6 +145,7 @@ def test_update_exception2():
 
 def test_select_all():
     cache = Flat_Cache({'b':1, 'c':2})
+    assert cache.isEmpty() == False
     keys = cache.getKeys()
     assert keys == ['b', 'c']
     allvalues = cache.select(update_timestamp=False)
@@ -280,12 +294,14 @@ def test_insert_location_at_index():
 
 def test_timestamp():
     cache = Flat_Cache({'b':None,'c':None,'d':None})
-
+    assert cache.isEmpty() == True
     # effectively append
     cache.insert_location(position='e')
+    assert cache.isEmpty() == True
     cache.insert(position="e", data=[1,2,3])
+    assert cache.isEmpty() == False
     data = cache.select()
-    print(data)
+    
     assert UPDATE_TIMESTAMP_KEY in data.keys()
     assert Flat_Cache.makeTimestampName("b") in data.keys()
     assert Flat_Cache.makeTimestampName("c") in data.keys()
@@ -317,12 +333,14 @@ def test_timestamp_pre_load():
     timestamp = time.time()
     
     cache = Flat_Cache({'b':1,'c':2,'d':3, UPDATE_TIMESTAMP_KEY:timestamp})
-    
+    assert cache.isEmpty() == False
     assert cache.getUpdateTimestamp(UPDATE_TIMESTAMP_KEY) == timestamp
-
+    
     # effectively append
     cache.insert_location(position='e')
+    assert cache.isEmpty() == False
     cache.insert(position="e", data=[1,2,3])
+    assert cache.isEmpty() == False
     data = cache.select()
 
     del data[UPDATE_TIMESTAMP_KEY]

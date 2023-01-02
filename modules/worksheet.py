@@ -40,6 +40,7 @@ class Worksheet_DataClass():
     title:str  = dc_field(default_factory=str)              # The Sheet title
     gspread_worksheet:Worksheet = None                      # The worksheet object itself, allows us to run gspread functions
     sheetData:Bdfs_Worksheet_Data = None                    # source of truth for the data of the worksheet, DO NOT call factory here
+    discount:int = 0
     expectedColumns:list = dc_field(default_factory=list)   # A list of columns we expect to have in the sheet
     expectedColumns_extra:list = dc_field(default_factory=list)
     uncommitted_title: str = dc_field(default_factory=str)  # temp storage if we change the title of the worksheet, until commit
@@ -308,8 +309,8 @@ class Bdfs_Worksheet(Base_Class):
     @Debugger
     @validate_arguments
     def getRow(self, row:int=None, unique:str=None, update_timestamp=True) -> Flat_Cache:
-        self.getData()
-        return self.data.sheetData.select(row=row, unique=unique, update_timestamp=update_timestamp)
+        self.getData() 
+        return self.data.sheetData.selectRow(row=row, unique=unique, update_timestamp=update_timestamp)
 
 
     ####

@@ -15,14 +15,15 @@ from modules.caches.exception import Flat_Cache_Exception
 def test_cache_creation():
      cache = Nested_Cache([{}])
      assert cache != None
-     assert len(cache.getAsListOfLists()) == 1 #only update timestamp should be returned
+     assert len(cache.getAsListOfLists()) == 0 #only update timestamp should be returned
 
 
 def test_empty_cache_select():
     cache = Nested_Cache([{}])
-    with pytest.raises(Flat_Cache_Exception) as excinfo:
+
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
         value = cache.select(row=0,position="test")
-    assert excinfo.value.message == "Location 'test' does not exist, try \"insert_location('test')\""
+    assert excinfo.value.message == "Row 0 doesn't exist, to add it use insertRow(rowData)"
 
 ####
 #
@@ -43,7 +44,7 @@ def test_select2():
 
 def test_select_all():
     cache = Nested_Cache([{'b':3,'c':None,'d':None}, {'b':None,'c':4,'d':None}, {'b':None,'c':None,'d':5}])
-    allData = cache.select()
+    allData = cache.selectRow()
     assert len(allData) == 3
     assert len(allData[0]) == 7
     assert len(allData[1]) == 7
@@ -56,23 +57,53 @@ def test_select_all():
 #
 ####
 
-
 def test_empty_cache_select2():
     cache = Nested_Cache([{}])
+    
+    assert cache.height() == 0
 
-    with pytest.raises(Nested_Cache_Exception) as excinfo:
-        cache.insert({'test':1})
-    assert excinfo.value.message == "rowData contains extra locations: ['test']"
+    cache.insertRow({'test':1})
+
+    with pytest.raises(Flat_Cache_Exception) as excinfo:
+        cache.insert_location("test")
+    assert excinfo.value.message == "Position 'test' already exists, you cannot insert a new location to Flat_Cache that already exists"
+
+    assert cache.height() == 1
+    
+    cache.insertRow({'test':1})
+
+    value = cache.select(0, "test")
+
+    assert value == 1
+
+    value = cache.select(1, "test")
+
+    assert value == 1
+
+
+def test_empty_cache_select3():
+    cache = Nested_Cache([{}])
+    
+    assert cache.height() == 0
 
     cache.insert_location("test")
 
     assert cache.height() == 1
-    
-    cache.insert({'test':1})
-
-    cache.select(0, "test")
+    assert cache.headerRowOnly == True
 
     value = cache.select(0, "test")
+
+    assert value == None
+
+    cache.insertRow({'test':1})
+
+    with pytest.raises(IndexError) as excinfo:
+        value = cache.select(1, "test")
+    assert "list index out of range" in str(excinfo.value)
+
+    value = cache.select(0, "test")
+
+    assert value == 1
     
 
 
@@ -95,7 +126,7 @@ def test_cache_trysetOnNewRow2():
         cache.insert(row=1, position="a", data=1)
     assert "unexpected keyword arguments: 'row', 'position', 'data' (type=type_error)" in str(excinfo.value)
     
-    cache.insert({'a':2})
+    cache.insertRow({'a':2})
 
     value = cache.select(1, "a")
     assert value == 2
@@ -107,7 +138,7 @@ def test_cache_set_again():
 
     with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.insert(0, "a", 1)
-    assert "value is not a valid dict" in str(excinfo.value)
+    assert "1 positional arguments expected but 4 given" in str(excinfo.value)
 
 
 def test_cache_set_again2():
@@ -116,7 +147,11 @@ def test_cache_set_again2():
 
     with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
         cache.insert(row=0, position="a", data=1)
-    assert "unexpected keyword arguments: 'row', 'position', 'data' (type=type_error)" in str(excinfo.value)
+    assert "unexpected keyword arguments: 'row', 'position', 'data'" in str(excinfo.value)
+
+    with pytest.raises(Nested_Cache_Exception) as excinfo:
+        cache.insert()
+    assert "There is no Nested_Cache.insert() method, maybe you meant insertRow()?" in str(excinfo.value)
 
 ####
 #
@@ -154,9 +189,9 @@ def test_update_exception2():
 
 def test_getAsDict():
     cache = Nested_Cache([{'b':3,'c':None,'d':None}, {'b':None,'c':4,'d':None}, {'b':None,'c':None,'d':5}])
-    assert cache.select(0, update_timestamp=False) == {'b': 3, 'c': None, 'd': None}
-    assert cache.select(1, update_timestamp=False) == {'b': None, 'c': 4, 'd': None}
-    assert cache.select(2, update_timestamp=False) == {'b': None, 'c': None, 'd': 5}
+    assert cache.selectRow(0, update_timestamp=False) == {'b': 3, 'c': None, 'd': None}
+    assert cache.selectRow(1, update_timestamp=False) == {'b': None, 'c': 4, 'd': None}
+    assert cache.selectRow(2, update_timestamp=False) == {'b': None, 'c': None, 'd': 5}
 
 ####
 #
@@ -254,8 +289,8 @@ def test_delete_columns_check_multi_rows():
 
     cache.deleteColumns(['c','d','e'])
 
-    assert cache.select(0, update_timestamp=False) == {'b': 3, 'f': 7}
-    assert cache.select(1, update_timestamp=False) == {'b': 1, 'f': 5}
+    assert cache.selectRow(0, update_timestamp=False) == {'b': 3, 'f': 7}
+    assert cache.selectRow(1, update_timestamp=False) == {'b': 1, 'f': 5}
 
 ####
 #
@@ -268,7 +303,7 @@ def test_updateRow():
     cache.updateRow(1, {'b':10,'c':20,'d':30,'e':40,'f':50})
 
     assert cache.select(0, update_timestamp=False) == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
-    assert cache.select(1, update_timestamp=False) == {'b': 10, 'c': 20,'d': 30,'e': 40,'f': 50}
+    assert cache.selectRow(1, update_timestamp=False) == {'b': 10, 'c': 20,'d': 30,'e': 40,'f': 50}
 
 
 def test_getRowAsList():
@@ -312,10 +347,10 @@ def test_getRowAsDict():
 def test_reorderColumns():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}])
     cache.reorderColumns(['f','b','d','c','e'])
-    assert cache.select(0, update_timestamp=False) == {'f': 7, 'b': 3, 'd': 5, 'c': 4, 'e': 6}
-    assert cache.select(1, update_timestamp=False) == {'f': 5, 'b': 1, 'd': 3, 'c': 2, 'e': 4}
+    assert cache.selectRow(0, update_timestamp=False) == {'f': 7, 'b': 3, 'd': 5, 'c': 4, 'e': 6}
+    assert cache.selectRow(1, update_timestamp=False) == {'f': 5, 'b': 1, 'd': 3, 'c': 2, 'e': 4}
     
-    somedataKeys = cache.select(0).keys()
+    somedataKeys = cache.selectRow(0).keys()
     assert Flat_Cache.makeTimestampName("b") in somedataKeys
     assert Flat_Cache.makeTimestampName("c") in somedataKeys
     assert Flat_Cache.makeTimestampName("d") in somedataKeys
@@ -344,14 +379,14 @@ def test_unique_load_fail():
 # add a unique that isn't in the locations
 def test_unique_insert():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
-    cache.insert({'b':2,'c':3,'d':4,'e':5,'f':6})
+    cache.insertRow({'b':2,'c':3,'d':4,'e':5,'f':6})
     assert cache.getUniques() == [3, 1, 2]
 
 # add a unique that is already set up
 def test_unique_insert_fail():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
     with pytest.raises(Nested_Cache_Exception) as excinfo:
-        cache.insert({'b':3,'c':3,'d':4,'e':5,'f':6})
+        cache.insertRow({'b':3,'c':3,'d':4,'e':5,'f':6})
     assert "'3' for position 'b' violates uniqueness" in str(excinfo.value)
     
 # try to remove the unique column from the data
@@ -397,15 +432,15 @@ def test_unique_updateRow_diff_unique_not_unique():
 def test_unique_unique_select_row_and_unique():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
     with pytest.raises(Nested_Cache_Exception) as excinfo:
-        row = cache.select(row=0,unique=3)
+        row = cache.selectRow(row=0,unique=3)
     assert "Passing row and unique together is poor form, pick one" in str(excinfo.value)
     
 # try a select with unique only
 def test_unique_select_by_unique():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
-    row = cache.select(unique=3)
+    row = cache.selectRow(unique=3)
     assert row == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
-    row = cache.select(unique=1)
+    row = cache.selectRow(unique=1)
     assert row == {'b':1,'c':2,'d':3,'e':4,'f':5}
 
 # test an update/insert based on data that exists

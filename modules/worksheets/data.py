@@ -178,10 +178,11 @@ class Bdfs_Worksheet_Data(Base_Class):
     # Row Methods
     # 
     ####
+ 
     @Debugger
     @validate_arguments
-    def select(self, row:int=None, column:Union[int,str]=None, unique:str=None, update_timestamp=True):
-        return self.dataStore.select(row=row, position=column, unique=unique, update_timestamp=update_timestamp)
+    def selectRow(self, row:int=None, unique:str=None, update_timestamp=True):
+        return self.dataStore.selectRow(row=row, unique=unique, update_timestamp=update_timestamp) 
 
 
     #given some data, identify if we need to update or insert the data
@@ -203,7 +204,18 @@ class Bdfs_Worksheet_Data(Base_Class):
             self.dataStore.updateRow(0, rowData)
             self.empty_first_row_is_headers = False
         else:
-            self.dataStore.insert(rowData)
+            self.dataStore.insertRow(rowData)
+
+    ####
+    #
+    # Data Point Methods
+    #
+    ####
+    @Debugger
+    @validate_arguments
+    def select(self, row:int=None, column:Union[int,str]=None, unique:str=None, update_timestamp=True):
+        return self.dataStore.select(row=row, position=column, unique=unique, update_timestamp=update_timestamp)
+ 
 
     ####
     #

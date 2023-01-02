@@ -1,15 +1,15 @@
 import sys
 from collections import OrderedDict
 from pydantic import validate_arguments
-from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
-from modules.dataMoves.exception import DataMove_Exception
 from modules.caches.flat import UPDATE_TIMESTAMP_KEY, UPDATE_TIMESTAMP_POSTFIX, Flat_Cache
 from modules.caches.exception import Nested_Cache_Exception
+from modules.config import config
+from modules.dataMoves.exception import DataMove_Exception
 from modules.decorator import Debugger
 from modules.helper import Helper
 from modules.helpers.exception import Helper_Exception
 from modules.logger import Logger, logger_name
-
+from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
 
 class DataMove():
 
@@ -100,7 +100,10 @@ class DataMove():
         args = Helper.prepArgs(**kwargs)
         if "([], [])" == str(args):
             args = ""
-        Logger.info(f"Hook: {name}::{args}")
+        
+        if True == config("datamove_run_hook"):
+            Logger.info(f"Hook: {name}::{args}")
+        
         logger_name.name = "MapData"
         
         if Helper.classHasMethod(klass=self, methodName=name):
@@ -249,25 +252,29 @@ class DataMove():
 
     @Debugger
     @validate_arguments
-    def getDestinationRow(self, worksheetName):
-        self.run_hook("start_getDestinationRow", worksheetName=worksheetName)
+    def getUniqueDestinationRow(self, worksheetName):
+        self.run_hook("start_getUniqueDestinationRow", worksheetName=worksheetName)
         
-        self.run_hook("getDestinationRow_pre_get_destination_unique_field")
+        self.run_hook("getUniqueDestinationRow_pre_get_destination_unique_field")
         destinationUniqueField = self.destinationWorksheets[worksheetName].getUniqueField()
-        self.run_hook("getDestinationRow_post_get_destination_unique_field", destinationUniqueField=destinationUniqueField)
+        self.run_hook("getUniqueDestinationRow_post_get_destination_unique_field", destinationUniqueField=destinationUniqueField)
 
         destinationData = {}
 
-        self.run_hook("getDestinationRow_pre_check_destination_unique_field")
+        self.run_hook("getUniqueDestinationRow_pre_check_destination_unique_field")
         # get the destination row, based on the unique column if there is one, do nothing otherwise
         if None != destinationUniqueField:
             try:
-                self.run_hook("getDestinationRow_check_destination_unique_field_pre_getRow")
+                self.run_hook("getUniqueDestinationRow_check_destination_unique_field_pre_getRow")
                 destinationData = self.destinationWorksheets[worksheetName].getRow(unique=self.newData[worksheetName][destinationUniqueField])
-                self.run_hook("getDestinationRow_check_destination_unique_field_post_getRow", destinationData=destinationData)
+                raise Exception("This row is retrieving ALL of the data instead of a single row... wtf?")
+                sys.exit()
+                self.run_hook("getUniqueDestinationRow_check_destination_unique_field_post_getRow", destinationData=destinationData)
             except Nested_Cache_Exception as err:
+                print(err)
                 destinationData = {}
-        self.run_hook("end_getDestinationRow", worksheetName=worksheetName)
+        self.run_hook("end_getUniqueDestinationRow", worksheetName=worksheetName, destinationData=destinationData)
+
         return destinationData
 
     @Debugger
@@ -280,15 +287,13 @@ class DataMove():
         #
         timestampKey = Flat_Cache.makeTimestampName(key)
         
-        useNew = True #if False, use the data from destination
-
         newDataTimestamp = self.chooseSourceOrDestinationData_getSourceTimestamp(worksheetName, timestampKey)
 
         #
         # Destination Data Keys
         #
-        destinationData = self.getDestinationRow(worksheetName)
-
+        destinationData = self.getUniqueDestinationRow(worksheetName)
+        
         destinationTimestamp = self.chooseSourceOrDestinationData_getDestinationTimestamp(timestampKey, destinationData.copy())
         #setup outputData to get overridden by either source or destination, based on usedNew and the timestamp
         outputData = {key: None}
@@ -325,7 +330,7 @@ class DataMove():
 
     @Debugger
     @validate_arguments
-    def chooseSourceOrDestinationData_getDestinationTimestamp(self, timestampKey:str, destinationData:dict):
+    def chooseSourceOrDestinationData_getDestinationTimestamp(self, timestampKey:str, destinationData:list):
         self.run_hook("start_chooseSourceOrDestinationData_getDestinationTimestamp")
         destinationDataKeys = []
         destinationHasTimestampKey = False
@@ -366,10 +371,12 @@ class DataMove():
     @validate_arguments
     def chooseSourceOrDestinationData_useDestination(self, key:str, timestampKey:str, destinationData:dict):
         outputData = {}
+        if not key in destinationData:
+            raise DataMove_Exception(f"'{key}' not in destination data")
         self.run_hook("start_chooseSourceOrDestinationData_pre_useDestination_data", data=destinationData[key])
         # the destination data is what we want, use that data
         outputData[key] = destinationData[key]
-        if timestampKey in destinationData[key]:
+        if timestampKey in destinationData.keys():
             self.run_hook("start_chooseSourceOrDestinationData_useDestination_data_pre_has_timestamp")
             # destination has the timestamp key, so pass that value along
             outputData[timestampKey] = destinationData[timestampKey]
@@ -577,6 +584,14 @@ class DataMove():
 
     @Debugger
     @validate_arguments
+    def cleanPriceKey(self,key:str):
+        self.run_hook('start_cleanPriceKey')
+        key = key.replace("Cost: ", "Price:")
+        self.run_hook('end_cleanPriceKey')
+        return key
+
+    @Debugger
+    @validate_arguments
     def calculatePrice(self, key:str, worksheetName, sourceData:dict):
         if not "Discount" in sourceData.keys():
             raise DataMove_Exception("Discount needs to be available in sourceData before calculatePrice() is run")
@@ -584,10 +599,14 @@ class DataMove():
         sourceKey = self.cleanPriceKey(key)
         
         priceString = str(sourceData[sourceKey]).replace(",","").replace("$","")
-        priceFloat = float(priceString)
+        
+        if '' == priceString:
+            return ''
+        else:
+            priceFloat = float(priceString)
 
-        price = 1
-        if '' != priceFloat: # sometimes we don't have a price for a door
-            price = priceFloat
+            price = 1
+            if '' != priceFloat: # sometimes we don't have a price for a door
+                price = priceFloat
 
-        return price * (1 - self.prepDiscount(worksheetName=worksheetName))
+            return price * (1 - self.prepDiscount(worksheetName=worksheetName))

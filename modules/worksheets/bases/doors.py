@@ -14,7 +14,7 @@ class Doors_Base():
         single_sizes = Helper.mapCols(widths_inches, heights_inches, "x")
         single = Helper.mapCols(self.map_cols, single_sizes, ": ")        
         
-        self.cols_expected_extra['single'] = single
+        self.cols_expected_extra['single'] = single.copy()
 
         if True == self.hasDoubles:
             double_sizes = []
@@ -24,7 +24,7 @@ class Doors_Base():
                     double_sizes.append(f"{2*int(width)}\"x{height} (2 @ {width}\"x{height})")
             
             double = Helper.mapCols(self.map_cols, double_sizes, ": ")
-            self.cols_expected_extra['double'] = double
+            self.cols_expected_extra['double'] = double.copy()
 
         
 

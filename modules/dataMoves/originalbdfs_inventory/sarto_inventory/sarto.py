@@ -125,14 +125,6 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         self.run_hook("end_mapFields_slabs_single")
         return sourceData
 
-    @Debugger
-    @validate_arguments
-    def cleanPriceKey(self,key:str):
-        self.run_hook('start_cleanPriceKey')
-        key = key.replace("Cost: ", "Price:")
-        self.run_hook('end_cleanPriceKey')
-        return key
-
 
     @Debugger
     @validate_arguments

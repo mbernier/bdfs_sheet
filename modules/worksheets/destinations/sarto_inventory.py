@@ -27,7 +27,7 @@ class Sarto_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
         # sets up all the params we need from some very basic data
         base = Sarto_Inventory_Base()
 
-        self.data.expectedColumns = base.cols_expected
-        self.data.expectedColumns_extra = base.cols_expected_extra
+        self.data.expectedColumns = base.cols_expected.copy()
+        self.data.expectedColumns_extra = base.cols_expected_extra.copy()
         self.data.uniqueField = base.uniqueField
         self.data.discount = base.discount

@@ -20,7 +20,8 @@ class Flat_Cache_Data(PydanticBaseModel):
     # this allows us to know whether to set a timestamp or not when we load data
     # if true, do not modify the timestamp unless it isn't there. 
     # if false and we change the data, modify the timestamps
-    initial_data_load:bool = True 
+    initial_data_load:bool = True
+    is_empty:bool = True
 
 
 class Flat_Cache(Bdfs_Cache):
@@ -163,9 +164,13 @@ class Flat_Cache(Bdfs_Cache):
                                         index       = index, 
                                         data        = data, 
                                         timestamp   = timestamp)
-
+        
         self.data.storage[location] = locationDict
         self.data.storage[index] = indexDict
+
+        # if we ever get any data that is not None, set this to false
+        if data != None:
+            self.data.is_empty = False
 
     # this is a "dumb" method, will write whatever is passed. ONLY used in __writeSpecial()
     @Debugger
@@ -408,9 +413,9 @@ class Flat_Cache(Bdfs_Cache):
         return self.data.storage[position]['timestamp']
 
 
+    @classmethod
     @Debugger
-    @staticmethod
-    def makeTimestampName(position:str) -> str:
+    def makeTimestampName(cls, position:str) -> str:
         if Flat_Cache.positionIsTimestamp(position):
             return position
         
@@ -422,9 +427,9 @@ class Flat_Cache(Bdfs_Cache):
         return name.replace(UPDATE_TIMESTAMP_POSTFIX,"")
 
 
-    @staticmethod
+    @classmethod
     @Debugger
-    def positionIsTimestamp(position):
+    def positionIsTimestamp(cls, position):
         if type(position) is str and UPDATE_TIMESTAMP_KEY in position:
             return True
         return False
@@ -434,6 +439,10 @@ class Flat_Cache(Bdfs_Cache):
     # Meta Methods
     #
     ####
+
+    @Debugger
+    def isEmpty(self):
+        return self.data.is_empty
 
     @Debugger
     def increaseSize(self):
