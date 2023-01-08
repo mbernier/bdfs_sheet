@@ -5,7 +5,10 @@ from modules.decorator import Debugger
 from modules.dataMove import DataMove
 from modules.helper import Helper
 
-
+# @todo get the information about how each door is built
+#   - Does it have solid wood frame? Solid all the way through?
+#   - does it have a beehive interior, something else?
+#   - what other data should we get from Sarto about the doors?
 class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     sourceClassPath = "originalbdfs_inventory.OriginalBdfs_Spreadsheet_Source"
     sourceWorksheetName = "sarto_barn_single_inventory"
@@ -13,7 +16,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     destinationClassPath = "sarto_inventory.Sarto_Inventory_Spreadsheet_Destination"
     destinationWorksheetNames = ["barndoor_single", "slabs_single"]
 
-    destinationWorksheetCreateIfNotFound = True
+    destinationWorksheetCreateIfNotFound = True #this is redundant, is in the parent class
 
     @Debugger
     @validate_arguments
@@ -39,10 +42,10 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         sourceData['Lites'] = self.prepLites(sourceData)
 
         # Hardware
-        sourceData = self.prepHardware(sourceData)
+        sourceData, hardwareSKU = self.prepHardware(sourceData)
 
         # Glass
-        sourceData = self.prepGlass(sourceData)
+        sourceData, glassSKU = self.prepGlass(sourceData)
         
         sourceData['Pre-drilled For Hardware'] = "No"
 
@@ -58,6 +61,16 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         sourceData['Shipping'] = 180
 
         sourceData['Discount'] = self.prepDiscount(worksheetName)
+
+        # {vendor}::{modelname}_{modelNumber}::{door_type}::glass_{glass_type}::hardware_{hardware_type}_{hardware_color}
+        # sartodoors::lydia_3355::single::white::glass_clear::hardware_rail_black
+        sourceData['SKU'] = "{}::{}::{}::{}::{}".format(
+                "sartodoors",
+                sourceData['Model'].replace(" ","_"),
+                sourceData['Type'],
+                sourceData['Color'],
+                glassSKU,
+                hardwareSKU).lower()
 
         # clean up the keys
         sourceDataKeys = sourceData.keys()
@@ -172,28 +185,31 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
     @Debugger
     @validate_arguments
     def prepGlass(self, sourceData:dict):
-        
+        glassSKU = "glass_"
         if sourceData['Glass'] == "No":
             sourceData['Has Glass'] = "No"
             sourceData['Glass Finish'] = "None"
+            glassSKU += "No"
         else:
             sourceData['Has Glass'] = "Yes"
             sourceData['Glass Finish'] = sourceData['Glass']
-        
-        return sourceData
+            glassSKU += f"{sourceData['Glass Finish']}"
+        return sourceData, glassSKU
     
     @Debugger
     @validate_arguments
     def prepHardware(self, sourceData:dict):
+        hardwareSKU = "hardware_"
         if sourceData['Hardware'] == "Slab":
             sourceData['Hardware Type'] = "None"
             sourceData['Hardware Color'] = "None"
             sourceData['Hardware'] = "None"
+            hardwareSKU += "No"
         else:
             sourceData['Hardware Type'] = "Rail"
             sourceData['Hardware Color'] = sourceData['Hardware']
             sourceData['Hardware'] = f"{sourceData['Hardware']} Rail with predrilled holes, {sourceData['Hardware']} Hangers with wheels, Door stops, Plastic Fin Floor guide, and Mounting screws"
-        
+            hardwareSKU += f"{sourceData['Hardware Type']}_{sourceData['Hardware Color']}"
         return sourceData
     
     @Debugger

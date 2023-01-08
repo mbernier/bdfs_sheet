@@ -2,68 +2,36 @@
 from modules.worksheets.destination import Bdfs_Worksheet_Destination
 
 
+import sys
+from dataclasses import dataclass, field as dc_field
+from gspread.worksheet import Worksheet
+from modules.worksheet import Worksheet_DataClass
+from modules.worksheets.data import Bdfs_Worksheet_Data
+from modules.worksheets.destination import Bdfs_Worksheet_Destination
+from modules.worksheets.bases.shopify_barndoor import Shopify_Barndoor_Base
+
+@dataclass
+class Bdfs_Worksheet_DataClass(Worksheet_DataClass):
+    gspread_worksheet:Worksheet = None                      # The worksheet object itself, allows us to run gspread functions
+    sheetData:Bdfs_Worksheet_Data = None                    # source of truth for the data of the worksheet, DO NOT call factory here
+    title:str  = dc_field(default_factory=str)              # The Sheet title
+    expectedColumns:list = dc_field(default_factory=list)   # A list of columns we expect to have in the sheet
+    expectedColumns_extra:list = dc_field(default_factory=list)
+    uncommitted_title: str = dc_field(default_factory=str)  # temp storage if we change the title of the worksheet, until commit
+    changes:dict[bool] = dc_field(default_factory=dict)     # {"title": False, "data": False}
+    sheet_retrieved:bool = False
+    id: int = dc_field(default_factory=int)
+    uniqueField: str = dc_field(default_factory=str)
+
 class Bdfs_Inventory_Worksheet_Destination(Bdfs_Worksheet_Destination):
+    dataClass = "modules.worksheets.destinations.bdfs_inventory.Bdfs_Worksheet_DataClass"
 
-    cols_expected = ['Title', 'Type', 'SEO Title', 'Description', 
-                        'Image 1 URL', 'Image 1 SEO', 'Image 2 URL', 'Image 2 SEO', 
-                        'Image 3 URL', 'Image 3 SEO', 'Image 4 URL', 'Image 4 SEO', 
-                        'Image 5 URL', 'Image 5 SEO', 'Image 6 URL', 'Image 6 SEO', 
-                        'Image 7 URL', 'Image 7 SEO', 'Image 8 URL', 'Image 8 SEO', 
-                        'Image 9 URL', 'Image 9 SEO', 'Image 10 URL', 'Image 10 SEO',
-                        'Vendor', 'Vendor SKU', 'Vendor Model Name',
-                        'Shopify URL', 'Shopify Handle', 'Category', 'Tags', 
-                        'Publish To Store', 'Publish To Google',
-                        'Publish to Pinterest', 'Publish To Facebook & Instagram', 
-                        'Publish to Microsoft', 'Publish to Shop']
+    def setupParams(self):
+        # sets up all the params we need from some very basic data
+        base = Shopify_Barndoor_Base()
+
+        self.data.expectedColumns = base.cols_expected.copy()
+        self.data.expectedColumns_extra = base.cols_expected_extra.copy()
+        self.data.uniqueField = base.uniqueField
+
     
-    single_door_cols = ['Cost:18" x 80"', 'Cost:24" x 80"', 'Cost:28" x 80"', 'Cost:30" x 80"', 
-                        'Cost:32" x 80"', 'Cost:36" x 80"', 'Cost:42" x 80"', 'Cost:18" x 84"', 'Cost:24" x 84"', 
-                        'Cost:28" x 84"', 'Cost:30" x 84"', 'Cost:32" x 84"', 'Cost:36" x 84"', 'Cost:42" x 84"', 
-                        'Cost:18" x 96"', 'Cost:24" x 96"', 'Cost:28" x 96"', 'Cost:30" x 96"', 'Cost:32" x 96"', 
-                        'Cost:36" x 96"', 'Cost:42" x 96"', 'Price:18" x 80"', 'Price:24" x 80"', 
-                        'Price:28" x 80"', 'Price:30" x 80"', 'Price:32" x 80"', 'Price:36" x 80"', 
-                        'Price:42" x 80"', 'Price:18" x 84"', 'Price:24" x 84"', 'Price:28" x 84"', 
-                        'Price:30" x 84"', 'Price:32" x 84"', 'Price:36" x 84"', 'Price:42" x 84"', 
-                        'Price:18" x 96"', 'Price:24" x 96"', 'Price:28" x 96"', 'Price:30" x 96"', 
-                        'Price:32" x 96"', 'Price:36" x 96"', 'Price:42" x 96"', 'Profits:18" x 80"',  
-                        'Profits:24" x 80"', 'Profits:28" x 80"', 'Profits:30" x 80"', 'Profits:32" x 80"', 
-                        'Profits:36" x 80"', 'Profits:42" x 80"', 'Profits:18" x 84"', 'Profits:24" x 84"', 
-                        'Profits:28" x 84"', 'Profits:30" x 84"', 'Profits:32" x 84"', 'Profits:36" x 84"', 
-                        'Profits:42" x 84"', 'Profits:18" x 96"', 'Profits:24" x 96"', 'Profits:28" x 96"', 
-                        'Profits:30" x 96"', 'Profits:32" x 96"', 'Profits:36" x 96"', 'Profits:42" x 96"']
-
-    double_door_cols = ['Cost:36" x 80" (2 @ 18"x80")', 'Cost:48" x 80" (2 @ 24"x80")', 
-                        'Cost:36" x 84" (2 @ 18"x84")', 'Cost:48" x 84" (2 @ 24"x84")', 
-                        'Cost:56" x 84" (2 @ 28"x84")', 'Cost:60" x 84" (2 @ 30"x84")', 
-                        'Cost:56" x 80" (2 @ 28"x80")', 'Cost:60" x 80" (2 @ 30"x80")', 
-                        'Cost:64" x 80" (2 @ 32"x80")', 'Cost:72" x 80" (2 @ 36"x80")', 
-                        'Cost:84" x 80" (2 @ 42"x80")', 'Cost:64" x 84" (2 @ 32"x84")', 
-                        'Cost:72" x 84" (2 @ 36"x84")', 'Cost:84" x 84" (2 @ 42"x84")', 
-                        'Cost:36" x 96" (2 @ 18"x96")', 'Cost:48" x 96" (2 @ 24"x96")', 
-                        'Cost:56" x 96" (2 @ 28"x96")', 'Cost:60" x 96" (2 @ 30"x96")', 
-                        'Cost:64" x 96" (2 @ 32"x96")', 'Cost:72" x 96" (2 @ 36"x96")', 
-                        'Cost:84" x 96" (2 @ 42"x96")', 'Price:36" x 80" (2 @ 18"x80")', 
-                        'Price:48" x 80" (2 @ 24"x80")', 'Price:56" x 80" (2 @ 28"x80")', 
-                        'Price:60" x 80" (2 @ 30"x80")', 'Price:64" x 80" (2 @ 32"x80")', 
-                        'Price:72" x 80" (2 @ 36"x80")', 'Price:84" x 80" (2 @ 42"x80")', 
-                        'Price:36" x 84" (2 @ 18"x84")', 'Price:48" x 84" (2 @ 24"x84")', 
-                        'Price:56" x 84" (2 @ 28"x84")', 'Price:60" x 84" (2 @ 30"x84")', 
-                        'Price:64" x 84" (2 @ 32"x84")', 'Price:72" x 84" (2 @ 36"x84")', 
-                        'Price:84" x 84" (2 @ 42"x84")', 'Price:36" x 96" (2 @ 18"x96")', 
-                        'Price:48" x 96" (2 @ 24"x96")', 'Price:56" x 96" (2 @ 28"x96")', 
-                        'Price:60" x 96" (2 @ 30"x96")', 'Price:64" x 96" (2 @ 32"x96")', 
-                        'Price:72" x 96" (2 @ 36"x96")', 'Price:84" x 96" (2 @ 42"x96")', 
-                        'Profits:36" x 80" (2 @ 18"x80")', 'Profits:48" x 80" (2 @ 24"x80")', 
-                        'Profits:56" x 80" (2 @ 28"x80")', 'Profits:60" x 80" (2 @ 30"x80")', 
-                        'Profits:64" x 80" (2 @ 32"x80")', 'Profits:72" x 80" (2 @ 36"x80")', 
-                        'Profits:84" x 80" (2 @ 42"x80")', 'Profits:36" x 84" (2 @ 18"x84")', 
-                        'Profits:48" x 84" (2 @ 24"x84")', 'Profits:56" x 84" (2 @ 28"x84")', 
-                        'Profits:60" x 84" (2 @ 30"x84")', 'Profits:64" x 84" (2 @ 32"x84")', 
-                        'Profits:72" x 84" (2 @ 36"x84")', 'Profits:84" x 84" (2 @ 42"x84")', 
-                        'Profits:36" x 96" (2 @ 18"x96")', 'Profits:48" x 96" (2 @ 24"x96")', 
-                        'Profits:56" x 96" (2 @ 28"x96")', 'Profits:60" x 96" (2 @ 30"x96")', 
-                        'Profits:64" x 96" (2 @ 32"x96")', 'Profits:72" x 96" (2 @ 36"x96")', 
-                        'Profits:84" x 96" (2 @ 42"x96")']
-
-    cols_expected_extra = {'single': single_door_cols,
-                            'double': double_door_cols}

@@ -99,7 +99,8 @@ class Bdfs_Worksheet_Destination(Bdfs_Worksheet):
             self.changed('title')
         return self.getTitle()
 
-
+    # @todo consider pulling this out of there and only to the subclasses where
+    #   discount is a thing
     @Debugger
     @validate_arguments
     def discount(self):
