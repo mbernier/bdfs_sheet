@@ -361,7 +361,7 @@ class Test_Empty_w_Unique_Worksheet_Data:
         
         self.worksheet.addRow({"one":1,"two":2,"three":3})
 
-        data = self.worksheet.getRow()
+        data = self.worksheet.getAllRows()
         assert type(data) == list
         assert len(data) == 1
         row0 = data[0]
@@ -376,9 +376,8 @@ class Test_Empty_w_Unique_Worksheet_Data:
         assert 1 == columns.count(UPDATE_TIMESTAMP_KEY)
     
     def test_empty_getRow_w_unique(self):
-        with pytest.raises(Nested_Cache_Exception) as excinfo:
-            row = self.worksheet.getRow(unique="This isn't in the data")
-        assert " is not in the uniques list, you should try" in excinfo.value.message
+        row = self.worksheet.getRow(unique="This isn't in the data")
+        assert None == row
 
     
     def test_empty_w_commit(self):

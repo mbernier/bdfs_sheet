@@ -10,7 +10,8 @@ from modules.decorator import Debugger
 from modules.helper import Helper
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
-from pydantic import validate_arguments
+from pydantic import validate_arguments, Field
+from pydantic.typing import Annotated
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -308,10 +309,16 @@ class Bdfs_Worksheet(Base_Class):
 
     @Debugger
     @validate_arguments
-    def getRow(self, row:int=None, unique:str=None, update_timestamp=True) -> Flat_Cache:
+    def getRow(self, row:Annotated[int, Field(gt=-1)]=None, unique:str=None, update_timestamp=True) -> Flat_Cache:
         self.getData() 
         return self.data.sheetData.selectRow(row=row, unique=unique, update_timestamp=update_timestamp)
 
+
+    @Debugger
+    @validate_arguments
+    def getAllRows(self):
+        self.getData()
+        return self.data.sheetData.selectAll()
 
     ####
     #
@@ -326,7 +333,7 @@ class Bdfs_Worksheet(Base_Class):
 
     @Debugger
     @validate_arguments
-    def getCell(self, row:int, column:str):
+    def getCell(self, row:Annotated[int, Field(gt=-1)], column:str):
         self.getData()
         return self.data.sheetData.select(row,column)
 
@@ -334,7 +341,7 @@ class Bdfs_Worksheet(Base_Class):
     # creates A1 notation for the row and column given
     @Debugger
     @validate_arguments
-    def getA1(self, row, column) -> str:
+    def getA1(self, row:Annotated[int, Field(gt=-1)], column:Annotated[int, Field(gt=-1)]) -> str:
         return gspread_utils.rowcol_to_a1(row, column)
 
 

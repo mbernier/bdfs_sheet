@@ -60,27 +60,27 @@ def test_prepUrlKey():
     # https://unitedporte.us/3-panel-slab-barn-door-lucia-2661-white-silk-sturdy-finished-wooden-kitchen-pantry-shaker-doors-pocket-closet-sliding
     source = slabSourceData.copy()
     source['URL'] = obj.prepUrl(source)
-    output = obj.prepUrlKey(source)
+    output = obj.prepUrlKey(source, worksheetName)
     assert output == "3-panel-slab-barn-door-lucia-2661-white-silk-sturdy-finished-wooden-kitchen-pantry-shaker-doors-pocket-closet-sliding"
 
 def test_prepUrlKey_no_url():
     sourceCopy = slabSourceData.copy()
     sourceCopy['URL'] = ""
-    assert None == obj.prepUrlKey(sourceCopy)
-    assert obj.skipItem[obj.sourceWorksheetName] == True
-    obj.skipItem[obj.sourceWorksheetName] = False
+    assert None == obj.prepUrlKey(sourceCopy, worksheetName)
+    assert obj.skipItem[worksheetName] == True
+    obj.skipItem[worksheetName] = False
 
 
 def test_prepModel():
-    output = obj.prepModel(slabSourceData.copy())
+    output = obj.prepModel(slabSourceData.copy(), worksheetName)
     assert "Lucia 2661" == output
 
 def test_prepModel_no_title():
     sourceCopy = slabSourceData.copy()
     sourceCopy['Title'] = ""
-    assert None == obj.prepModel(sourceCopy)
-    assert obj.skipItem[obj.sourceWorksheetName] == True
-    obj.skipItem[obj.sourceWorksheetName] = False
+    assert None == obj.prepModel(sourceCopy, worksheetName)
+    assert obj.skipItem[worksheetName] == True
+    obj.skipItem[worksheetName] = False
 
 def test_prepImages():
     data = obj.prepImages(slabSourceData)
@@ -141,9 +141,9 @@ def test_lites():
 
 
 def test_mapFields_barndoor_single():
-    obj.skipItem['barndoor_single'] = False
+    obj.skipItem[worksheetName] = False
     outputData = obj.mapFields_barndoor_single(notSlabSourceData.copy())
-    assert obj.skipItem['barndoor_single'] == False
+    assert obj.skipItem[worksheetName] == False
 
     assert outputData['Hardware Type'] == "Rail"
     assert outputData['Hardware Color'] == notSlabSourceData['Hardware']

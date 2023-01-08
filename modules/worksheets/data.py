@@ -5,8 +5,10 @@ from modules.helper import Helper
 from modules.logger import Logger
 from modules.worksheets.exception import Bdfs_Worksheet_Data_Exception
 from modules.decorator import Debugger
-from pydantic import validate_arguments
+from pydantic import validate_arguments, Field
+from pydantic.typing import Annotated
 from typing import Union
+
 
 
 class Bdfs_Worksheet_Data(Base_Class):
@@ -125,7 +127,7 @@ class Bdfs_Worksheet_Data(Base_Class):
 
     @Debugger
     @validate_arguments
-    def addHeader(self, name:str, index:int=None):
+    def addHeader(self, name:str, index:Annotated[int, Field(gt=-1)]=None):
         # add to the end of the data
         self.dataStore.insert_location(location=name, index=index)
 
@@ -180,9 +182,12 @@ class Bdfs_Worksheet_Data(Base_Class):
     ####
  
     @Debugger
-    @validate_arguments
-    def selectRow(self, row:int=None, unique:str=None, update_timestamp=True):
-        return self.dataStore.selectRow(row=row, unique=unique, update_timestamp=update_timestamp) 
+    @validate_arguments 
+    def selectRow(self, row:Annotated[int,Field(gt=-1)]=None, unique:str=None, update_timestamp=True):
+        if None != unique:
+            return self.dataStore.selectRowByUnique(unique=unique, update_timestamp=update_timestamp)
+        else:
+            return self.dataStore.selectRow(row=row, update_timestamp=update_timestamp) 
 
 
     #given some data, identify if we need to update or insert the data
@@ -213,7 +218,7 @@ class Bdfs_Worksheet_Data(Base_Class):
     ####
     @Debugger
     @validate_arguments
-    def select(self, row:int=None, column:Union[int,str]=None, unique:str=None, update_timestamp=True):
+    def select(self, row:Annotated[int, Field(gt=-1)]=None, column:Union[int,str]=None, unique:str=None, update_timestamp=True):
         return self.dataStore.select(row=row, position=column, unique=unique, update_timestamp=update_timestamp)
  
 
@@ -235,6 +240,11 @@ class Bdfs_Worksheet_Data(Base_Class):
     def deleteRowWhere(self, column:str, value):
         self.dataStore.deleteRowWhere(column=column, value=value)
 
+    @Debugger
+    @validate_arguments
+    def selectAll(self):
+        return self.dataStore.selectAll()
+
     ####
     #
     # Meta Methods
@@ -242,11 +252,11 @@ class Bdfs_Worksheet_Data(Base_Class):
     ####
 
     @Debugger
-    def width(self) -> int:
+    def width(self) -> Annotated[int, Field(gt=-1)]:
         return len(self.getHeaders())
 
     @Debugger
-    def height(self) -> int:
+    def height(self) -> Annotated[int, Field(gt=-1)]:
         return self.dataStore.height()
 
     @Debugger

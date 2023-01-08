@@ -124,20 +124,18 @@ class Nested_Cache(Bdfs_Cache):
     @Debugger
     @validate_arguments
     def update(self, row:Annotated[int, Field(gt=-1)], position:Union[int,str], data=None):
+
         self.__handleHeaderRowOnly(row)
 
         self.validation_rowExists(row)
 
         if position == self.uniqueField:
-            # get the old uniqueValue
-            oldUnique = self.select(position=position,row=row)
-            # fail if the data is different and the data is already in the uniques list
-            self.__removeUnique(oldUnique)
-            self.__updateUniques(data, index=row)
+            self.__replaceUniqueItem(data, row)
 
         # do the manual update, we are not replacing the row, only the data in these locations
         self._storage[row].update(position=position, data=data)
-        
+
+
     @Debugger
     @validate_arguments
     def insert(self):
@@ -150,25 +148,33 @@ class Nested_Cache(Bdfs_Cache):
     ####
 
     @Debugger
+    @validate_arguments
+    def selectAll(self, update_timestamp=True):
+        # select all
+        return self.getAsListOfDicts(update_timestamp=update_timestamp)
+
+
+    @Debugger
     @validate_arguments # no need to test location exists, return None if the data doesn't exist at row or location
-    def selectRow(self, row:Annotated[int,Field(gt=-1)]=None, unique=None, update_timestamp=True):
-        if None != unique:
-            if None != row:
-                raise Nested_Cache_Exception("Passing row and unique together is poor form, pick one")
-            # we want the row based on the unique value
+    def selectRow(self, row:Annotated[int,Field(gt=-1)]=None, update_timestamp:bool=True):
+        # a row was passed, validate it
+        self.validation_rowExists(row)
+
+        # if position is None, will return the row, if it's set it will return the data at that position
+        data = self._storage[row].select(position=None, update_timestamp=update_timestamp)
+        return data
+
+
+    @Debugger
+    @validate_arguments # no need to test location exists, return None if the data doesn't exist at row or location
+    def selectRowByUnique(self, unique:str=None, update_timestamp:bool=True):
+        # we want the row based on the unique value
+        try:
             row = self.__getRowByUnique(uniqueData=unique)
             data = self._storage[row].select(position=None, update_timestamp=update_timestamp)
-        else: 
-
-            if None == row:
-                # select all
-                return self.getAsListOfDicts(update_timestamp=update_timestamp)
-            else: 
-                # a row was passed, validate it
-                self.validation_rowExists(row)
-
-            # if position is None, will return the row, if it's set it will return the data at that position
-            data = self._storage[row].select(position=None, update_timestamp=update_timestamp)
+        except Nested_Cache_Exception as err:
+            data = None # we didn't find a unique row
+        
         return data
 
     # given some data, identify whether it should be inserted or updated, based on the uniqueField
@@ -230,7 +236,9 @@ class Nested_Cache(Bdfs_Cache):
     @validate_arguments
     def __handleUniqueRowLogic(self, newRow):
         if None != self.uniqueField: #otherwise, we add the entire row to the uniques - not great
-            self.__updateUniques(newRow.select(position=self.uniqueField))
+            # we never want None in uniques, bc that could be the header row and if it's not then we should catch this earlier
+            if None != newRow.select(position=self.uniqueField):
+                self.__updateUniques(newRow.select(position=self.uniqueField))
         
         if self.headerRowOnly == True:
             # we have a placeholder row in the header and we now have a suitable replacement row
@@ -285,15 +293,11 @@ class Nested_Cache(Bdfs_Cache):
         if len(newRow.getKeys(keyType=str)) != len(locations):
             raise Nested_Cache_Exception(f"rowData was expected to be of length {len(locations)} but {len(newRow.getKeys(keyType=str))} was passed")
         
-        oldRow = self._storage[row]
-        
         newRowUnique = newRow.select(position=self.uniqueField)
-        oldRowUnique = oldRow.select(position=self.uniqueField)
 
         # if we care about unique Fields check that the new uniqueField hasn't already been entered
-        if None != self.uniqueField and True == self.isUnique(newRowUnique):
-            self.__removeUnique(oldRowUnique)
-            self.__updateUniques(newRowUnique,index=row)
+        if None != self.uniqueField:
+            self.__replaceUniqueItem(newRowUnique, index=row)
         
         self._storage[row] = newRow
 
@@ -455,7 +459,10 @@ class Nested_Cache(Bdfs_Cache):
 
     @Debugger
     @validate_arguments
-    def __updateUniques(self, uniqueData, index=None):
+    def __updateUniques(self, uniqueData, index:int=None):
+        if None == uniqueData:
+            raise Nested_Cache_Exception("None is not a valid value for uniques in Nested_Cache")
+        
         if True == self.isUnique(uniqueData):
             if None != index:
                 # we have this at a specific index, so add it
@@ -465,12 +472,31 @@ class Nested_Cache(Bdfs_Cache):
                 self.uniques.append(uniqueData)
             return True
         raise Nested_Cache_Exception(f"'{uniqueData}' for position '{self.uniqueField}' violates uniqueness")
+    
+
+    @Debugger
+    @validate_arguments
+    def __replaceUniqueItem(self, uniqueData, index:int):
+        # get the old uniqueValue
+        oldUnique = self.select(position=self.uniqueField, row=index)
+
+        if oldUnique != uniqueData:
+
+            if True == self.isUnique(uniqueData):
+                
+                # fail if the data is different and the data is already in the uniques list
+                self.__removeUnique(oldUnique)
+                
+                self.uniques.insert(index, uniqueData)
+                return True
+            else:
+                raise Nested_Cache_Exception(f"'{uniqueData}' for position '{self.uniqueField}' violates uniqueness")        
 
 
     @Debugger
     @validate_arguments
     def __removeUnique(self, uniqueData):
-        if None != self.uniqueField:
+        if None != self.uniqueField and uniqueData in self.uniques:
             self.uniques.remove(uniqueData)
 
 

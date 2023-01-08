@@ -27,7 +27,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         sourceData['URL'] = self.prepUrl(sourceData.copy())
         
         # URL key
-        sourceData['URL_key'] = self.prepUrlKey(sourceData.copy())
+        sourceData['URL_key'] = self.prepUrlKey(sourceData.copy(), worksheetName=worksheetName)
 
         # Door Count
         sourceData['Door Count'] = sourceData['Type']
@@ -47,7 +47,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         sourceData['Pre-drilled For Hardware'] = "No"
 
         # Parse out the model name and number
-        sourceData['Model'] = self.prepModel(sourceData.copy())
+        sourceData['Model'] = self.prepModel(sourceData.copy(), worksheetName=worksheetName)
 
         # this will rewrite sourceData with the new images 
         sourceData = self.prepImages(sourceData)
@@ -137,12 +137,12 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
 
     @Debugger
     @validate_arguments
-    def prepUrlKey(self, sourceData:dict):
+    def prepUrlKey(self, sourceData:dict, worksheetName:str):
         self.run_hook("start_prepUrlKey", url=sourceData['URL'])
         output = None
         if "" == sourceData['URL']:
             self.run_hook("prepUrlKey_url_is_blank", url=sourceData['URL'])
-            self.noteProblem(self.sourceWorksheetName, "URL", f"Door with no URL: '{sourceData['Title']}'")
+            self.noteProblem(worksheetName, "URL", f"Door with no URL: '{sourceData['Title']}'")
         else:
             self.run_hook("prepUrlKey_url_not_blank", url=sourceData['URL'])
             #sarto URL Key
@@ -154,7 +154,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
 
     @Debugger
     @validate_arguments
-    def prepModel(self, sourceData:dict):
+    def prepModel(self, sourceData:dict, worksheetName:str):
         self.run_hook("start_prepModel")
         output = None
         if "" != sourceData['Title']:
@@ -164,7 +164,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
                 output = f"{splitTitle[0]} {splitTitle[1]}"
         else:
             self.run_hook("prepModel_title_is_empty", title=sourceData['Title'])
-            self.noteProblem(self.sourceWorksheetName, "Title", f"Door with No Title: '{', '.join(sourceData)}'")
+            self.noteProblem(worksheetName, "Title", f"Door with No Title: '{', '.join(sourceData)}'")
             return
         self.run_hook("end_prepModel")
         return output

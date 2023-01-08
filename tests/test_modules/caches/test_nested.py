@@ -44,7 +44,7 @@ def test_select2():
 
 def test_select_all():
     cache = Nested_Cache([{'b':3,'c':None,'d':None}, {'b':None,'c':4,'d':None}, {'b':None,'c':None,'d':5}])
-    allData = cache.selectRow()
+    allData = cache.selectAll()
     assert len(allData) == 3
     assert len(allData[0]) == 7
     assert len(allData[1]) == 7
@@ -367,7 +367,6 @@ def test_reorderColumns():
 # verify that unique gets setup
 def test_unique_load():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
-    print(cache.getUniques())
     assert cache.getUniques() == [3, 1]
 
 # do an initial load with 2 of the same item in the unique field
@@ -428,19 +427,18 @@ def test_unique_updateRow_diff_unique_not_unique():
         cache.update(row=0, position='b', data=1)
     assert "'1' for position 'b' violates uniqueness" in str(excinfo.value)
 
-# try a select with row and unique
-def test_unique_unique_select_row_and_unique():
+def test_unique_updateRow_diff_unique_dne():
+    """try to unset the value of the unique columns from the data"""
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
-    with pytest.raises(Nested_Cache_Exception) as excinfo:
-        row = cache.selectRow(row=0,unique=3)
-    assert "Passing row and unique together is poor form, pick one" in str(excinfo.value)
-    
+    row = cache.selectRowByUnique(unique=52)
+    assert row == None
+
 # try a select with unique only
 def test_unique_select_by_unique():
     cache = Nested_Cache([{'b':3,'c':4,'d':5,'e':6,'f':7},{'b':1,'c':2,'d':3,'e':4,'f':5}], 'b')
-    row = cache.selectRow(unique=3)
+    row = cache.selectRowByUnique(unique=3)
     assert row == {'b': 3, 'c': 4,'d': 5,'e': 6,'f': 7}
-    row = cache.selectRow(unique=1)
+    row = cache.selectRowByUnique(unique=1)
     assert row == {'b':1,'c':2,'d':3,'e':4,'f':5}
 
 # test an update/insert based on data that exists

@@ -1,4 +1,4 @@
-import pytest, sys, time
+import pytest, sys, time, pydantic
 from modules.caches.flat import Flat_Cache, UPDATE_TIMESTAMP_KEY
 from modules.decorator import Debugger
 from modules.dataMove import DataMove
@@ -71,7 +71,7 @@ class Simple_DataMove(DataMove):
     @validate_arguments
     def mapFields_test_dataMove1(self, sourceData:dict):
         if sourceData['Name'] == "MattB":
-            self.noteProblem(self.sourceWorksheetName, "Name", "MattB is an asshole, skipping him")
+            self.noteProblem("test_dataMove1", "Name", "MattB is an asshole, skipping him")
             return
 
         # Source cols are one two three and update_timestamps
@@ -104,20 +104,25 @@ class Simple_DataMove(DataMove):
     def just_a_hook_with_data(self, data:str):
         return f"another test hook ran {data}"
 
+
 class Test_Bdfs_Worksheet_Destination:
     @classmethod
     def setup_class(self):
+        #DO NOT DELETE
         print("\n\tStarting class: {} execution".format(self.__name__))
         self.migrator = Simple_DataMove()
-        self.class_setup = True
-        # Do the setup of the objects for this test, done outside of the testing file to work around pytest oddities
+        self.migrator.pre_destination_open_create_worksheet("test_moveData1")
+        self.migrator.pre_destination_open_create_worksheet("test_moveData2")
+
 
     @classmethod
     def teardown_class(self):
+        #DO NOT DELETE
         print("\n\tTeardown class: {} execution".format(self.__name__))
 
 
     def setup_method(self, method):
+        #DO NOT DELETE
         print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
 
 
@@ -175,21 +180,30 @@ class Test_Bdfs_Worksheet_Destination:
 
     def test_getDestinationRow(self):
         worksheet = "test_dataMove1"
-        self.migrator.newData[worksheet]['Email'] = "test@example.com"
 
+        # Set to None so the getRow has unique=None and throws off the kwargs default
+        self.migrator.newData[worksheet]['Email'] = None
         uniqueField = self.migrator.destinationWorksheets[worksheet].getUniqueField()
+        
+        with pytest.raises(pydantic.error_wrappers.ValidationError) as excinfo:
+            row = self.migrator.destinationWorksheets[worksheet].getRow(unique=self.migrator.newData[worksheet]['Email'])    
+        assert "row" in str(excinfo.value)
+        assert "none is not an allowed value" in str(excinfo.value)
 
+        #set to something that will be in our data and get it
+        self.migrator.newData[worksheet]['Email'] = "test@example.com"
+        uniqueField = self.migrator.destinationWorksheets[worksheet].getUniqueField()
         assert 'Email' == uniqueField
-
         row = self.migrator.getUniqueDestinationRow(worksheet)
-        assert {} == row
+        assert {} == row #no row has this unique item
 
-        data = {'Name': 'Test User_Destination', 
-                'Email': 'test@example.com', 
+        # add the field to the data, then get it
+        data = {'Name': 'Test User_Destination',
+                'Email': 'test@example.com',
                 'Birthday':'1/1/1999',
-                'Yearly Salary': 100, 
-                'Hours Worked': 100, 
-                'Hourly Pay': 100, 
+                'Yearly Salary': 100,
+                'Hours Worked': 100,
+                'Hourly Pay': 100,
                 'Total Pay': 100}
         self.migrator.destinationWorksheets[worksheet].putRow(data)
         row = self.migrator.getUniqueDestinationRow(worksheet)
@@ -219,7 +233,7 @@ class Test_Bdfs_Worksheet_Destination:
         self.migrator.destinationWorksheets[worksheet].data.uniqueField = None
         row = self.migrator.getUniqueDestinationRow(worksheet)
         assert {} == row
-        
+
         # set it back, for subsequent tests
         self.migrator.destinationWorksheets[worksheet].data.uniqueField = uniqueField
 
@@ -249,222 +263,286 @@ class Test_Bdfs_Worksheet_Destination:
         assert "'Email' not in destination data" in excinfo.value.message
 
 
-    # def test_chooseSourceOrDestinationData_getSourceTimestamp(self):
-    #     worksheet = "test_dataMove1"
-    #     self.migrator.newData[worksheet]['Email'] = "test@example.com"
-    #     sourceTimestamp = self.migrator.chooseSourceOrDestinationData_getSourceTimestamp(worksheet, Flat_Cache.makeTimestampName('Email'))
-    #     assert sourceTimestamp == 0.0
+    def test_chooseSourceOrDestinationData_getSourceTimestamp(self):
+        worksheet = "test_dataMove1"
+        self.migrator.newData[worksheet]['Email'] = "test@example.com"
+        sourceTimestamp = self.migrator.chooseSourceOrDestinationData_getSourceTimestamp(worksheet, Flat_Cache.makeTimestampName('Email'))
+        assert sourceTimestamp == 0.0
 
-    #     self.migrator.newData[worksheet][Flat_Cache.makeTimestampName('Email')] = time.time()
-    #     newSourceTimestamp = self.migrator.chooseSourceOrDestinationData_getSourceTimestamp(worksheet, Flat_Cache.makeTimestampName('Email'))
-    #     assert newSourceTimestamp > 0
-    #     assert newSourceTimestamp > sourceTimestamp
-
-
-    # def test_chooseSourceOrDestinationData_getDestinationTimestamp(self):
-    #     worksheet = "test_dataMove1"
-    #     self.migrator.newData[worksheet]['Email'] = "test@example.com"
-    #     destinationData = self.migrator.getDestinationRow(worksheet)
-    #     sourceTimestamp = self.migrator.chooseSourceOrDestinationData_getDestinationTimestamp(Flat_Cache.makeTimestampName('Email'), destinationData)
-    #     assert sourceTimestamp > 0.0 # this is here from previous test
+        self.migrator.newData[worksheet][Flat_Cache.makeTimestampName('Email')] = time.time()
+        newSourceTimestamp = self.migrator.chooseSourceOrDestinationData_getSourceTimestamp(worksheet, Flat_Cache.makeTimestampName('Email'))
+        assert newSourceTimestamp > 0
+        assert newSourceTimestamp > sourceTimestamp
 
 
-    # def test_chooseSourceOrDestinationData(self):
-    #     worksheet = "test_dataMove1"
-    #     output = self.migrator.chooseSourceOrDestinationData('Name', worksheet)
-    #     # due to the tests here, the Test User_Destination is newer
-    #     assert output == {'Name': 'Test User_Destination'}
-    #     self.migrator.newData[worksheet][Flat_Cache.makeTimestampName('Name')] = time.time()
-    #     output = self.migrator.chooseSourceOrDestinationData('Name', worksheet)
-    #     # we just got at timestamp for the source, so we know it's newer now
-    #     assert output == {'Name': 'Test User_Source'}
+    def test_chooseSourceOrDestinationData_getDestinationTimestamp(self):
+        worksheet = "test_dataMove1"
+        self.migrator.newData[worksheet]['Email'] = "test@example.com"
+        destinationData = self.migrator.getUniqueDestinationRow(worksheet)
+        sourceTimestamp = self.migrator.chooseSourceOrDestinationData_getDestinationTimestamp(Flat_Cache.makeTimestampName('Email'), destinationData)
+        assert sourceTimestamp > 0.0 # this is here from previous test
 
 
-    # def test_handleWorksheetMethods(self):
-    #     pass
+    def test_chooseSourceOrDestinationData(self):
+        worksheet = "test_dataMove1"
+        output = self.migrator.chooseSourceOrDestinationData('Name', worksheet)
+        # due to the tests here, the Test User_Destination is newer
+        assert 'Name' in output.keys()
+        assert output['Name'] == 'Test User_Destination'
+        self.migrator.newData[worksheet][Flat_Cache.makeTimestampName('Name')] = time.time()
+        output = self.migrator.chooseSourceOrDestinationData('Name', worksheet)
+        # we just got at timestamp for the source, so we know it's newer now
+        assert 'Name' in output.keys()
+        assert output['Name'] == 'Test User_Source'
 
 
-    # def test_fieldMapper(self):
-    #     sourceData = self.migrator.sourceWorksheet.getRow(0, update_timestamp=True)        
-    #     # merge the source and Destination data, based on whatever rules you need
-    #     self.migrator.fieldMapper(sourceData)
+    def test_handleWorksheetMethods(self):
+        pass
 
-    #     newDataKeys = self.migrator.newData.keys()
-    #     for worksheet in self.migrator.destinationWorksheetNames:
-    #         assert worksheet in newDataKeys
-    #         newData = self.migrator.newData[worksheet]
-    #         assert 'Name' in newData
-    #         assert 'Email' in newData
-    #         assert 'Birthday' in newData
-    #         assert 'Yearly Salary' in newData
-    #         assert 'Hours Worked' in newData
-    #         assert 'Hourly Pay' in newData
-    #         assert 'Total Pay' in newData
-    #         assert Flat_Cache.makeTimestampName('Name') in newData
-    #         assert Flat_Cache.makeTimestampName('Email') in newData
-    #         assert Flat_Cache.makeTimestampName('Birthday') in newData
-    #         # These are created in the next step of dataMove, so they are not there yet
-    #         assert not Flat_Cache.makeTimestampName('Yearly Salary') in newData
-    #         assert not Flat_Cache.makeTimestampName('Hours Worked') in newData
-    #         assert not Flat_Cache.makeTimestampName('Hourly Pay') in newData
-    #         assert not Flat_Cache.makeTimestampName('Total Pay') in newData
+    def test_fieldMapper(self):
+        sourceData = self.migrator.sourceWorksheet.getRow(0, update_timestamp=True)        
+        # merge the source and Destination data, based on whatever rules you need
+        self.migrator.fieldMapper(row=0, sourceData=sourceData)
 
-    # def test_verifyRowData(self):
-    #     worksheet = "test_dataMove1"
-    #     modifiedData = self.migrator.verifyRowData(worksheet)
-    #     assert 'Name' in modifiedData
-    #     assert 'Email' in modifiedData
-    #     assert 'Birthday' in modifiedData
-    #     assert 'Yearly Salary' in modifiedData
-    #     assert 'Hours Worked' in modifiedData
-    #     assert 'Hourly Pay' in modifiedData
-    #     assert 'Total Pay' in modifiedData
-    #     # These are created in the next step of dataMove, so they are not there yet
-    #     assert not Flat_Cache.makeTimestampName('Name') in modifiedData
-    #     assert not Flat_Cache.makeTimestampName('Email') in modifiedData
-    #     assert not Flat_Cache.makeTimestampName('Birthday') in modifiedData
-    #     assert not Flat_Cache.makeTimestampName('Yearly Salary') in modifiedData
-    #     assert not Flat_Cache.makeTimestampName('Hours Worked') in modifiedData
-    #     assert not Flat_Cache.makeTimestampName('Hourly Pay') in modifiedData
-    #     assert not Flat_Cache.makeTimestampName('Total Pay') in modifiedData
+        newDataKeys = self.migrator.newData.keys()
+        for worksheet in self.migrator.destinationWorksheetNames:
+            assert worksheet in newDataKeys
+            newData = self.migrator.newData[worksheet]
+            assert 'Name' in newData
+            assert 'Email' in newData
+            assert 'Birthday' in newData
+            assert 'Yearly Salary' in newData
+            assert 'Hours Worked' in newData
+            assert 'Hourly Pay' in newData
+            assert 'Total Pay' in newData
+            assert Flat_Cache.makeTimestampName('Name') in newData
+            assert Flat_Cache.makeTimestampName('Email') in newData
+            assert Flat_Cache.makeTimestampName('Birthday') in newData
+            # These are created in the next step of dataMove, so they are not there yet
+            assert not Flat_Cache.makeTimestampName('Yearly Salary') in newData
+            assert not Flat_Cache.makeTimestampName('Hours Worked') in newData
+            assert not Flat_Cache.makeTimestampName('Hourly Pay') in newData
+            assert not Flat_Cache.makeTimestampName('Total Pay') in newData
 
-    # def test_storeTheData(self):
-    #     worksheet = "test_dataMove1"
-    #     data = {'Name': 'Test User_storeTheData', 
-    #             'Email': 'testStoreTheData@example.com', 
-    #             'Birthday':'1/1/1999',
-    #             'Yearly Salary': 100000, 
-    #             'Hours Worked': 2010, 
-    #             'Hourly Pay': 50, 
-    #             'Total Pay': 105000}
-    #     self.migrator.storeTheData(worksheet, data)
-    #     # the data is stored in the local copy, not committed yet
-    #     row = self.migrator.destinationWorksheets[worksheet].getRow(unique=data['Email'])
-    #     assert 'Name' in row.keys()
-    #     assert 'Email' in row.keys()
-    #     assert 'Birthday' in row.keys()
-    #     assert 'Yearly Salary' in row.keys()
-    #     assert 'Hours Worked' in row.keys()
-    #     assert 'Hourly Pay' in row.keys()
-    #     assert 'Total Pay' in row.keys()
-    #     assert Flat_Cache.makeTimestampName('Name') in row.keys()
-    #     assert Flat_Cache.makeTimestampName('Email') in row.keys()
-    #     assert Flat_Cache.makeTimestampName('Birthday') in row.keys()
-    #     assert Flat_Cache.makeTimestampName('Yearly Salary') in row.keys()
-    #     assert Flat_Cache.makeTimestampName('Hours Worked') in row.keys()
-    #     assert Flat_Cache.makeTimestampName('Hourly Pay') in row.keys()
-    #     assert Flat_Cache.makeTimestampName('Total Pay') in row.keys()
-    #     assert data['Name']             == row['Name']
-    #     assert data['Email']            == row['Email']
-    #     assert data['Birthday']         == row['Birthday']
-    #     assert data['Yearly Salary']    == row['Yearly Salary']
-    #     assert data['Hours Worked']     == row['Hours Worked']
-    #     assert data['Hourly Pay']       == row['Hourly Pay']
-    #     assert data['Total Pay']        == row['Total Pay']
+    def test_verifyRowData(self):
+        worksheet1 = "test_dataMove1"
 
-    # def test_checkMappedData(self):
-    #     #so long as this doesn't raise another error, we're good
-    #     self.migrator.checkMappedData()
+        modifiedData = self.migrator.verifyRowData(worksheet1)
+        assert 'Name' in modifiedData
+        assert 'Email' in modifiedData
+        assert 'Birthday' in modifiedData
+        assert 'Yearly Salary' in modifiedData
+        assert 'Hours Worked' in modifiedData
+        assert 'Hourly Pay' in modifiedData
+        assert 'Total Pay' in modifiedData
+
+        # These are created in the next step of dataMove, so they are not there yet
+        assert Flat_Cache.makeTimestampName('Name') in modifiedData
+        assert Flat_Cache.makeTimestampName('Email') in modifiedData
+        assert Flat_Cache.makeTimestampName('Birthday') in modifiedData
+        # if this ends up failing again, bc the items are not there...we def have an inconcistent bug in these tests
+        assert Flat_Cache.makeTimestampName('Yearly Salary') in modifiedData
+        assert Flat_Cache.makeTimestampName('Hours Worked') in modifiedData
+        assert Flat_Cache.makeTimestampName('Hourly Pay') in modifiedData
+        assert Flat_Cache.makeTimestampName('Total Pay') in modifiedData
+
+        #reset for next test
+        self.migrator.newData[worksheet1] = {}
 
 
-    # def test_doCommit(self):
-    #     self.migrator.doCommit()
+    def test_storeTheData(self):
+        worksheet1 = "test_dataMove1"
+        data1 = {'Name': 'Test User_storeTheData', 
+                'Email': 'testStoreTheData@example.com', 
+                'Birthday':'1/1/1999',
+                'Yearly Salary': 100000, 
+                'Hours Worked': 2010, 
+                'Hourly Pay': 50, 
+                'Total Pay': 105000}
+        self.migrator.storeTheData(worksheet1, data1)
 
 
-    # def test_noteProblems(self):
-    #     pass
+        worksheet2 = "test_dataMove2"
+        data2 = {'Name': 'Test User2_storeTheData', 
+                'Email': 'testStoreTheData2@example.com', 
+                'Birthday':'2/2/1999',
+                'Yearly Salary': 2222, 
+                'Hours Worked': 2222, 
+                'Hourly Pay': 22, 
+                'Total Pay': 222222}
+        self.migrator.storeTheData(worksheet2, data2)        
+
+        # the data is stored in the local copy, not committed yet
+        row = self.migrator.destinationWorksheets[worksheet1].getRow(unique=data1['Email'])
+        assert 'Name' in row.keys()
+        assert 'Email' in row.keys()
+        assert 'Birthday' in row.keys()
+        assert 'Yearly Salary' in row.keys()
+        assert 'Hours Worked' in row.keys()
+        assert 'Hourly Pay' in row.keys()
+        assert 'Total Pay' in row.keys()
+        assert Flat_Cache.makeTimestampName('Name') in row.keys()
+        assert Flat_Cache.makeTimestampName('Email') in row.keys()
+        assert Flat_Cache.makeTimestampName('Birthday') in row.keys()
+        assert Flat_Cache.makeTimestampName('Yearly Salary') in row.keys()
+        assert Flat_Cache.makeTimestampName('Hours Worked') in row.keys()
+        assert Flat_Cache.makeTimestampName('Hourly Pay') in row.keys()
+        assert Flat_Cache.makeTimestampName('Total Pay') in row.keys()
+        assert data1['Name']             == row['Name']
+        assert data1['Email']            == row['Email']
+        assert data1['Birthday']         == row['Birthday']
+        assert data1['Yearly Salary']    == row['Yearly Salary']
+        assert data1['Hours Worked']     == row['Hours Worked']
+        assert data1['Hourly Pay']       == row['Hourly Pay']
+        assert data1['Total Pay']        == row['Total Pay']
 
 
-    # # def test_problems(self):
-    # #     self.migrator.problems()
+    def test_map(self):
+        worksheet1 = "test_dataMove1"
+        worksheet2 = "test_dataMove2"
+        self.migrator.newData[worksheet1] = {}
+        self.migrator.newData[worksheet2] = {}
+
+        self.migrator.map()
 
 
-    # # def test_run(self):
-    # #     self.migrator.run()
+    def test_doCommit(self):
+        worksheet1 = "test_dataMove1"
+        worksheet2 = "test_dataMove2"
 
-    # #     spreadsheet = Simple_Spreadsheet_Source()
-    # #     spreadsheet.setupSpreadsheet()
-    # #     worksheet = spreadsheet.getWorksheet(worksheetTitle="test_dataMove1")
-    # #     data = worksheet.getData()
-    # #     # get the data we will start with
-    # #     row0 = worksheet.getRow(0, update_timestamp=True)
-    # #     assert row0['Name'] == "Matt"
-    # #     assert row0['Birthday'] == "1/1/2001"
-    # #     assert row0['Email'] == "email@example.com"
-    # #     assert row0['Yearly Salary'] == "40160"
-    # #     assert row0['Hours Worked'] == "100"
-    # #     assert row0['Hourly Pay'] == "20"
-    # #     assert row0['Total Pay'] == "2000" 
-    # #     assert row0[Flat_Cache.makeTimestampName('Name')] == 12345.0
-    # #     assert row0[Flat_Cache.makeTimestampName('Birthday')] == 12345.0
-    # #     assert row0[Flat_Cache.makeTimestampName('Email')] == 12345.0
-    # #     # these were all set at the same time, so the timestamp is the same for these
-    # #     timestamp = row0[Flat_Cache.makeTimestampName('Yearly Salary')]
-    # #     assert row0[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
-    # #     assert row0[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
-    # #     assert row0[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
-    # #     assert row0[UPDATE_TIMESTAMP_KEY] == timestamp
-
-    # #     row1 = worksheet.getRow(1, update_timestamp=True)
-    # #     timestamp = row1[Flat_Cache.makeTimestampName('Yearly Salary')]
-    # #     assert row1[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
-    # #     assert row1[UPDATE_TIMESTAMP_KEY] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Name')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Birthday')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Email')] == timestamp
-
-    # #     row2 = worksheet.getRow(2,update_timestamp=True)
-    # #     assert row2[Flat_Cache.makeTimestampName('Name')] == 54321.0
-    # #     assert row2[Flat_Cache.makeTimestampName('Birthday')] == 54321.0
-    # #     assert row2[Flat_Cache.makeTimestampName('Email')] == 54321.0
-    # #     # these were all set at the same time, so the timestamp is the same for these
-    # #     timestamp = row2[Flat_Cache.makeTimestampName('Yearly Salary')]
-    # #     assert row2[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
-    # #     assert row2[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
-    # #     assert row2[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
-    # #     assert row2[UPDATE_TIMESTAMP_KEY] == timestamp
+        self.migrator.doCommit()
 
 
-    # #     worksheet = spreadsheet.getWorksheet(worksheetTitle="test_dataMove2")
-    # #     data = worksheet.getData()
-    # #     # get the data we will start with
-    # #     row0 = worksheet.getRow(0, update_timestamp=True)
-    # #     assert row0['Name'] == "Matt"
-    # #     assert row0['Birthday'] == "1/1/2001"
-    # #     assert row0['Email'] == "email@example.com"
-    # #     assert row0['Yearly Salary'] == "20080"
-    # #     assert row0['Hours Worked'] == "10"
-    # #     assert row0['Hourly Pay'] == "2"
-    # #     assert row0['Total Pay'] == "200"
-    # #     assert row0[Flat_Cache.makeTimestampName('Name')] == 12345.0
-    # #     assert row0[Flat_Cache.makeTimestampName('Birthday')] == 12345.0
-    # #     assert row0[Flat_Cache.makeTimestampName('Email')] == 12345.0
-    # #     # these were all set at the same time, so the timestamp is the same for these
-    # #     timestamp = row0[Flat_Cache.makeTimestampName('Yearly Salary')]
-    # #     assert row0[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
-    # #     assert row0[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
-    # #     assert row0[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
-    # #     assert row0[UPDATE_TIMESTAMP_KEY] == timestamp
+    def test_noteProblems(self):
+        pass
 
-    # #     row1 = worksheet.getRow(1, update_timestamp=True)
-    # #     timestamp = row1[Flat_Cache.makeTimestampName('Yearly Salary')]
-    # #     assert row1[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('update_timestamp')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Name')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Birthday')] == timestamp
-    # #     assert row1[Flat_Cache.makeTimestampName('Email')] == timestamp
 
-    # #     row2 = worksheet.getRow(2,update_timestamp=True)
-    # #     assert row2[Flat_Cache.makeTimestampName('Name')] == 54321.0
-    # #     assert row2[Flat_Cache.makeTimestampName('Birthday')] == 54321.0
-    # #     assert row2[Flat_Cache.makeTimestampName('Email')] == 54321.0
-    # #     # these were all set at the same time, so the timestamp is the same for these
-    # #     timestamp = row2[Flat_Cache.makeTimestampName('Yearly Salary')]
-    # #     assert row2[Flat_Cache.makeTimestampName('Hours Worked')] == timestamp
-    # #     assert row2[Flat_Cache.makeTimestampName('Hourly Pay')] == timestamp
-    # #     assert row2[Flat_Cache.makeTimestampName('Total Pay')] == timestamp
-    # #     assert row2[UPDATE_TIMESTAMP_KEY] == timestamp
+    def test_problems(self):
+        self.migrator.problems()
+
+
+class Test_Bdfs_Worksheet_Destination2:
+    @classmethod
+    def setup_class(self):
+        #DO NOT DELETE
+        print("\n\tStarting class: {} execution".format(self.__name__))
+        self.migrator = Simple_DataMove()
+        self.migrator.pre_destination_open_create_worksheet("test_moveData1")
+        self.migrator.pre_destination_open_create_worksheet("test_moveData2")
+
+
+    @classmethod
+    def teardown_class(self):
+        #DO NOT DELETE
+        print("\n\tTeardown class: {} execution".format(self.__name__))
+
+
+    def setup_method(self, method):
+        #DO NOT DELETE
+        print(f"\n\tSetting up method {self.__class__.__name__}:: {method.__name__}")
+
+
+    def teardown_method(self, method):
+        pass
+
+
+
+    def test_run(self):
+        destinationDataRow = self.migrator.destinationWorksheets["test_dataMove1"].getAllRows()
+
+        self.migrator.run()
+
+        spreadsheet = Simple_Spreadsheet_Source()
+        spreadsheet.setupSpreadsheet()
+        worksheet = spreadsheet.getWorksheet(worksheetTitle="test_dataMove1")
+        data = worksheet.getData()
+        # get the data we will start with
+        row0 = worksheet.getRow(0, update_timestamp=True)
+        assert row0['Name'] == "Matt"
+        assert row0['Birthday'] == "1/1/2001"
+        assert row0['Email'] == "email@example.com"
+        assert row0['Yearly Salary'] == "40160"
+        assert row0['Hours Worked'] == "100"
+        assert row0['Hourly Pay'] == "20"
+        assert row0['Total Pay'] == "2000"
+        
+        assert row0[Flat_Cache.makeTimestampName('Name')] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Birthday')] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Email')] == 12345.0
+        # these were all set at the same time, so the timestamp is the same for these
+        timestamp = row0[Flat_Cache.makeTimestampName('Yearly Salary')]
+        ts_range = range(int(timestamp)-2, int(timestamp)+2)
+        assert row0[Flat_Cache.makeTimestampName('Hours Worked')] in ts_range
+        assert row0[Flat_Cache.makeTimestampName('Hourly Pay')] in ts_range
+        assert row0[Flat_Cache.makeTimestampName('Total Pay')] in ts_range
+        assert row0[UPDATE_TIMESTAMP_KEY] in ts_range
+
+        row1 = worksheet.getRow(1, update_timestamp=True)
+        timestamp = row1[Flat_Cache.makeTimestampName('Yearly Salary')]
+        ts_range = range(int(timestamp)-2, int(timestamp)+2)
+        assert row1[Flat_Cache.makeTimestampName('Hours Worked')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Hourly Pay')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Total Pay')] in ts_range
+        assert row1[UPDATE_TIMESTAMP_KEY] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Name')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Birthday')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Email')] in ts_range
+
+        row2 = worksheet.getRow(2,update_timestamp=True)
+        assert row2[Flat_Cache.makeTimestampName('Name')] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Birthday')] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Email')] == 54321.0
+        # these were all set at the same time, so the timestamp is the same for these
+        timestamp = row2[Flat_Cache.makeTimestampName('Yearly Salary')]
+        ts_range = range(int(timestamp)-2, int(timestamp)+2)
+        assert row2[Flat_Cache.makeTimestampName('Hours Worked')] in ts_range
+        assert row2[Flat_Cache.makeTimestampName('Hourly Pay')] in ts_range
+        assert row2[Flat_Cache.makeTimestampName('Total Pay')] in ts_range
+        assert row2[UPDATE_TIMESTAMP_KEY] in ts_range
+
+
+        worksheet = spreadsheet.getWorksheet(worksheetTitle="test_dataMove2")
+        data = worksheet.getData()
+        # get the data we will start with
+        row0 = worksheet.getRow(0, update_timestamp=True)
+        assert row0['Name'] == "Matt"
+        assert row0['Birthday'] == "1/1/2001"
+        assert row0['Email'] == "email@example.com"
+        assert row0['Yearly Salary'] == "20080"
+        assert row0['Hours Worked'] == "10"
+        assert row0['Hourly Pay'] == "2"
+        assert row0['Total Pay'] == "200"
+        
+        assert row0[Flat_Cache.makeTimestampName('Name')] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Birthday')] == 12345.0
+        assert row0[Flat_Cache.makeTimestampName('Email')] == 12345.0
+        # these were all set at the same time, so the timestamp is the same for these
+        timestamp = row0[Flat_Cache.makeTimestampName('Yearly Salary')]
+        ts_range = range(int(timestamp)-2, int(timestamp)+2)
+        assert row0[Flat_Cache.makeTimestampName('Hours Worked')] in ts_range
+        assert row0[Flat_Cache.makeTimestampName('Hourly Pay')] in ts_range
+        assert row0[Flat_Cache.makeTimestampName('Total Pay')] in ts_range
+        assert row0[UPDATE_TIMESTAMP_KEY] in ts_range
+
+        row1 = worksheet.getRow(1, update_timestamp=True)
+        timestamp = row1[Flat_Cache.makeTimestampName('Yearly Salary')]
+        ts_range = range(int(timestamp)-2, int(timestamp)+2)
+        assert row1[Flat_Cache.makeTimestampName('Hours Worked')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Hourly Pay')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Total Pay')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('update_timestamp')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Name')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Birthday')] in ts_range
+        assert row1[Flat_Cache.makeTimestampName('Email')] in ts_range
+
+        row2 = worksheet.getRow(2,update_timestamp=True)
+        assert row2[Flat_Cache.makeTimestampName('Name')] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Birthday')] == 54321.0
+        assert row2[Flat_Cache.makeTimestampName('Email')] == 54321.0
+        # these were all set at the same time, so the timestamp is the same for these
+        timestamp = row2[Flat_Cache.makeTimestampName('Yearly Salary')]
+        ts_range = range(int(timestamp)-2, int(timestamp)+2)
+        assert row2[Flat_Cache.makeTimestampName('Hours Worked')] in ts_range
+        assert row2[Flat_Cache.makeTimestampName('Hourly Pay')] in ts_range
+        assert row2[Flat_Cache.makeTimestampName('Total Pay')] in ts_range
+        assert row2[UPDATE_TIMESTAMP_KEY] in ts_range
