@@ -3,21 +3,24 @@ from modules.dataMove import DataMove
 from pydantic import validate_arguments
 from modules.dataMoves.exception import DataMove_Exception
 
-class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
+class Sarto_Inventory_BarnDoor_Single_BDFS(DataMove):
     sourceClassPath = "sarto_inventory.Sarto_Inventory_Spreadsheet_Source"
     sourceWorksheetName = "barndoor_single"
 
     destinationClassPath = "bdfs_inventory.Bdfs_Inventory_Spreadsheet_Destination"
-    destinationWorksheetName = "barndoor_single"
+    destinationWorksheetName = ["barndoor_single"]
 
     @Debugger
     @validate_arguments
-    def mapFields(self, sourceData:dict): 
+    def mapFields_barndoor_single(self, sourceData:dict): 
+
+        # Vendor Identifier
+        sourceData['Vendor Identifier'] = sourceData['URL_key']
 
         # Door Count
-        sourceData['Door Count'] = sourceData['Type']
+        sourceData['Number of Doors'] = sourceData['Type']
         
-        # Type
+        # Type of Door
         sourceData['Type'] = 'Barn Door'
 
         #####
@@ -25,9 +28,11 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
         # Vars For Description and Tags
         # 
         #####
-     
-            # Lites
-            sourceData['Lites'] = sourceData['Glass Lites'].replace("lites","").replace("Lites", "").strip()
+        # Has Glass
+        sourceData['Has Glass'] = 
+
+        # Lites
+        sourceData['Lites'] = sourceData['Glass Lites'].replace("lites","").replace("Lites", "").strip()
 
             # Description
             description = ""

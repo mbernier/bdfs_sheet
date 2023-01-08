@@ -213,9 +213,10 @@ Ongoing Data Migration/Modification:
 
 
 ### Migration Classes:
-- Create a Temporal workflow that will handle the ongoing data migration/modification
-    - initially, run it to see it working
-    - eventually, schedule it to run daily
+- Temporal
+    - Workflow for each spreadsheet
+        - child workflows for each worksheet
+        - child workflows for each data row
 - Create a class that takes a source and a Destination:
     - Naming: e.g. Sarto_to_Bdfs
     - Definition 
