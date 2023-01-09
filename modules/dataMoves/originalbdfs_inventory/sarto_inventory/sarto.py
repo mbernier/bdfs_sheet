@@ -106,7 +106,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
 
     @Debugger
     @validate_arguments
-    def mapFields_barndoor_single(self, sourceData:dict):
+    def barndoor_single(self, sourceData:dict):
         self.run_hook("\nstart_mapFields_barndoor_single", hardware=sourceData['Hardware'])
         if not "Slab" in sourceData['Hardware']:
             self.skipItem['barndoor_single'] = False
@@ -123,7 +123,7 @@ class Originalbdfs_Inventory_To_Sarto_Inventory(DataMove):
 
     @Debugger
     @validate_arguments
-    def mapFields_slabs_single(self, sourceData:dict):
+    def slabs_single(self, sourceData:dict):
         self.run_hook("\nstart_mapFields_slabs_single", hardware=sourceData['Hardware'])
     
         if "Slab" in sourceData['Hardware']:

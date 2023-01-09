@@ -11,7 +11,7 @@ from modules.helper import Helper
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
 from pydantic import validate_arguments, Field
-from pydantic.typing import Annotated
+from pydantic.typing import Annotated, Type
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -57,12 +57,14 @@ class Bdfs_Worksheet(Base_Class):
     cols_expected = None
     cols_expected_extra = None
     dataClass = "modules.worksheet.Worksheet_DataClass"
+    data: Type[Worksheet_DataClass]
 
     @Debugger
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def __init__(self, worksheet:Worksheet):
-        worksheetDataClass = Helper.importClass(self.dataClass)
-        self.data = worksheetDataClass()
+        if None == self.data: # allows a subclass to set this and not get overridden
+            worksheetDataClass = Helper.importClass(self.dataClass)
+            self.data = worksheetDataClass()
         # store the gspread worksheet for use later
         self.data.gspread_worksheet = worksheet
         self.data.title = worksheet.title

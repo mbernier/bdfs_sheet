@@ -174,8 +174,7 @@ class Bdfs_Spreadsheet(Base_Class):
         
         if worksheetTitle in self.getWorksheets():
             if None == self.getWorksheets()[worksheetTitle]:
-                worksheetClass = self.getWorksheetClass()
-                self.data.worksheets[worksheetTitle] = worksheetClass(self.data.gspread_worksheets[worksheetTitle])
+                self.createWorksheet(worksheetTitle)
             return self.data.worksheets[worksheetTitle]
         elif True == skipKept: # we don't care that this isn't in the keeper pattern
             if worksheetTitle in self.data.gspread_worksheets.keys(): # if it exists, go ahead and grab it
@@ -184,3 +183,12 @@ class Bdfs_Spreadsheet(Base_Class):
             return self.getWorksheet(worksheetTitle)
         else:
             raise Bdfs_Spreadsheet_Exception(f"The worksheet '{worksheetTitle}' was not found in the kept worksheets: {list(self.getWorksheets().keys())}")
+    
+    
+    @Debugger
+    @validate_arguments
+    def createWorksheet(self, worksheetTitle):
+        """This is its own method so it can be overridden by Migrator
+            Finds the worksheet class name and then instantiates a worksheet obj"""
+        worksheetClass = self.getWorksheetClass()
+        self.data.worksheets[worksheetTitle] = worksheetClass(self.data.gspread_worksheets[worksheetTitle])

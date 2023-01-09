@@ -1,7 +1,7 @@
 import sys
 from collections import OrderedDict
 from pydantic import validate_arguments, Field
-from pydantic.typing import Annotated
+from pydantic.typing import Annotated, Type
 from modules.caches.flat import UPDATE_TIMESTAMP_KEY, UPDATE_TIMESTAMP_POSTFIX, Flat_Cache
 from modules.caches.exception import Nested_Cache_Exception
 from modules.config import config
@@ -10,6 +10,8 @@ from modules.decorator import Debugger
 from modules.helper import Helper
 from modules.helpers.exception import Helper_Exception
 from modules.logger import Logger, logger_name
+from modules.spreadsheets.destination import Bdfs_Spreadsheet_Destination
+from modules.spreadsheets.source import Bdfs_Spreadsheet_Source
 from modules.spreadsheets.exception import Bdfs_Spreadsheet_Exception
 
 class DataMove():
@@ -54,26 +56,34 @@ class DataMove():
         
         if None == self.sourceWorksheetName:
             raise DataMove_Exception("sourceWorksheetName needs to be set")
-        
-        if None == self.sourceClassPath:
-            raise DataMove_Exception("sourceClassPath needs to be set")
-        
+                
         self.run_hook('pre_init')
 
         self.run_hook('pre_init_spreadsheets')
 
         self.run_hook('pre_source_init_spreadsheet')
         
-        sourceklassObj = self.getSourceClass()
-        self.sourceSpreadsheet = sourceklassObj()
+        if None == self.sourceSpreadsheet:
+            if None == self.sourceClassPath:
+                raise DataMove_Exception("sourceClassPath needs to be set")
+
+            sourceklassObj = self.getSourceClass()
+            self.sourceSpreadsheet = sourceklassObj()
+        
+        # validate that we got a subclass of Bdfs_Spreadsheet_Source
+        self.validate_sourceSpreadsheetObj(self.sourceSpreadsheet)
         self.run_hook('post_source_init_spreadsheet')
 
-        self.run_hook('pre_destination_init_spreadsheet')
-        destklassObj = self.getDestinationClass()
-        self.destinationSpreadsheet = destklassObj()
-        self.run_hook('post_destination_init_spreadsheet')
 
+        self.run_hook('pre_destination_init_spreadsheet')
+        if None == self.destinationSpreadsheet:
+            destklassObj = self.getDestinationClass()
+            self.destinationSpreadsheet = destklassObj()
+        
+        self.validate_destinationSpreadsheetObj(self.destinationSpreadsheet)
+        self.run_hook('post_destination_init_spreadsheet')
         self.run_hook('post_init_spreadsheets')
+
 
         self.run_hook('pre_source_get_worksheets')
         self.sourceWorksheet = self.sourceSpreadsheet.getWorksheet(worksheetTitle=self.sourceWorksheetName)
@@ -97,6 +107,18 @@ class DataMove():
         
         self.run_hook("post_init")
 
+
+    @Debugger
+    @validate_arguments
+    def validate_sourceSpreadsheetObj(self, spreadsheetObj:Type[Bdfs_Spreadsheet_Source]):
+        """Pydantic will fail the code before this returns, if the spreadsheet object is the wrong type"""
+        return True
+
+    @Debugger
+    @validate_arguments
+    def validate_destinationSpreadsheetObj(self, spreadsheetObj:Type[Bdfs_Spreadsheet_Destination]):
+        """Pydantic will fail the code before this returns, if the spreadsheet object is the wrong type"""
+        return True
 
     @Debugger
     @validate_arguments
@@ -431,8 +453,9 @@ class DataMove():
         
         try:
             self.run_hook("handleWorksheetMethods_pre_callMethod", methodName=methodName)
+            
             # tries to run methodName from self, passing it the sourceData as kwarg
-            newData = Helper.callMethod(klass=self, methodName=methodName, sourceData=sourceData.copy())
+            newData = self.callFieldMapperMethod(klass=self, methodName=methodName, sourceData=sourceData.copy())
             
             self.run_hook("handleWorksheetMethods_post_callMethod", methodName=methodName)
         except Helper_Exception as err:
@@ -444,7 +467,7 @@ class DataMove():
         
         self.run_hook("end_handleWorksheetMethods")
         return newData
-        
+
 
     @Debugger
     @validate_arguments
@@ -552,6 +575,18 @@ class DataMove():
                     print(f"\t- {value}")
 
         self.run_hook('post_problems')
+
+    ####
+    # 
+    # Meta Methods
+    #
+    #####
+
+    @Debugger
+    @validate_arguments
+    def callFieldMapperMethod(self, klass, methodName:str, sourceData:dict):
+        """Wraps this method, so we can override it in the Migrator subclass"""
+        Helper.callMethod(klass=klass, methodName=methodName, sourceData=sourceData)
 
 
     ####
