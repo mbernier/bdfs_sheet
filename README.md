@@ -160,9 +160,19 @@ Environments:
 
 Environment options are all explained in the comments of the `default` environment
 
-## To Add:
+## To do:
 
-To do:
+- Get tests to pass with the new changes for Migrator
+- Build a test Migrator with Simple Spreadsheet to match the original Simple tests
+    - verify the tests for Simple pass with this new version
+- Build the BDFS inventory migrator and verify it
+    Product Titles
+    - rearrange titles: The items that get the most clicks Lucia 22 Matte Black Barn Door
+        - "single barn door", double barn door further up in the title
+        - "Matte Black Single Barn Door - Lucia 22"
+    - attributes through type, categories, description - rich content
+
+
 
 - Double Check with testDataMove, when the destination is not cleared -- do the timestamps get updated to the new timestamp? 
     - if they do get updated, should they be staying the same as the old, since we passed the old and we're passing it again?
@@ -171,23 +181,6 @@ To do:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-Product Titles
-- rearrange titles: The items that get the most clicks Lucia 22 Matte Black Barn Door
-    - "single barn door", double barn door further up in the title
-    - "Matte Black Single Barn Door - Lucia 22"
-- attributes through type, categories, description - rich content
 
 
 Initial Migration to new Data sources:
@@ -199,6 +192,7 @@ Initial Migration to new Data sources:
     - apply formulas and templates (see below)
 1. Kill BDFS_Inventory and refer to the Sarto sheets and Shopify Sheets (BDFS, DFS)
 
+- see if pdoc will work
 
 Ongoing Data Migration/Modification:
 1. Where is Ali putting his scraped data?

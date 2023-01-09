@@ -43,7 +43,7 @@ class Migrator_Exception(Bdfs_Exception):
 
 class Migrator_Field_Exception(Bdfs_Exception):
     def __init__(self, type:ObjTypeEnum, field:str, direction:DirectionEnum):
-        self.message = f"{}.name is a required param for Migrator_Spreadsheet_Source"
+        self.message = f"{type}.{field} is a required param for Migrator_Spreadsheet_{direction}"
         super().__init__(self.message)
 
 
@@ -60,7 +60,7 @@ class Migrator_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
                 "expectedCols": Sarto_Base.cols_expected,
                 "expectedCols_extra": Sarto_Base.cols_expected_extra,
                 "uniqueField": "URL_key",
-                "dataclass": Sarto_Worksheet_DataClass()# uses the default if this is not set
+                "data_class": Sarto_Worksheet_DataClass()# uses the default if this is not set
             }
         }
     """
@@ -78,7 +78,7 @@ class Migrator_Spreadsheet_Source(Bdfs_Spreadsheet_Source):
     def createWorksheet(self, worksheetTitle):
         """This is its own method so it can be overridden by Migrator
             Finds the worksheet class name and then instantiates a worksheet obj"""
-        worksheet = Migrator_Worksheet_Source(self.source_dict, self.data.gspread_worksheets[worksheetTitle])
+        worksheet = Migrator_Worksheet_Source(source_dict=self.source_dict, worksheet=self.data.gspread_worksheets[worksheetTitle])
         self.data.worksheets[worksheetTitle] = worksheet
 
 
@@ -97,7 +97,7 @@ class Migrator_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
                 "expectedCols": Sarto_Base.cols_expected,
                 "extra_expectedCols": Sarto_Base.cols_expected_extra,
                 "uniqueField": "URL_key",
-                "dataclass": Sarto_Worksheet_DataClass(),
+                "data_class": Sarto_Worksheet_DataClass(),
                 "map_fields": MapFields()
             }
         }
@@ -116,34 +116,42 @@ class Migrator_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
     def createWorksheet(self, worksheetTitle):
         """This is its own method so it can be overridden by Migrator
             Finds the worksheet class name and then instantiates a worksheet obj"""
-        worksheet = Migrator_Worksheet_Destination(self.dest_dict, self.data.gspread_worksheets[worksheetTitle])
+        worksheet = Migrator_Worksheet_Destination(dest_dict=self.dest_dict, worksheet=self.data.gspread_worksheets[worksheetTitle])
+        worksheet.setupParams(self.dest_dict)
         self.data.worksheets[worksheetTitle] = worksheet
 
 
 @dataclass
 class Migrator_Worksheet_Dataclass(Worksheet_DataClass):
     discount:int = dc_field(default_factory=int)    # discount data
-    title:str  = dc_field(default_factory=str)      # The Sheet title
-
-
-
-
-
-Need to instantiate worksheets properly - pass in the cols as part of setup, then call super__init__
-
-
-
-
+    title:str = dc_field(default_factory=str)      # The Sheet title
 
 
 class Migrator_Worksheet_Source(Bdfs_Worksheet_Source):
-    def __init__(source_dict:dict):
-        pass
+    
+    def __init__(self, worksheet:Worksheet, source_dict:dict):
+        """Delays the Bdfs_Worksheet_Source __init__ behind setting the params passed from config"""
+        self.data.expectedColumns = source_dict['worksheet']['expectedCols']
+        self.data.expectedColumns_extra = source_dict['worksheet']['expectedCols_extra']
+        self.data.uniqueField = source_dict['worksheet']['uniqueField']
 
+        if "data_class" in source_dict['worksheet'].keys():
+            self.setDataClass(source_dict['worksheet']['data_class'])
+
+        self.initialSetup()
+    
 
 class Migrator_Worksheet_Destination(Bdfs_Worksheet_Destination):
-    def __init__(dest_dict:dict):
-        pass
+    def __init__(self, dest_dict:dict, worksheet:Worksheet):
+        """Delays the Bdfs_Worksheet_Destination __init__ behind setting the params passed from config"""
+        self.data.expectedColumns = dest_dict['worksheet']['expectedCols']
+        self.data.expectedColumns_extra = dest_dict['worksheet']['expectedCols_extra']
+        self.data.uniqueField = dest_dict['worksheet']['uniqueField']
+
+        if "data_class" in dest_dict['worksheet'].keys():
+            self.setDataClass(dest_dict['worksheet']['data_class'])
+
+        self.initialSetup()
 
 # @todo create a base dataclass for all source worksheets
 # @todo by default the MapFields method that is used is the same as the worksheet name

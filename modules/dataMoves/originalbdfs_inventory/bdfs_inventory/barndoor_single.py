@@ -183,7 +183,7 @@ class Sarto_Inventory_BDFS_BarnDoor_Single(DataMove):
                     with a.li():
                         a('Floor Guide (Plastic Fin)')
             with a.p():
-
+                a('paragraph')
 
 
 

@@ -11,7 +11,7 @@ from modules.helper import Helper
 from modules.worksheets.exception import Bdfs_Worksheet_Exception
 from modules.worksheets.data import Bdfs_Worksheet_Data
 from pydantic import validate_arguments, Field
-from pydantic.typing import Annotated, Type
+from pydantic.typing import Annotated, Type, Union
 
 # @todo the spreadsheet ID should be given by the extending class
 #   If this class is called directly, then it should error out because it should never have a
@@ -57,14 +57,24 @@ class Bdfs_Worksheet(Base_Class):
     cols_expected = None
     cols_expected_extra = None
     dataClass = "modules.worksheet.Worksheet_DataClass"
-    data: Type[Worksheet_DataClass]
+    data: Type[Worksheet_DataClass] = None
 
     @Debugger
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def __init__(self, worksheet:Worksheet):
+        self.initialSetup(worksheet)
+    
+    @Debugger
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def initialSetup(self, worksheet:Worksheet):
+        """Setup as an overloadable function, so that this can be called post __init__ in subclasses
+            This will make sure that we can call all the same functionality after we have
+            setup the instance params that we need to setup"""
+
         if None == self.data: # allows a subclass to set this and not get overridden
             worksheetDataClass = Helper.importClass(self.dataClass)
-            self.data = worksheetDataClass()
+            data_class = worksheetDataClass()
+            self.setDataClass(data_class)
         # store the gspread worksheet for use later
         self.data.gspread_worksheet = worksheet
         self.data.title = worksheet.title
@@ -85,6 +95,12 @@ class Bdfs_Worksheet(Base_Class):
 
         self.getTitle()
 
+
+    @Debugger
+    # @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def setDataClass(self, data_class:Union[Worksheet_DataClass, Type[Worksheet_DataClass]]):
+        """Created to use Pydantic to validate that the data class is the correct type before setting it"""
+        self.data = data_class #code will not get here if Pydantic detects the wrong kind of dataclass
 
     @Debugger
     def checkSetup(self):

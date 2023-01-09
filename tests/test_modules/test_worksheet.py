@@ -1,7 +1,7 @@
 import time
 from gspread import Worksheet
 from modules.spreadsheets.destination import Bdfs_Spreadsheet_Destination
-from modules.worksheet import Bdfs_Worksheet
+from modules.worksheet import Bdfs_Worksheet, Worksheet_DataClass
 
 class Good_Simple_Spreadsheet_Destination(Bdfs_Spreadsheet_Destination):
     spreadsheetId = '1FEO3BKhyEtr7uF5ZmmodNm7vK3M5i5jrL2_AoOuAwlI' #test_inventory

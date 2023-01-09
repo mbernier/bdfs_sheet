@@ -1,7 +1,7 @@
 import sys
 from collections import OrderedDict
 from pydantic import validate_arguments, Field
-from pydantic.typing import Annotated, Type
+from pydantic.typing import Annotated, Type, Union
 from modules.caches.flat import UPDATE_TIMESTAMP_KEY, UPDATE_TIMESTAMP_POSTFIX, Flat_Cache
 from modules.caches.exception import Nested_Cache_Exception
 from modules.config import config
@@ -109,14 +109,14 @@ class DataMove():
 
 
     @Debugger
-    @validate_arguments
-    def validate_sourceSpreadsheetObj(self, spreadsheetObj:Type[Bdfs_Spreadsheet_Source]):
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def validate_sourceSpreadsheetObj(self, spreadsheetObj:Union[Bdfs_Spreadsheet_Source, Type[Bdfs_Spreadsheet_Source]]):
         """Pydantic will fail the code before this returns, if the spreadsheet object is the wrong type"""
         return True
 
     @Debugger
-    @validate_arguments
-    def validate_destinationSpreadsheetObj(self, spreadsheetObj:Type[Bdfs_Spreadsheet_Destination]):
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def validate_destinationSpreadsheetObj(self, spreadsheetObj:Union[Bdfs_Spreadsheet_Destination, Type[Bdfs_Spreadsheet_Destination]]):
         """Pydantic will fail the code before this returns, if the spreadsheet object is the wrong type"""
         return True
 

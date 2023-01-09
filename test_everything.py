@@ -62,15 +62,15 @@ config_for_testing()
 # Make sure we're using the right parameters on pytest
 #
 ####
-opts, args = getopt.getopt(sys.argv[1:], "chs:w:lvv",["capture=","ignore="])
-captureFound = False
+# opts, args = getopt.getopt(sys.argv[1:], "chs:w:lvv",["capture=","ignore="])
+# captureFound = False
 
-for opt, arg in opts: 
-    if opt == "--capture" and arg == "tee-sys":
-        captureFound = True
+# for opt, arg in opts: 
+#     if opt == "--capture" and arg == "tee-sys":
+#         captureFound = True
 
-if False == captureFound:
-    raise Exception("Try running `pytest --capture=tee-sys` instead")
+# if False == captureFound:
+#     raise Exception("Try running `pytest --capture=tee-sys` instead")
 
 
 ####
